@@ -24,7 +24,7 @@ from pathlib import Path
 import numpy as np
 import pandas as pd
 
-DATA_PATH = Path("/Users/vexila/Desktop/Data real/appraisal_2561-2569.parquet")
+DATA_PATH = Path(__file__).resolve().parent.parent / "Data" / "appraisal_2561-2569.parquet"
 
 CATEGORICAL = ["collateral_type", "province", "district"]
 # Everything below is derived in add_features(); none of it is a raw column.

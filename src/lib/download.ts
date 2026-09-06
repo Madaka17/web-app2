@@ -69,6 +69,12 @@ export function reportToCSV(input: PredictionInput, result: PredictionResult): s
   rows.push(csvRow("Output", "Lower Bound", result.lowerBound, "THB"));
   rows.push(csvRow("Output", "Upper Bound", result.upperBound, "THB"));
   rows.push(csvRow("Output", "Confidence", result.confidence.toFixed(1), "percent"));
+  if (result.market) {
+    rows.push(csvRow("Market", "Estimated Market Price", result.market.price, "THB"));
+    rows.push(csvRow("Market", "Asking/Appraisal Ratio", result.market.ratio, "x"));
+    rows.push(csvRow("Market", "Listings Behind Ratio", result.market.listings, "listings"));
+    rows.push(csvRow("Market", "Basis", result.market.basis, "-"));
+  }
 
   for (const c of result.contributions) {
     rows.push(csvRow("Ensemble", `${c.name} Weight`, (c.weight * 100).toFixed(0), "percent"));
@@ -106,6 +112,13 @@ export function reportToText(input: PredictionInput, result: PredictionResult): 
   lines.push(`  Lower Bound:      ${formatBaht(result.lowerBound)}`);
   lines.push(`  Upper Bound:      ${formatBaht(result.upperBound)}`);
   lines.push(`  Confidence:       ${result.confidence.toFixed(1)}%`);
+  if (result.market) {
+    lines.push("");
+    lines.push("--- MARKET ESTIMATE ---");
+    lines.push(`  Estimated Market: ${formatBaht(result.market.price)}`);
+    lines.push(`  Ratio:            x${result.market.ratio.toFixed(2)} (${result.market.listings} listings, ${result.market.scope})`);
+    lines.push(`  Basis:            ${result.market.basis}`);
+  }
   lines.push("");
   lines.push("--- ENSEMBLE BREAKDOWN ---");
   for (const c of result.contributions) {

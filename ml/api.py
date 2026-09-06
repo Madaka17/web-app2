@@ -2,7 +2,14 @@
 Prediction API for the web app.
 
 Serves the CatBoost + LightGBM + XGBoost ensemble trained by train_models.py on
-the real appraisal data (Data real/appraisal_2561-2569.parquet).
+Data/appraisal_2561-2569.parquet.
+
+Its PRICES come from the Treasury Department's published appraisals; its ROWS
+do not - Data/generate_appraisal_dataset.py invents which property was appraised
+and when, because the Treasury publishes price levels rather than a transaction
+history. So a figure here is the right order of magnitude for that district and
+type, and is not a record of any appraisal that took place. The strings below
+say exactly that rather than letting the web app imply either extreme.
 
     GET  /api/health   liveness + what is loaded
     GET  /api/metrics  honest accuracy figures from the held-out years
@@ -27,6 +34,11 @@ from prepare_data import CATEGORICAL, FEATURES, add_features, to_price
 
 HERE = Path(__file__).parent
 BUNDLE = joblib.load(HERE / "models/ensemble.joblib")
+# Optional: written by Data/build_market_ratio.py once listings have been
+# collected. Absent is the normal state - the app then shows the appraisal on
+# its own rather than a market figure it cannot back up.
+_ratio_path = HERE / "models/market_ratio.json"
+MARKET_RATIO = json.loads(_ratio_path.read_text(encoding="utf-8")) if _ratio_path.exists() else None
 LOCATIONS = json.loads((HERE / "models/location_map.json").read_text(encoding="utf-8"))
 METRICS = json.loads((HERE / "models/metrics.json").read_text(encoding="utf-8"))
 
@@ -95,15 +107,40 @@ def _predict_each(frame: pd.DataFrame) -> dict[str, float]:
     }
 
 
+def market_estimate(price: float, collateral_type: str, province: str) -> dict | None:
+    """Scale the appraisal by what sellers in this province are asking.
+
+    Returns None whenever the ratio is missing or too thin to stand behind. A
+    caller showing "-" is telling the truth; one showing a number built from a
+    dozen listings is not.
+    """
+    if not MARKET_RATIO:
+        return None
+    cell = MARKET_RATIO["cells"].get(f"{collateral_type}|{province}")
+    if cell is None:
+        cell = MARKET_RATIO["__default__"]
+        scope = "ค่ากลางรวมทุกจังหวัด"
+    else:
+        scope = f"{province} · {'คอนโด' if 'ห้องชุด' in collateral_type else 'บ้าน/ที่ดิน'}"
+    return {
+        "price": round(price * cell["ratio"], -3),
+        "ratio": cell["ratio"],
+        "listings": cell["n"],
+        "scope": scope,
+        "basis": "ราคาประกาศขาย ไม่ใช่ราคาที่ซื้อขายจริง",
+    }
+
+
 @app.get("/api/health")
 def health():
     return jsonify({
         "status": "ok",
         "models": list(BUNDLE["models"]),
         "weights": {k: float(v) for k, v in BUNDLE["weights"].items()},
-        "trained_on": "Data real/appraisal_2561-2569.parquet",
+        "trained_on": "ราคาประเมินกรมธนารักษ์ + รายการจำลอง (Data/appraisal_2561-2569.parquet)",
         "fit_years": METRICS["protocol"]["served_model_fit_years"],
         "rows_trained": METRICS["rows"]["fit"] + METRICS["rows"]["validation"],
+        "market_ratio_loaded": bool(MARKET_RATIO),
     })
 
 
@@ -157,6 +194,8 @@ def predict():
     calib = BUNDLE["calibration"].get(collateral_type, BUNDLE["calibration"]["__default__"])
     lower, upper = price * calib["q10"], price * calib["q90"]
 
+    market = market_estimate(price, collateral_type, location["province"])
+
     importance = list(METRICS["feature_importance"].items())[:FEATURES_SHOWN]
     features = [
         {"label": FEATURE_LABELS.get(k, (k, "MapPin"))[0],
@@ -178,6 +217,7 @@ def predict():
             for n, p in sorted(per_model.items(), key=lambda kv: -weights[kv[0]])
         ],
         "features": features,
+        "market": market,
         "meta": {
             "province": location["province"],
             "district": location["district"],
@@ -187,7 +227,7 @@ def predict():
             "median_abs_pct_error": round(calib["MdAPE"], 1),
             "within_20pct": round(calib["within_20pct"], 1),
             "sample_size": calib["n"],
-            "source": "real appraisal data 2561-2567",
+            "source": "ราคาอ้างอิงราคาประเมินทางการ (กรมธนารักษ์) รายการเป็นข้อมูลจำลอง",
         },
     })
 

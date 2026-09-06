@@ -64,20 +64,26 @@ def metrics(y_true: np.ndarray, y_pred: np.ndarray) -> dict:
     }
 
 
+# Parameters and round counts come from tune_params.py, which early-stops every
+# candidate against the validation year. The counts replace the flat 2000 each
+# model used to run: none of the three needed anything like that many, and the
+# extra rounds cost about five times the training time for no accuracy. The
+# search was flat - every candidate landed within 0.3 pp of every other - so
+# these are the best of a shallow field, not a peak worth defending.
 def build_models() -> dict:
     return {
         "CatBoost": CatBoostRegressor(
-            iterations=2000, learning_rate=0.04, depth=10, l2_leaf_reg=3.0,
+            iterations=400, learning_rate=0.04, depth=10, l2_leaf_reg=8.0,
             loss_function="MAE", random_seed=SEED, verbose=False,
             cat_features=CATEGORICAL,
         ),
         "LightGBM": LGBMRegressor(
-            n_estimators=2000, learning_rate=0.04, num_leaves=127,
+            n_estimators=220, learning_rate=0.04, num_leaves=127,
             min_child_samples=30, subsample=0.9, colsample_bytree=0.9,
             objective="regression_l1", random_state=SEED, verbose=-1,
         ),
         "XGBoost": XGBRegressor(
-            n_estimators=2000, learning_rate=0.04, max_depth=10,
+            n_estimators=290, learning_rate=0.04, max_depth=8,
             subsample=0.9, colsample_bytree=0.9, min_child_weight=5,
             objective="reg:absoluteerror", random_state=SEED,
             enable_categorical=True, tree_method="hist",

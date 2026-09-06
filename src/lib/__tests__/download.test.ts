@@ -26,6 +26,8 @@ const result: PredictionResult = {
     { label: "ราคาต่อ ตร.ม. ของเขต", value: 0.2658, icon: "MapPin" },
     { label: "พื้นที่ใช้สอย", value: 0.1934, icon: "Maximize" },
   ],
+  // No listings collected yet, which is the state the app ships in.
+  market: null,
 };
 
 describe("reportToCSV", () => {

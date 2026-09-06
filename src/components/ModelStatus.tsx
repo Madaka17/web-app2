@@ -49,11 +49,11 @@ export function ModelStatus() {
     <div className="flex flex-wrap items-center gap-x-3 gap-y-1 rounded-xl border border-green-200 bg-green-50 px-4 py-3 dark:border-green-500/25 dark:bg-green-500/10">
       <span className="flex items-center gap-1.5 text-xs font-bold text-green-700 dark:text-green-400">
         <Cpu className="h-3.5 w-3.5" />
-        โมเดลจริงพร้อมใช้งาน
+        โมเดลพร้อมใช้งาน
       </span>
       <span className="text-xs text-green-800/80 dark:text-green-300/80">{weights}</span>
       <span className="text-xs text-green-800/60 dark:text-green-300/60">
-        เทรนจากข้อมูลประเมินจริง {health.rows_trained.toLocaleString("en-US")} รายการ (ปี{" "}
+        เทรนจาก {health.rows_trained.toLocaleString("en-US")} รายการจำลอง (ปี{" "}
         {Math.min(...health.fit_years)}–{Math.max(...health.fit_years)})
       </span>
     </div>

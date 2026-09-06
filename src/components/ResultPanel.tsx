@@ -88,6 +88,24 @@ export function ResultPanel({ result, input }: ResultPanelProps) {
             </div>
           </div>
 
+          {result.market && (
+            <div className="mt-4 rounded-xl bg-white/10 backdrop-blur-sm px-4 py-3">
+              <div className="flex flex-wrap items-baseline gap-x-2 gap-y-1">
+                <span className="text-xs text-brand-100">ประมาณการราคาตลาด</span>
+                <span className="text-xl font-bold text-white">
+                  {formatBaht(result.market.price)}
+                </span>
+                <span className="text-[11px] text-brand-200">
+                  ×{result.market.ratio.toFixed(2)} จาก {result.market.listings.toLocaleString("en-US")} ประกาศ
+                  {" · "}{result.market.scope}
+                </span>
+              </div>
+              <p className="mt-1 text-[11px] leading-4 text-amber-200">
+                {result.market.basis} — ผู้ขายมักตั้งราคาสูงกว่าราคาที่ปิดจริง
+              </p>
+            </div>
+          )}
+
           <div className="mt-4 flex items-center gap-2">
             <div className="flex-1 h-1.5 bg-white/20 rounded-full overflow-hidden">
               <div
@@ -182,84 +200,88 @@ export function ResultPanel({ result, input }: ResultPanelProps) {
         </p>
       </div>
 
-      {/* Ensemble Breakdown */}
-      <div className="rounded-2xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 p-6 shadow-sm">
-        <div className="flex items-center gap-2 mb-4">
-          <div className="p-1.5 rounded-lg bg-brand-50 dark:bg-brand-500/10">
-            <Info className="w-4 h-4 text-brand-600 dark:text-brand-400" />
-          </div>
-          <h3 className="text-sm font-bold text-slate-900 dark:text-white">
-            Ensemble Breakdown — น้ำหนักการทำนายของโมเดล
-          </h3>
-        </div>
-
-        {/* Stacked bar */}
-        <div className="flex h-3 rounded-full overflow-hidden mb-4">
-          {result.contributions.map((c) => (
-            <div
-              key={c.name}
-              className="h-full transition-all duration-500"
-              style={{
-                width: `${(c.weight / barTotal) * 100}%`,
-                backgroundColor: c.color,
-              }}
-            />
-          ))}
-        </div>
-
-        <div className="space-y-3">
-          {result.contributions.map((c) => (
-            <div key={c.name} className="flex items-center gap-3">
-              <div className="w-3 h-3 rounded-md flex-shrink-0" style={{ backgroundColor: c.color }} />
-              <span className="text-sm font-medium text-slate-700 dark:text-slate-300 flex-1">
-                {c.name}
-              </span>
-              <span className="text-sm font-bold text-slate-900 dark:text-white">
-                {(c.weight * 100).toFixed(0)}%
-              </span>
-              <span className="text-xs text-slate-400 dark:text-slate-500 w-28 text-right">
-                {formatBaht(c.prediction)}
-              </span>
+      {/* Side by side once there is room. Stacked at full width these two put
+          the feature list a whole screen below the price. */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        {/* Ensemble Breakdown */}
+        <div className="rounded-2xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 p-6 shadow-sm">
+          <div className="flex items-center gap-2 mb-4">
+            <div className="p-1.5 rounded-lg bg-brand-50 dark:bg-brand-500/10">
+              <Info className="w-4 h-4 text-brand-600 dark:text-brand-400" />
             </div>
-          ))}
-        </div>
-      </div>
-
-      {/* Feature Importance */}
-      <div className="rounded-2xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 p-6 shadow-sm">
-        <div className="flex items-center gap-2 mb-4">
-          <div className="p-1.5 rounded-lg bg-orange-50 dark:bg-orange-500/10">
-            <CheckCircle2 className="w-4 h-4 text-orange-500 dark:text-orange-400" />
+            <h3 className="text-sm font-bold text-slate-900 dark:text-white">
+              Ensemble Breakdown — น้ำหนักการทำนายของโมเดล
+            </h3>
           </div>
-          <h3 className="text-sm font-bold text-slate-900 dark:text-white">
-            ปัจจัยที่มีผลต่อราคามากที่สุด — Feature Importance
-          </h3>
-        </div>
 
-        <div className="space-y-2.5">
-          {result.features.map((feature, i) => {
-            const Icon = ICON_MAP[feature.icon] ?? MapPin;
-            const widthPct = (feature.value / maxFeatureValue) * 100;
-            return (
-              <div key={i} className="flex items-center gap-3">
-                <div className="p-1.5 rounded-lg bg-slate-100 dark:bg-slate-800 flex-shrink-0">
-                  <Icon className="w-3.5 h-3.5 text-slate-500 dark:text-slate-400" />
-                </div>
-                <span className="text-xs font-medium text-slate-600 dark:text-slate-400 w-32 flex-shrink-0">
-                  {feature.label}
+          {/* Stacked bar */}
+          <div className="flex h-3 rounded-full overflow-hidden mb-4">
+            {result.contributions.map((c) => (
+              <div
+                key={c.name}
+                className="h-full transition-all duration-500"
+                style={{
+                  width: `${(c.weight / barTotal) * 100}%`,
+                  backgroundColor: c.color,
+                }}
+              />
+            ))}
+          </div>
+
+          <div className="space-y-3">
+            {result.contributions.map((c) => (
+              <div key={c.name} className="flex items-center gap-3">
+                <div className="w-3 h-3 rounded-md flex-shrink-0" style={{ backgroundColor: c.color }} />
+                <span className="text-sm font-medium text-slate-700 dark:text-slate-300 flex-1">
+                  {c.name}
                 </span>
-                <div className="flex-1 h-2 bg-slate-100 dark:bg-slate-800 rounded-full overflow-hidden">
-                  <div
-                    className="h-full rounded-full bg-gradient-to-r from-brand-500 to-brand-400 transition-all duration-700 ease-out"
-                    style={{ width: `${widthPct}%` }}
-                  />
-                </div>
-                <span className="text-xs font-bold text-slate-900 dark:text-white w-10 text-right">
-                  {(feature.value * 100).toFixed(0)}%
+                <span className="text-sm font-bold text-slate-900 dark:text-white">
+                  {(c.weight * 100).toFixed(0)}%
+                </span>
+                <span className="text-xs text-slate-400 dark:text-slate-500 w-28 text-right">
+                  {formatBaht(c.prediction)}
                 </span>
               </div>
-            );
-          })}
+            ))}
+          </div>
+        </div>
+
+        {/* Feature Importance */}
+        <div className="rounded-2xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 p-6 shadow-sm">
+          <div className="flex items-center gap-2 mb-4">
+            <div className="p-1.5 rounded-lg bg-orange-50 dark:bg-orange-500/10">
+              <CheckCircle2 className="w-4 h-4 text-orange-500 dark:text-orange-400" />
+            </div>
+            <h3 className="text-sm font-bold text-slate-900 dark:text-white">
+              ปัจจัยที่มีผลต่อราคามากที่สุด — Feature Importance
+            </h3>
+          </div>
+
+          <div className="space-y-2.5">
+            {result.features.map((feature, i) => {
+              const Icon = ICON_MAP[feature.icon] ?? MapPin;
+              const widthPct = (feature.value / maxFeatureValue) * 100;
+              return (
+                <div key={i} className="flex items-center gap-3">
+                  <div className="p-1.5 rounded-lg bg-slate-100 dark:bg-slate-800 flex-shrink-0">
+                    <Icon className="w-3.5 h-3.5 text-slate-500 dark:text-slate-400" />
+                  </div>
+                  <span className="text-xs font-medium text-slate-600 dark:text-slate-400 w-32 flex-shrink-0">
+                    {feature.label}
+                  </span>
+                  <div className="flex-1 h-2 bg-slate-100 dark:bg-slate-800 rounded-full overflow-hidden">
+                    <div
+                      className="h-full rounded-full bg-gradient-to-r from-brand-500 to-brand-400 transition-all duration-700 ease-out"
+                      style={{ width: `${widthPct}%` }}
+                    />
+                  </div>
+                  <span className="text-xs font-bold text-slate-900 dark:text-white w-10 text-right">
+                    {(feature.value * 100).toFixed(0)}%
+                  </span>
+                </div>
+              );
+            })}
+          </div>
         </div>
       </div>
     </div>

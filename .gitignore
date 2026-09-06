@@ -27,8 +27,21 @@ ml/.venv/
 ml/models/*.joblib
 ml/__pycache__/
 ml/.pytest_cache/
+ml/catboost_info/
 
 Data/*.csv
 Data/*.json
 Data/*.zip
 Data/*.xlsx
+
+# Rebuildable, and too big to carry: 220 MB of Treasury source CSVs
+# (build_price_tables.py) and the generated dataset itself
+# (generate_appraisal_dataset.py).
+Data/.treasury_cache/
+Data/*.parquet
+Data/.listing_urls_seen.txt
+
+# The one Data file that MUST be committed. It is 224 KB of Treasury appraisal
+# levels boiled down from those 220 MB, and generate_appraisal_dataset.py
+# refuses to run without it - a clone that lacks it cannot build anything.
+!Data/price_tables.json

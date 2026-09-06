@@ -26,6 +26,14 @@ export interface FeatureImportance {
   icon: string;
 }
 
+export interface MarketEstimate {
+  price: number;
+  ratio: number;
+  listings: number;
+  scope: string;
+  basis: string;
+}
+
 export interface PredictionResult {
   predictedPrice: number;
   lowerBound: number;
@@ -33,6 +41,8 @@ export interface PredictionResult {
   confidence: number;
   contributions: ModelContribution[];
   features: FeatureImportance[];
+  // null until Data/build_market_ratio.py has enough listings to back a figure.
+  market: MarketEstimate | null;
 }
 
 export type PipelineStatus = "building" | "validating" | "review" | "ready";

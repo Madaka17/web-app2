@@ -2,3 +2,7 @@ Data/*.csv filter=lfs diff=lfs merge=lfs -text
 Data/*.json filter=lfs diff=lfs merge=lfs -text
 Data/*.zip filter=lfs diff=lfs merge=lfs -text
 Data/*.xlsx filter=lfs diff=lfs merge=lfs -text
+
+# price_tables.json is small and read on every run; keep it a plain file so a
+# clone without git-lfs installed still gets its contents rather than a pointer.
+Data/price_tables.json !filter !diff !merge text

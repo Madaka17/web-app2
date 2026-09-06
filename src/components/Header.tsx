@@ -41,7 +41,7 @@ export function Header({ onMenuClick }: HeaderProps) {
           <div className="hidden sm:flex items-center gap-2 px-3 py-1.5 rounded-full bg-amber-50 dark:bg-amber-500/10 border border-amber-200 dark:border-amber-500/20">
             <FlaskConical className="w-3.5 h-3.5 text-amber-600 dark:text-amber-400" />
             <span className="text-xs font-semibold text-amber-700 dark:text-amber-400">
-โมเดลจริง — MdAPE 20–34%
+ราคาอ้างอิงกรมธนารักษ์
             </span>
           </div>
           <button
