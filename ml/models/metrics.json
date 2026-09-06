@@ -1,0 +1,172 @@
+{
+  "protocol": {
+    "fit_years": [
+      2562,
+      2563,
+      2564,
+      2565,
+      2566
+    ],
+    "validation_year": 2567,
+    "test_years": [
+      2568,
+      2569
+    ],
+    "served_model_fit_years": [
+      2561,
+      2562,
+      2563,
+      2564,
+      2565,
+      2566,
+      2567
+    ]
+  },
+  "rows": {
+    "fit": 181633,
+    "validation": 30410,
+    "test": 39372
+  },
+  "cleaning": {
+    "rows_in": 302702,
+    "dropped_null": 0,
+    "dropped_value_range": 873,
+    "dropped_area_range": 11760,
+    "folded_rare_categories": 0,
+    "rows_out": 290069
+  },
+  "features": [
+    "collateral_type",
+    "province",
+    "district",
+    "area_sqm",
+    "log_area",
+    "n_units",
+    "year",
+    "area_per_unit",
+    "type_ppsqm",
+    "province_ppsqm",
+    "prov_type_ppsqm",
+    "district_ppsqm",
+    "dt_ppsqm",
+    "dt_n",
+    "dt_iqr",
+    "band_ppsqm",
+    "band_n",
+    "comp_ppsqm",
+    "comp_n",
+    "comp_age",
+    "comp_gap",
+    "comp2_ppsqm",
+    "comp2_n",
+    "nn_ppsqm",
+    "nn_dist"
+  ],
+  "feature_importance": {
+    "area_per_unit": 0.1501,
+    "comp_ppsqm": 0.0963,
+    "nn_ppsqm": 0.0962,
+    "comp2_ppsqm": 0.0811,
+    "area_sqm": 0.0553,
+    "log_area": 0.0487,
+    "n_units": 0.0467,
+    "comp_age": 0.0386,
+    "band_ppsqm": 0.0378,
+    "dt_n": 0.0346,
+    "comp_gap": 0.0337,
+    "dt_iqr": 0.0329,
+    "band_n": 0.029,
+    "nn_dist": 0.0289,
+    "district": 0.0259,
+    "dt_ppsqm": 0.0248,
+    "province": 0.0198,
+    "district_ppsqm": 0.0198,
+    "province_ppsqm": 0.0182,
+    "prov_type_ppsqm": 0.0175,
+    "comp2_n": 0.0151,
+    "comp_n": 0.0144,
+    "type_ppsqm": 0.0131,
+    "collateral_type": 0.0111,
+    "year": 0.0104
+  },
+  "results": {
+    "CatBoost": {
+      "test": {
+        "RMSE": 8539857.772126704,
+        "MAE": 3099646.470290571,
+        "R2": 0.595005712071645,
+        "MAPE": 49.450873428495925,
+        "MdAPE": 24.475854124478055,
+        "Within_10Pct": 25.459717565782793,
+        "Within_20Pct": 43.490297673473535
+      },
+      "weight": 0.8,
+      "train_seconds": 122.7
+    },
+    "LightGBM": {
+      "test": {
+        "RMSE": 8478161.557994002,
+        "MAE": 3103274.0962221515,
+        "R2": 0.6008363376067002,
+        "MAPE": 50.568430153271315,
+        "MdAPE": 24.807397211111095,
+        "Within_10Pct": 25.401300416539673,
+        "Within_20Pct": 43.30742659758204
+      },
+      "weight": 0.1,
+      "train_seconds": 39.2
+    },
+    "XGBoost": {
+      "test": {
+        "RMSE": 8482399.739593312,
+        "MAE": 3119907.975490182,
+        "R2": 0.6004371588649872,
+        "MAPE": 50.376521405433735,
+        "MdAPE": 25.150226290063895,
+        "Within_10Pct": 24.834908056486842,
+        "Within_20Pct": 42.70293609671848
+      },
+      "weight": 0.1,
+      "train_seconds": 60.5
+    },
+    "Ensemble": {
+      "test": {
+        "RMSE": 8496868.786159735,
+        "MAE": 3081105.1214142754,
+        "R2": 0.5990728694377869,
+        "MAPE": 49.401321600715676,
+        "MdAPE": 24.34465947694591,
+        "Within_10Pct": 25.84323884994412,
+        "Within_20Pct": 43.71126689017576
+      },
+      "weight": 1.0
+    }
+  },
+  "calibration": {
+    "ที่ดิน/สิ่งปลูกสร้าง/ที่ดินพร้อมสิ่งปลูกสร้าง": {
+      "n": 31469,
+      "q10": 0.49548524078037626,
+      "q90": 2.0101593810445983,
+      "median_ratio": 0.9926130265250958,
+      "MdAPE": 25.808353898287134,
+      "within_20pct": 42.518033620388316
+    },
+    "ห้องชุด (คอนโดมิเนียม)": {
+      "n": 7903,
+      "q10": 0.7226192749823048,
+      "q90": 1.3580985541716395,
+      "median_ratio": 1.002543417964051,
+      "MdAPE": 12.818020881258368,
+      "within_20pct": 66.59496393774515
+    },
+    "__default__": {
+      "n": 39372,
+      "q10": 0.5344051255539125,
+      "q90": 1.8380562098500328,
+      "median_ratio": 0.9958614285798195,
+      "MdAPE": 21.888647632026824,
+      "within_20pct": 47.35090927562735
+    }
+  },
+  "calibration_note": "Intervals are the 10th-90th percentile of actual/predicted on the held-out years 2568-2569, per property type."
+}

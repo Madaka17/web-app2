@@ -1,0 +1,2930 @@
+{
+ "100101": {
+  "subdistrict": "พระบรมมหาราชวัง",
+  "district": "พระนคร",
+  "province": "กรุงเทพมหานคร",
+  "in_training_data": true
+ },
+ "100102": {
+  "subdistrict": "วังบูรพาภิรมย์",
+  "district": "พระนคร",
+  "province": "กรุงเทพมหานคร",
+  "in_training_data": true
+ },
+ "100103": {
+  "subdistrict": "วัดราชบพิธ",
+  "district": "พระนคร",
+  "province": "กรุงเทพมหานคร",
+  "in_training_data": true
+ },
+ "100104": {
+  "subdistrict": "สำราญราษฎร์",
+  "district": "พระนคร",
+  "province": "กรุงเทพมหานคร",
+  "in_training_data": true
+ },
+ "100105": {
+  "subdistrict": "ศาลเจ้าพ่อเสือ",
+  "district": "พระนคร",
+  "province": "กรุงเทพมหานคร",
+  "in_training_data": true
+ },
+ "100106": {
+  "subdistrict": "เสาชิงช้า",
+  "district": "พระนคร",
+  "province": "กรุงเทพมหานคร",
+  "in_training_data": true
+ },
+ "100107": {
+  "subdistrict": "บวรนิเวศ",
+  "district": "พระนคร",
+  "province": "กรุงเทพมหานคร",
+  "in_training_data": true
+ },
+ "100108": {
+  "subdistrict": "ตลาดยอด",
+  "district": "พระนคร",
+  "province": "กรุงเทพมหานคร",
+  "in_training_data": true
+ },
+ "100109": {
+  "subdistrict": "ชนะสงคราม",
+  "district": "พระนคร",
+  "province": "กรุงเทพมหานคร",
+  "in_training_data": true
+ },
+ "100110": {
+  "subdistrict": "บ้านพานถม",
+  "district": "พระนคร",
+  "province": "กรุงเทพมหานคร",
+  "in_training_data": true
+ },
+ "100111": {
+  "subdistrict": "บางขุนพรหม",
+  "district": "พระนคร",
+  "province": "กรุงเทพมหานคร",
+  "in_training_data": true
+ },
+ "100112": {
+  "subdistrict": "วัดสามพระยา",
+  "district": "พระนคร",
+  "province": "กรุงเทพมหานคร",
+  "in_training_data": true
+ },
+ "100201": {
+  "subdistrict": "ดุสิต",
+  "district": "ดุสิต",
+  "province": "กรุงเทพมหานคร",
+  "in_training_data": true
+ },
+ "100202": {
+  "subdistrict": "วชิรพยาบาล",
+  "district": "ดุสิต",
+  "province": "กรุงเทพมหานคร",
+  "in_training_data": true
+ },
+ "100203": {
+  "subdistrict": "สวนจิตรลดา",
+  "district": "ดุสิต",
+  "province": "กรุงเทพมหานคร",
+  "in_training_data": true
+ },
+ "100204": {
+  "subdistrict": "สี่แยกมหานาค",
+  "district": "ดุสิต",
+  "province": "กรุงเทพมหานคร",
+  "in_training_data": true
+ },
+ "100206": {
+  "subdistrict": "ถนนนครไชยศรี",
+  "district": "ดุสิต",
+  "province": "กรุงเทพมหานคร",
+  "in_training_data": true
+ },
+ "100301": {
+  "subdistrict": "กระทุ่มราย",
+  "district": "หนองจอก",
+  "province": "กรุงเทพมหานคร",
+  "in_training_data": true
+ },
+ "100302": {
+  "subdistrict": "หนองจอก",
+  "district": "หนองจอก",
+  "province": "กรุงเทพมหานคร",
+  "in_training_data": true
+ },
+ "100303": {
+  "subdistrict": "คลองสิบ",
+  "district": "หนองจอก",
+  "province": "กรุงเทพมหานคร",
+  "in_training_data": true
+ },
+ "100304": {
+  "subdistrict": "คลองสิบสอง",
+  "district": "หนองจอก",
+  "province": "กรุงเทพมหานคร",
+  "in_training_data": true
+ },
+ "100305": {
+  "subdistrict": "โคกแฝด",
+  "district": "หนองจอก",
+  "province": "กรุงเทพมหานคร",
+  "in_training_data": true
+ },
+ "100306": {
+  "subdistrict": "คู้ฝั่งเหนือ",
+  "district": "หนองจอก",
+  "province": "กรุงเทพมหานคร",
+  "in_training_data": true
+ },
+ "100307": {
+  "subdistrict": "ลำผักชี",
+  "district": "หนองจอก",
+  "province": "กรุงเทพมหานคร",
+  "in_training_data": true
+ },
+ "100308": {
+  "subdistrict": "ลำต้อยติ่ง",
+  "district": "หนองจอก",
+  "province": "กรุงเทพมหานคร",
+  "in_training_data": true
+ },
+ "100401": {
+  "subdistrict": "มหาพฤฒาราม",
+  "district": "บางรัก",
+  "province": "กรุงเทพมหานคร",
+  "in_training_data": true
+ },
+ "100402": {
+  "subdistrict": "สีลม",
+  "district": "บางรัก",
+  "province": "กรุงเทพมหานคร",
+  "in_training_data": true
+ },
+ "100403": {
+  "subdistrict": "สุริยวงศ์",
+  "district": "บางรัก",
+  "province": "กรุงเทพมหานคร",
+  "in_training_data": true
+ },
+ "100404": {
+  "subdistrict": "บางรัก",
+  "district": "บางรัก",
+  "province": "กรุงเทพมหานคร",
+  "in_training_data": true
+ },
+ "100405": {
+  "subdistrict": "สี่พระยา",
+  "district": "บางรัก",
+  "province": "กรุงเทพมหานคร",
+  "in_training_data": true
+ },
+ "100502": {
+  "subdistrict": "อนุสาวรีย์",
+  "district": "บางเขน",
+  "province": "กรุงเทพมหานคร",
+  "in_training_data": true
+ },
+ "100508": {
+  "subdistrict": "ท่าแร้ง",
+  "district": "บางเขน",
+  "province": "กรุงเทพมหานคร",
+  "in_training_data": true
+ },
+ "100601": {
+  "subdistrict": "คลองจั่น",
+  "district": "บางกะปิ",
+  "province": "กรุงเทพมหานคร",
+  "in_training_data": true
+ },
+ "100608": {
+  "subdistrict": "หัวหมาก",
+  "district": "บางกะปิ",
+  "province": "กรุงเทพมหานคร",
+  "in_training_data": true
+ },
+ "100701": {
+  "subdistrict": "รองเมือง",
+  "district": "ปทุมวัน",
+  "province": "กรุงเทพมหานคร",
+  "in_training_data": true
+ },
+ "100702": {
+  "subdistrict": "วังใหม่",
+  "district": "ปทุมวัน",
+  "province": "กรุงเทพมหานคร",
+  "in_training_data": true
+ },
+ "100703": {
+  "subdistrict": "ปทุมวัน",
+  "district": "ปทุมวัน",
+  "province": "กรุงเทพมหานคร",
+  "in_training_data": true
+ },
+ "100704": {
+  "subdistrict": "ลุมพินี",
+  "district": "ปทุมวัน",
+  "province": "กรุงเทพมหานคร",
+  "in_training_data": true
+ },
+ "100801": {
+  "subdistrict": "ป้อมปราบ",
+  "district": "ป้อมปราบศัตรูพ่าย",
+  "province": "กรุงเทพมหานคร",
+  "in_training_data": true
+ },
+ "100802": {
+  "subdistrict": "วัดเทพศิรินทร์",
+  "district": "ป้อมปราบศัตรูพ่าย",
+  "province": "กรุงเทพมหานคร",
+  "in_training_data": true
+ },
+ "100803": {
+  "subdistrict": "คลองมหานาค",
+  "district": "ป้อมปราบศัตรูพ่าย",
+  "province": "กรุงเทพมหานคร",
+  "in_training_data": true
+ },
+ "100804": {
+  "subdistrict": "บ้านบาตร",
+  "district": "ป้อมปราบศัตรูพ่าย",
+  "province": "กรุงเทพมหานคร",
+  "in_training_data": true
+ },
+ "100805": {
+  "subdistrict": "วัดโสมนัส",
+  "district": "ป้อมปราบศัตรูพ่าย",
+  "province": "กรุงเทพมหานคร",
+  "in_training_data": true
+ },
+ "100905": {
+  "subdistrict": "บางจาก",
+  "district": "พระโขนง",
+  "province": "กรุงเทพมหานคร",
+  "in_training_data": true
+ },
+ "100910": {
+  "subdistrict": "พระโขนงใต้",
+  "district": "พระโขนง",
+  "province": "กรุงเทพมหานคร",
+  "in_training_data": true
+ },
+ "101001": {
+  "subdistrict": "มีนบุรี",
+  "district": "มีนบุรี",
+  "province": "กรุงเทพมหานคร",
+  "in_training_data": true
+ },
+ "101002": {
+  "subdistrict": "แสนแสบ",
+  "district": "มีนบุรี",
+  "province": "กรุงเทพมหานคร",
+  "in_training_data": true
+ },
+ "101101": {
+  "subdistrict": "ลาดกระบัง",
+  "district": "ลาดกระบัง",
+  "province": "กรุงเทพมหานคร",
+  "in_training_data": true
+ },
+ "101102": {
+  "subdistrict": "คลองสองต้นนุ่น",
+  "district": "ลาดกระบัง",
+  "province": "กรุงเทพมหานคร",
+  "in_training_data": true
+ },
+ "101103": {
+  "subdistrict": "คลองสามประเวศ",
+  "district": "ลาดกระบัง",
+  "province": "กรุงเทพมหานคร",
+  "in_training_data": true
+ },
+ "101104": {
+  "subdistrict": "ลำปลาทิว",
+  "district": "ลาดกระบัง",
+  "province": "กรุงเทพมหานคร",
+  "in_training_data": true
+ },
+ "101105": {
+  "subdistrict": "ทับยาว",
+  "district": "ลาดกระบัง",
+  "province": "กรุงเทพมหานคร",
+  "in_training_data": true
+ },
+ "101106": {
+  "subdistrict": "ขุมทอง",
+  "district": "ลาดกระบัง",
+  "province": "กรุงเทพมหานคร",
+  "in_training_data": true
+ },
+ "101203": {
+  "subdistrict": "ช่องนนทรี",
+  "district": "ยานนาวา",
+  "province": "กรุงเทพมหานคร",
+  "in_training_data": true
+ },
+ "101204": {
+  "subdistrict": "บางโพงพาง",
+  "district": "ยานนาวา",
+  "province": "กรุงเทพมหานคร",
+  "in_training_data": true
+ },
+ "101301": {
+  "subdistrict": "จักรวรรดิ",
+  "district": "สัมพันธวงศ์",
+  "province": "กรุงเทพมหานคร",
+  "in_training_data": true
+ },
+ "101302": {
+  "subdistrict": "สัมพันธวงศ์",
+  "district": "สัมพันธวงศ์",
+  "province": "กรุงเทพมหานคร",
+  "in_training_data": true
+ },
+ "101303": {
+  "subdistrict": "ตลาดน้อย",
+  "district": "สัมพันธวงศ์",
+  "province": "กรุงเทพมหานคร",
+  "in_training_data": true
+ },
+ "101401": {
+  "subdistrict": "สามเสนใน",
+  "district": "พญาไท",
+  "province": "กรุงเทพมหานคร",
+  "in_training_data": true
+ },
+ "101406": {
+  "subdistrict": "พญาไท",
+  "district": "พญาไท",
+  "province": "กรุงเทพมหานคร",
+  "in_training_data": true
+ },
+ "101501": {
+  "subdistrict": "วัดกัลยาณ์",
+  "district": "ธนบุรี",
+  "province": "กรุงเทพมหานคร",
+  "in_training_data": true
+ },
+ "101502": {
+  "subdistrict": "หิรัญรูจี",
+  "district": "ธนบุรี",
+  "province": "กรุงเทพมหานคร",
+  "in_training_data": true
+ },
+ "101503": {
+  "subdistrict": "บางยี่เรือ",
+  "district": "ธนบุรี",
+  "province": "กรุงเทพมหานคร",
+  "in_training_data": true
+ },
+ "101504": {
+  "subdistrict": "บุคคโล",
+  "district": "ธนบุรี",
+  "province": "กรุงเทพมหานคร",
+  "in_training_data": true
+ },
+ "101505": {
+  "subdistrict": "ตลาดพลู",
+  "district": "ธนบุรี",
+  "province": "กรุงเทพมหานคร",
+  "in_training_data": true
+ },
+ "101506": {
+  "subdistrict": "ดาวคะนอง",
+  "district": "ธนบุรี",
+  "province": "กรุงเทพมหานคร",
+  "in_training_data": true
+ },
+ "101507": {
+  "subdistrict": "สำเหร่",
+  "district": "ธนบุรี",
+  "province": "กรุงเทพมหานคร",
+  "in_training_data": true
+ },
+ "101601": {
+  "subdistrict": "วัดอรุณ",
+  "district": "บางกอกใหญ่",
+  "province": "กรุงเทพมหานคร",
+  "in_training_data": true
+ },
+ "101602": {
+  "subdistrict": "วัดท่าพระ",
+  "district": "บางกอกใหญ่",
+  "province": "กรุงเทพมหานคร",
+  "in_training_data": true
+ },
+ "101701": {
+  "subdistrict": "ห้วยขวาง",
+  "district": "ห้วยขวาง",
+  "province": "กรุงเทพมหานคร",
+  "in_training_data": true
+ },
+ "101702": {
+  "subdistrict": "บางกะปิ",
+  "district": "ห้วยขวาง",
+  "province": "กรุงเทพมหานคร",
+  "in_training_data": true
+ },
+ "101704": {
+  "subdistrict": "สามเสนนอก",
+  "district": "ห้วยขวาง",
+  "province": "กรุงเทพมหานคร",
+  "in_training_data": true
+ },
+ "101801": {
+  "subdistrict": "สมเด็จเจ้าพระยา",
+  "district": "คลองสาน",
+  "province": "กรุงเทพมหานคร",
+  "in_training_data": true
+ },
+ "101802": {
+  "subdistrict": "คลองสาน",
+  "district": "คลองสาน",
+  "province": "กรุงเทพมหานคร",
+  "in_training_data": true
+ },
+ "101803": {
+  "subdistrict": "บางลำภูล่าง",
+  "district": "คลองสาน",
+  "province": "กรุงเทพมหานคร",
+  "in_training_data": true
+ },
+ "101804": {
+  "subdistrict": "คลองต้นไทร",
+  "district": "คลองสาน",
+  "province": "กรุงเทพมหานคร",
+  "in_training_data": true
+ },
+ "101901": {
+  "subdistrict": "คลองชักพระ",
+  "district": "ตลิ่งชัน",
+  "province": "กรุงเทพมหานคร",
+  "in_training_data": true
+ },
+ "101902": {
+  "subdistrict": "ตลิ่งชัน",
+  "district": "ตลิ่งชัน",
+  "province": "กรุงเทพมหานคร",
+  "in_training_data": true
+ },
+ "101903": {
+  "subdistrict": "ฉิมพลี",
+  "district": "ตลิ่งชัน",
+  "province": "กรุงเทพมหานคร",
+  "in_training_data": true
+ },
+ "101904": {
+  "subdistrict": "บางพรม",
+  "district": "ตลิ่งชัน",
+  "province": "กรุงเทพมหานคร",
+  "in_training_data": true
+ },
+ "101905": {
+  "subdistrict": "บางระมาด",
+  "district": "ตลิ่งชัน",
+  "province": "กรุงเทพมหานคร",
+  "in_training_data": true
+ },
+ "101907": {
+  "subdistrict": "บางเชือกหนัง",
+  "district": "ตลิ่งชัน",
+  "province": "กรุงเทพมหานคร",
+  "in_training_data": true
+ },
+ "102004": {
+  "subdistrict": "ศิริราช",
+  "district": "บางกอกน้อย",
+  "province": "กรุงเทพมหานคร",
+  "in_training_data": true
+ },
+ "102005": {
+  "subdistrict": "บ้านช่างหล่อ",
+  "district": "บางกอกน้อย",
+  "province": "กรุงเทพมหานคร",
+  "in_training_data": true
+ },
+ "102006": {
+  "subdistrict": "บางขุนนนท์",
+  "district": "บางกอกน้อย",
+  "province": "กรุงเทพมหานคร",
+  "in_training_data": true
+ },
+ "102007": {
+  "subdistrict": "บางขุนศรี",
+  "district": "บางกอกน้อย",
+  "province": "กรุงเทพมหานคร",
+  "in_training_data": true
+ },
+ "102009": {
+  "subdistrict": "อรุณอมรินทร์",
+  "district": "บางกอกน้อย",
+  "province": "กรุงเทพมหานคร",
+  "in_training_data": true
+ },
+ "102105": {
+  "subdistrict": "ท่าข้าม",
+  "district": "บางขุนเทียน",
+  "province": "กรุงเทพมหานคร",
+  "in_training_data": true
+ },
+ "102107": {
+  "subdistrict": "แสมดำ",
+  "district": "บางขุนเทียน",
+  "province": "กรุงเทพมหานคร",
+  "in_training_data": true
+ },
+ "102201": {
+  "subdistrict": "บางหว้า",
+  "district": "ภาษีเจริญ",
+  "province": "กรุงเทพมหานคร",
+  "in_training_data": true
+ },
+ "102202": {
+  "subdistrict": "บางด้วน",
+  "district": "ภาษีเจริญ",
+  "province": "กรุงเทพมหานคร",
+  "in_training_data": true
+ },
+ "102206": {
+  "subdistrict": "บางจาก",
+  "district": "ภาษีเจริญ",
+  "province": "กรุงเทพมหานคร",
+  "in_training_data": true
+ },
+ "102207": {
+  "subdistrict": "บางแวก",
+  "district": "ภาษีเจริญ",
+  "province": "กรุงเทพมหานคร",
+  "in_training_data": true
+ },
+ "102208": {
+  "subdistrict": "คลองขวาง",
+  "district": "ภาษีเจริญ",
+  "province": "กรุงเทพมหานคร",
+  "in_training_data": true
+ },
+ "102209": {
+  "subdistrict": "ปากคลองภาษีเจริญ",
+  "district": "ภาษีเจริญ",
+  "province": "กรุงเทพมหานคร",
+  "in_training_data": true
+ },
+ "102210": {
+  "subdistrict": "คูหาสวรรค์",
+  "district": "ภาษีเจริญ",
+  "province": "กรุงเทพมหานคร",
+  "in_training_data": true
+ },
+ "102302": {
+  "subdistrict": "หนองแขม",
+  "district": "หนองแขม",
+  "province": "กรุงเทพมหานคร",
+  "in_training_data": true
+ },
+ "102303": {
+  "subdistrict": "หนองค้างพลู",
+  "district": "หนองแขม",
+  "province": "กรุงเทพมหานคร",
+  "in_training_data": true
+ },
+ "102401": {
+  "subdistrict": "ราษฎร์บูรณะ",
+  "district": "ราษฎร์บูรณะ",
+  "province": "กรุงเทพมหานคร",
+  "in_training_data": true
+ },
+ "102402": {
+  "subdistrict": "บางปะกอก",
+  "district": "ราษฎร์บูรณะ",
+  "province": "กรุงเทพมหานคร",
+  "in_training_data": true
+ },
+ "102501": {
+  "subdistrict": "บางพลัด",
+  "district": "บางพลัด",
+  "province": "กรุงเทพมหานคร",
+  "in_training_data": true
+ },
+ "102502": {
+  "subdistrict": "บางอ้อ",
+  "district": "บางพลัด",
+  "province": "กรุงเทพมหานคร",
+  "in_training_data": true
+ },
+ "102503": {
+  "subdistrict": "บางบำหรุ",
+  "district": "บางพลัด",
+  "province": "กรุงเทพมหานคร",
+  "in_training_data": true
+ },
+ "102504": {
+  "subdistrict": "บางยี่ขัน",
+  "district": "บางพลัด",
+  "province": "กรุงเทพมหานคร",
+  "in_training_data": true
+ },
+ "102601": {
+  "subdistrict": "ดินแดง",
+  "district": "ดินแดง",
+  "province": "กรุงเทพมหานคร",
+  "in_training_data": true
+ },
+ "102602": {
+  "subdistrict": "รัชดาภิเษก",
+  "district": "ดินแดง",
+  "province": "กรุงเทพมหานคร",
+  "in_training_data": true
+ },
+ "102701": {
+  "subdistrict": "คลองกุ่ม",
+  "district": "บึงกุ่ม",
+  "province": "กรุงเทพมหานคร",
+  "in_training_data": true
+ },
+ "102704": {
+  "subdistrict": "นวมินทร์",
+  "district": "บึงกุ่ม",
+  "province": "กรุงเทพมหานคร",
+  "in_training_data": true
+ },
+ "102705": {
+  "subdistrict": "นวลจันทร์",
+  "district": "บึงกุ่ม",
+  "province": "กรุงเทพมหานคร",
+  "in_training_data": true
+ },
+ "102801": {
+  "subdistrict": "ทุ่งวัดดอน",
+  "district": "สาทร",
+  "province": "กรุงเทพมหานคร",
+  "in_training_data": true
+ },
+ "102802": {
+  "subdistrict": "ยานนาวา",
+  "district": "สาทร",
+  "province": "กรุงเทพมหานคร",
+  "in_training_data": true
+ },
+ "102803": {
+  "subdistrict": "ทุ่งมหาเมฆ",
+  "district": "สาทร",
+  "province": "กรุงเทพมหานคร",
+  "in_training_data": true
+ },
+ "102901": {
+  "subdistrict": "บางซื่อ",
+  "district": "บางซื่อ",
+  "province": "กรุงเทพมหานคร",
+  "in_training_data": true
+ },
+ "102902": {
+  "subdistrict": "วงศ์สว่าง",
+  "district": "บางซื่อ",
+  "province": "กรุงเทพมหานคร",
+  "in_training_data": true
+ },
+ "103001": {
+  "subdistrict": "ลาดยาว",
+  "district": "จตุจักร",
+  "province": "กรุงเทพมหานคร",
+  "in_training_data": true
+ },
+ "103002": {
+  "subdistrict": "เสนานิคม",
+  "district": "จตุจักร",
+  "province": "กรุงเทพมหานคร",
+  "in_training_data": true
+ },
+ "103003": {
+  "subdistrict": "จันทรเกษม",
+  "district": "จตุจักร",
+  "province": "กรุงเทพมหานคร",
+  "in_training_data": true
+ },
+ "103004": {
+  "subdistrict": "จอมพล",
+  "district": "จตุจักร",
+  "province": "กรุงเทพมหานคร",
+  "in_training_data": true
+ },
+ "103005": {
+  "subdistrict": "จตุจักร",
+  "district": "จตุจักร",
+  "province": "กรุงเทพมหานคร",
+  "in_training_data": true
+ },
+ "103101": {
+  "subdistrict": "บางคอแหลม",
+  "district": "บางคอแหลม",
+  "province": "กรุงเทพมหานคร",
+  "in_training_data": true
+ },
+ "103102": {
+  "subdistrict": "วัดพระยาไกร",
+  "district": "บางคอแหลม",
+  "province": "กรุงเทพมหานคร",
+  "in_training_data": true
+ },
+ "103103": {
+  "subdistrict": "บางโคล่",
+  "district": "บางคอแหลม",
+  "province": "กรุงเทพมหานคร",
+  "in_training_data": true
+ },
+ "103201": {
+  "subdistrict": "ประเวศ",
+  "district": "ประเวศ",
+  "province": "กรุงเทพมหานคร",
+  "in_training_data": true
+ },
+ "103202": {
+  "subdistrict": "หนองบอน",
+  "district": "ประเวศ",
+  "province": "กรุงเทพมหานคร",
+  "in_training_data": true
+ },
+ "103203": {
+  "subdistrict": "ดอกไม้",
+  "district": "ประเวศ",
+  "province": "กรุงเทพมหานคร",
+  "in_training_data": true
+ },
+ "103301": {
+  "subdistrict": "คลองเตย",
+  "district": "คลองเตย",
+  "province": "กรุงเทพมหานคร",
+  "in_training_data": true
+ },
+ "103302": {
+  "subdistrict": "คลองตัน",
+  "district": "คลองเตย",
+  "province": "กรุงเทพมหานคร",
+  "in_training_data": true
+ },
+ "103303": {
+  "subdistrict": "พระโขนง",
+  "district": "คลองเตย",
+  "province": "กรุงเทพมหานคร",
+  "in_training_data": true
+ },
+ "103401": {
+  "subdistrict": "สวนหลวง",
+  "district": "สวนหลวง",
+  "province": "กรุงเทพมหานคร",
+  "in_training_data": true
+ },
+ "103402": {
+  "subdistrict": "อ่อนนุช",
+  "district": "สวนหลวง",
+  "province": "กรุงเทพมหานคร",
+  "in_training_data": true
+ },
+ "103403": {
+  "subdistrict": "พัฒนาการ",
+  "district": "สวนหลวง",
+  "province": "กรุงเทพมหานคร",
+  "in_training_data": true
+ },
+ "103501": {
+  "subdistrict": "บางขุนเทียน",
+  "district": "จอมทอง",
+  "province": "กรุงเทพมหานคร",
+  "in_training_data": true
+ },
+ "103502": {
+  "subdistrict": "บางค้อ",
+  "district": "จอมทอง",
+  "province": "กรุงเทพมหานคร",
+  "in_training_data": true
+ },
+ "103503": {
+  "subdistrict": "บางมด",
+  "district": "จอมทอง",
+  "province": "กรุงเทพมหานคร",
+  "in_training_data": true
+ },
+ "103504": {
+  "subdistrict": "จอมทอง",
+  "district": "จอมทอง",
+  "province": "กรุงเทพมหานคร",
+  "in_training_data": true
+ },
+ "103602": {
+  "subdistrict": "สีกัน",
+  "district": "ดอนเมือง",
+  "province": "กรุงเทพมหานคร",
+  "in_training_data": true
+ },
+ "103604": {
+  "subdistrict": "ดอนเมือง",
+  "district": "ดอนเมือง",
+  "province": "กรุงเทพมหานคร",
+  "in_training_data": true
+ },
+ "103605": {
+  "subdistrict": "สนามบิน",
+  "district": "ดอนเมือง",
+  "province": "กรุงเทพมหานคร",
+  "in_training_data": true
+ },
+ "103701": {
+  "subdistrict": "ทุ่งพญาไท",
+  "district": "ราชเทวี",
+  "province": "กรุงเทพมหานคร",
+  "in_training_data": true
+ },
+ "103702": {
+  "subdistrict": "ถนนพญาไท",
+  "district": "ราชเทวี",
+  "province": "กรุงเทพมหานคร",
+  "in_training_data": true
+ },
+ "103703": {
+  "subdistrict": "ถนนเพชรบุรี",
+  "district": "ราชเทวี",
+  "province": "กรุงเทพมหานคร",
+  "in_training_data": true
+ },
+ "103704": {
+  "subdistrict": "มักกะสัน",
+  "district": "ราชเทวี",
+  "province": "กรุงเทพมหานคร",
+  "in_training_data": true
+ },
+ "103801": {
+  "subdistrict": "ลาดพร้าว",
+  "district": "ลาดพร้าว",
+  "province": "กรุงเทพมหานคร",
+  "in_training_data": true
+ },
+ "103802": {
+  "subdistrict": "จรเข้บัว",
+  "district": "ลาดพร้าว",
+  "province": "กรุงเทพมหานคร",
+  "in_training_data": true
+ },
+ "103901": {
+  "subdistrict": "คลองเตยเหนือ",
+  "district": "วัฒนา",
+  "province": "กรุงเทพมหานคร",
+  "in_training_data": true
+ },
+ "103902": {
+  "subdistrict": "คลองตันเหนือ",
+  "district": "วัฒนา",
+  "province": "กรุงเทพมหานคร",
+  "in_training_data": true
+ },
+ "103903": {
+  "subdistrict": "พระโขนงเหนือ",
+  "district": "วัฒนา",
+  "province": "กรุงเทพมหานคร",
+  "in_training_data": true
+ },
+ "104001": {
+  "subdistrict": "บางแค",
+  "district": "บางแค",
+  "province": "กรุงเทพมหานคร",
+  "in_training_data": true
+ },
+ "104002": {
+  "subdistrict": "บางแคเหนือ",
+  "district": "บางแค",
+  "province": "กรุงเทพมหานคร",
+  "in_training_data": true
+ },
+ "104003": {
+  "subdistrict": "บางไผ่",
+  "district": "บางแค",
+  "province": "กรุงเทพมหานคร",
+  "in_training_data": true
+ },
+ "104004": {
+  "subdistrict": "หลักสอง",
+  "district": "บางแค",
+  "province": "กรุงเทพมหานคร",
+  "in_training_data": true
+ },
+ "104101": {
+  "subdistrict": "ทุ่งสองห้อง",
+  "district": "หลักสี่",
+  "province": "กรุงเทพมหานคร",
+  "in_training_data": true
+ },
+ "104102": {
+  "subdistrict": "ตลาดบางเขน",
+  "district": "หลักสี่",
+  "province": "กรุงเทพมหานคร",
+  "in_training_data": true
+ },
+ "104201": {
+  "subdistrict": "สายไหม",
+  "district": "สายไหม",
+  "province": "กรุงเทพมหานคร",
+  "in_training_data": true
+ },
+ "104202": {
+  "subdistrict": "ออเงิน",
+  "district": "สายไหม",
+  "province": "กรุงเทพมหานคร",
+  "in_training_data": true
+ },
+ "104203": {
+  "subdistrict": "คลองถนน",
+  "district": "สายไหม",
+  "province": "กรุงเทพมหานคร",
+  "in_training_data": true
+ },
+ "104301": {
+  "subdistrict": "คันนายาว",
+  "district": "คันนายาว",
+  "province": "กรุงเทพมหานคร",
+  "in_training_data": true
+ },
+ "104302": {
+  "subdistrict": "รามอินทรา",
+  "district": "คันนายาว",
+  "province": "กรุงเทพมหานคร",
+  "in_training_data": true
+ },
+ "104401": {
+  "subdistrict": "สะพานสูง",
+  "district": "สะพานสูง",
+  "province": "กรุงเทพมหานคร",
+  "in_training_data": true
+ },
+ "104402": {
+  "subdistrict": "ราษฎร์พัฒนา",
+  "district": "สะพานสูง",
+  "province": "กรุงเทพมหานคร",
+  "in_training_data": true
+ },
+ "104403": {
+  "subdistrict": "ทับช้าง",
+  "district": "สะพานสูง",
+  "province": "กรุงเทพมหานคร",
+  "in_training_data": true
+ },
+ "104501": {
+  "subdistrict": "วังทองหลาง",
+  "district": "วังทองหลาง",
+  "province": "กรุงเทพมหานคร",
+  "in_training_data": true
+ },
+ "104502": {
+  "subdistrict": "สะพานสอง",
+  "district": "วังทองหลาง",
+  "province": "กรุงเทพมหานคร",
+  "in_training_data": true
+ },
+ "104503": {
+  "subdistrict": "คลองเจ้าคุณสิงห์",
+  "district": "วังทองหลาง",
+  "province": "กรุงเทพมหานคร",
+  "in_training_data": true
+ },
+ "104504": {
+  "subdistrict": "พลับพลา",
+  "district": "วังทองหลาง",
+  "province": "กรุงเทพมหานคร",
+  "in_training_data": true
+ },
+ "104601": {
+  "subdistrict": "สามวาตะวันตก",
+  "district": "คลองสามวา",
+  "province": "กรุงเทพมหานคร",
+  "in_training_data": true
+ },
+ "104602": {
+  "subdistrict": "สามวาตะวันออก",
+  "district": "คลองสามวา",
+  "province": "กรุงเทพมหานคร",
+  "in_training_data": true
+ },
+ "104603": {
+  "subdistrict": "บางชัน",
+  "district": "คลองสามวา",
+  "province": "กรุงเทพมหานคร",
+  "in_training_data": true
+ },
+ "104604": {
+  "subdistrict": "ทรายกองดิน",
+  "district": "คลองสามวา",
+  "province": "กรุงเทพมหานคร",
+  "in_training_data": true
+ },
+ "104605": {
+  "subdistrict": "ทรายกองดินใต้",
+  "district": "คลองสามวา",
+  "province": "กรุงเทพมหานคร",
+  "in_training_data": true
+ },
+ "104702": {
+  "subdistrict": "บางนาเหนือ",
+  "district": "บางนา",
+  "province": "กรุงเทพมหานคร",
+  "in_training_data": true
+ },
+ "104703": {
+  "subdistrict": "บางนาใต้",
+  "district": "บางนา",
+  "province": "กรุงเทพมหานคร",
+  "in_training_data": true
+ },
+ "104801": {
+  "subdistrict": "ทวีวัฒนา",
+  "district": "ทวีวัฒนา",
+  "province": "กรุงเทพมหานคร",
+  "in_training_data": true
+ },
+ "104802": {
+  "subdistrict": "ศาลาธรรมสพน์",
+  "district": "ทวีวัฒนา",
+  "province": "กรุงเทพมหานคร",
+  "in_training_data": true
+ },
+ "104901": {
+  "subdistrict": "บางมด",
+  "district": "ทุ่งครุ",
+  "province": "กรุงเทพมหานคร",
+  "in_training_data": true
+ },
+ "104902": {
+  "subdistrict": "ทุ่งครุ",
+  "district": "ทุ่งครุ",
+  "province": "กรุงเทพมหานคร",
+  "in_training_data": true
+ },
+ "105002": {
+  "subdistrict": "บางบอนเหนือ",
+  "district": "บางบอน",
+  "province": "กรุงเทพมหานคร",
+  "in_training_data": true
+ },
+ "105003": {
+  "subdistrict": "บางบอนใต้",
+  "district": "บางบอน",
+  "province": "กรุงเทพมหานคร",
+  "in_training_data": true
+ },
+ "105004": {
+  "subdistrict": "คลองบางพราน",
+  "district": "บางบอน",
+  "province": "กรุงเทพมหานคร",
+  "in_training_data": true
+ },
+ "105005": {
+  "subdistrict": "คลองบางบอน",
+  "district": "บางบอน",
+  "province": "กรุงเทพมหานคร",
+  "in_training_data": true
+ },
+ "110101": {
+  "subdistrict": "ปากน้ำ",
+  "district": "เมืองสมุทรปราการ",
+  "province": "สมุทรปราการ",
+  "in_training_data": true
+ },
+ "110102": {
+  "subdistrict": "สำโรงเหนือ",
+  "district": "เมืองสมุทรปราการ",
+  "province": "สมุทรปราการ",
+  "in_training_data": true
+ },
+ "110103": {
+  "subdistrict": "บางเมือง",
+  "district": "เมืองสมุทรปราการ",
+  "province": "สมุทรปราการ",
+  "in_training_data": true
+ },
+ "110104": {
+  "subdistrict": "ท้ายบ้าน",
+  "district": "เมืองสมุทรปราการ",
+  "province": "สมุทรปราการ",
+  "in_training_data": true
+ },
+ "110108": {
+  "subdistrict": "บางปูใหม่",
+  "district": "เมืองสมุทรปราการ",
+  "province": "สมุทรปราการ",
+  "in_training_data": true
+ },
+ "110110": {
+  "subdistrict": "แพรกษา",
+  "district": "เมืองสมุทรปราการ",
+  "province": "สมุทรปราการ",
+  "in_training_data": true
+ },
+ "110111": {
+  "subdistrict": "บางโปรง",
+  "district": "เมืองสมุทรปราการ",
+  "province": "สมุทรปราการ",
+  "in_training_data": true
+ },
+ "110112": {
+  "subdistrict": "บางปู",
+  "district": "เมืองสมุทรปราการ",
+  "province": "สมุทรปราการ",
+  "in_training_data": true
+ },
+ "110113": {
+  "subdistrict": "บางด้วน",
+  "district": "เมืองสมุทรปราการ",
+  "province": "สมุทรปราการ",
+  "in_training_data": true
+ },
+ "110114": {
+  "subdistrict": "บางเมืองใหม่",
+  "district": "เมืองสมุทรปราการ",
+  "province": "สมุทรปราการ",
+  "in_training_data": true
+ },
+ "110115": {
+  "subdistrict": "เทพารักษ์",
+  "district": "เมืองสมุทรปราการ",
+  "province": "สมุทรปราการ",
+  "in_training_data": true
+ },
+ "110116": {
+  "subdistrict": "ท้ายบ้านใหม่",
+  "district": "เมืองสมุทรปราการ",
+  "province": "สมุทรปราการ",
+  "in_training_data": true
+ },
+ "110117": {
+  "subdistrict": "แพรกษาใหม่",
+  "district": "เมืองสมุทรปราการ",
+  "province": "สมุทรปราการ",
+  "in_training_data": true
+ },
+ "110201": {
+  "subdistrict": "บางบ่อ",
+  "district": "บางบ่อ",
+  "province": "สมุทรปราการ",
+  "in_training_data": true
+ },
+ "110202": {
+  "subdistrict": "บ้านระกาศ",
+  "district": "บางบ่อ",
+  "province": "สมุทรปราการ",
+  "in_training_data": true
+ },
+ "110203": {
+  "subdistrict": "บางพลีน้อย",
+  "district": "บางบ่อ",
+  "province": "สมุทรปราการ",
+  "in_training_data": true
+ },
+ "110204": {
+  "subdistrict": "บางเพรียง",
+  "district": "บางบ่อ",
+  "province": "สมุทรปราการ",
+  "in_training_data": true
+ },
+ "110205": {
+  "subdistrict": "คลองด่าน",
+  "district": "บางบ่อ",
+  "province": "สมุทรปราการ",
+  "in_training_data": true
+ },
+ "110206": {
+  "subdistrict": "คลองสวน",
+  "district": "บางบ่อ",
+  "province": "สมุทรปราการ",
+  "in_training_data": true
+ },
+ "110207": {
+  "subdistrict": "เปร็ง",
+  "district": "บางบ่อ",
+  "province": "สมุทรปราการ",
+  "in_training_data": true
+ },
+ "110208": {
+  "subdistrict": "คลองนิยมยาตรา",
+  "district": "บางบ่อ",
+  "province": "สมุทรปราการ",
+  "in_training_data": true
+ },
+ "110301": {
+  "subdistrict": "บางพลีใหญ่",
+  "district": "บางพลี",
+  "province": "สมุทรปราการ",
+  "in_training_data": true
+ },
+ "110302": {
+  "subdistrict": "บางแก้ว",
+  "district": "บางพลี",
+  "province": "สมุทรปราการ",
+  "in_training_data": true
+ },
+ "110303": {
+  "subdistrict": "บางปลา",
+  "district": "บางพลี",
+  "province": "สมุทรปราการ",
+  "in_training_data": true
+ },
+ "110304": {
+  "subdistrict": "บางโฉลง",
+  "district": "บางพลี",
+  "province": "สมุทรปราการ",
+  "in_training_data": true
+ },
+ "110308": {
+  "subdistrict": "ราชาเทวะ",
+  "district": "บางพลี",
+  "province": "สมุทรปราการ",
+  "in_training_data": true
+ },
+ "110309": {
+  "subdistrict": "หนองปรือ",
+  "district": "บางพลี",
+  "province": "สมุทรปราการ",
+  "in_training_data": true
+ },
+ "110401": {
+  "subdistrict": "ตลาด",
+  "district": "พระประแดง",
+  "province": "สมุทรปราการ",
+  "in_training_data": true
+ },
+ "110402": {
+  "subdistrict": "บางพึ่ง",
+  "district": "พระประแดง",
+  "province": "สมุทรปราการ",
+  "in_training_data": true
+ },
+ "110403": {
+  "subdistrict": "บางจาก",
+  "district": "พระประแดง",
+  "province": "สมุทรปราการ",
+  "in_training_data": true
+ },
+ "110404": {
+  "subdistrict": "บางครุ",
+  "district": "พระประแดง",
+  "province": "สมุทรปราการ",
+  "in_training_data": true
+ },
+ "110405": {
+  "subdistrict": "บางหญ้าแพรก",
+  "district": "พระประแดง",
+  "province": "สมุทรปราการ",
+  "in_training_data": true
+ },
+ "110406": {
+  "subdistrict": "บางหัวเสือ",
+  "district": "พระประแดง",
+  "province": "สมุทรปราการ",
+  "in_training_data": true
+ },
+ "110407": {
+  "subdistrict": "สำโรงใต้",
+  "district": "พระประแดง",
+  "province": "สมุทรปราการ",
+  "in_training_data": true
+ },
+ "110408": {
+  "subdistrict": "บางยอ",
+  "district": "พระประแดง",
+  "province": "สมุทรปราการ",
+  "in_training_data": true
+ },
+ "110409": {
+  "subdistrict": "บางกะเจ้า",
+  "district": "พระประแดง",
+  "province": "สมุทรปราการ",
+  "in_training_data": true
+ },
+ "110410": {
+  "subdistrict": "บางน้ำผึ้ง",
+  "district": "พระประแดง",
+  "province": "สมุทรปราการ",
+  "in_training_data": true
+ },
+ "110411": {
+  "subdistrict": "บางกระสอบ",
+  "district": "พระประแดง",
+  "province": "สมุทรปราการ",
+  "in_training_data": true
+ },
+ "110412": {
+  "subdistrict": "บางกอบัว",
+  "district": "พระประแดง",
+  "province": "สมุทรปราการ",
+  "in_training_data": true
+ },
+ "110413": {
+  "subdistrict": "ทรงคนอง",
+  "district": "พระประแดง",
+  "province": "สมุทรปราการ",
+  "in_training_data": true
+ },
+ "110414": {
+  "subdistrict": "สำโรง",
+  "district": "พระประแดง",
+  "province": "สมุทรปราการ",
+  "in_training_data": true
+ },
+ "110415": {
+  "subdistrict": "สำโรงกลาง",
+  "district": "พระประแดง",
+  "province": "สมุทรปราการ",
+  "in_training_data": true
+ },
+ "110501": {
+  "subdistrict": "นาเกลือ",
+  "district": "พระสมุทรเจดีย์",
+  "province": "สมุทรปราการ",
+  "in_training_data": true
+ },
+ "110502": {
+  "subdistrict": "บ้านคลองสวน",
+  "district": "พระสมุทรเจดีย์",
+  "province": "สมุทรปราการ",
+  "in_training_data": true
+ },
+ "110503": {
+  "subdistrict": "แหลมฟ้าผ่า",
+  "district": "พระสมุทรเจดีย์",
+  "province": "สมุทรปราการ",
+  "in_training_data": true
+ },
+ "110504": {
+  "subdistrict": "ปากคลองบางปลากด",
+  "district": "พระสมุทรเจดีย์",
+  "province": "สมุทรปราการ",
+  "in_training_data": true
+ },
+ "110505": {
+  "subdistrict": "ในคลองบางปลากด",
+  "district": "พระสมุทรเจดีย์",
+  "province": "สมุทรปราการ",
+  "in_training_data": true
+ },
+ "110601": {
+  "subdistrict": "บางเสาธง",
+  "district": "บางเสาธง",
+  "province": "สมุทรปราการ",
+  "in_training_data": false
+ },
+ "110602": {
+  "subdistrict": "ศีรษะจรเข้น้อย",
+  "district": "บางเสาธง",
+  "province": "สมุทรปราการ",
+  "in_training_data": false
+ },
+ "110603": {
+  "subdistrict": "ศีรษะจรเข้ใหญ่",
+  "district": "บางเสาธง",
+  "province": "สมุทรปราการ",
+  "in_training_data": false
+ },
+ "120101": {
+  "subdistrict": "สวนใหญ่",
+  "district": "เมืองนนทบุรี",
+  "province": "นนทบุรี",
+  "in_training_data": true
+ },
+ "120102": {
+  "subdistrict": "ตลาดขวัญ",
+  "district": "เมืองนนทบุรี",
+  "province": "นนทบุรี",
+  "in_training_data": true
+ },
+ "120103": {
+  "subdistrict": "บางเขน",
+  "district": "เมืองนนทบุรี",
+  "province": "นนทบุรี",
+  "in_training_data": true
+ },
+ "120104": {
+  "subdistrict": "บางกระสอ",
+  "district": "เมืองนนทบุรี",
+  "province": "นนทบุรี",
+  "in_training_data": true
+ },
+ "120105": {
+  "subdistrict": "ท่าทราย",
+  "district": "เมืองนนทบุรี",
+  "province": "นนทบุรี",
+  "in_training_data": true
+ },
+ "120106": {
+  "subdistrict": "บางไผ่",
+  "district": "เมืองนนทบุรี",
+  "province": "นนทบุรี",
+  "in_training_data": true
+ },
+ "120107": {
+  "subdistrict": "บางศรีเมือง",
+  "district": "เมืองนนทบุรี",
+  "province": "นนทบุรี",
+  "in_training_data": true
+ },
+ "120108": {
+  "subdistrict": "บางกร่าง",
+  "district": "เมืองนนทบุรี",
+  "province": "นนทบุรี",
+  "in_training_data": true
+ },
+ "120109": {
+  "subdistrict": "ไทรม้า",
+  "district": "เมืองนนทบุรี",
+  "province": "นนทบุรี",
+  "in_training_data": true
+ },
+ "120110": {
+  "subdistrict": "บางรักน้อย",
+  "district": "เมืองนนทบุรี",
+  "province": "นนทบุรี",
+  "in_training_data": true
+ },
+ "120201": {
+  "subdistrict": "วัดชลอ",
+  "district": "บางกรวย",
+  "province": "นนทบุรี",
+  "in_training_data": true
+ },
+ "120202": {
+  "subdistrict": "บางกรวย",
+  "district": "บางกรวย",
+  "province": "นนทบุรี",
+  "in_training_data": true
+ },
+ "120203": {
+  "subdistrict": "บางสีทอง",
+  "district": "บางกรวย",
+  "province": "นนทบุรี",
+  "in_training_data": true
+ },
+ "120204": {
+  "subdistrict": "บางขนุน",
+  "district": "บางกรวย",
+  "province": "นนทบุรี",
+  "in_training_data": true
+ },
+ "120205": {
+  "subdistrict": "บางขุนกอง",
+  "district": "บางกรวย",
+  "province": "นนทบุรี",
+  "in_training_data": true
+ },
+ "120206": {
+  "subdistrict": "บางคูเวียง",
+  "district": "บางกรวย",
+  "province": "นนทบุรี",
+  "in_training_data": true
+ },
+ "120207": {
+  "subdistrict": "มหาสวัสดิ์",
+  "district": "บางกรวย",
+  "province": "นนทบุรี",
+  "in_training_data": true
+ },
+ "120208": {
+  "subdistrict": "ปลายบาง",
+  "district": "บางกรวย",
+  "province": "นนทบุรี",
+  "in_training_data": true
+ },
+ "120209": {
+  "subdistrict": "ศาลากลาง",
+  "district": "บางกรวย",
+  "province": "นนทบุรี",
+  "in_training_data": true
+ },
+ "120301": {
+  "subdistrict": "บางม่วง",
+  "district": "บางใหญ่",
+  "province": "นนทบุรี",
+  "in_training_data": true
+ },
+ "120302": {
+  "subdistrict": "บางแม่นาง",
+  "district": "บางใหญ่",
+  "province": "นนทบุรี",
+  "in_training_data": true
+ },
+ "120303": {
+  "subdistrict": "บางเลน",
+  "district": "บางใหญ่",
+  "province": "นนทบุรี",
+  "in_training_data": true
+ },
+ "120304": {
+  "subdistrict": "เสาธงหิน",
+  "district": "บางใหญ่",
+  "province": "นนทบุรี",
+  "in_training_data": true
+ },
+ "120305": {
+  "subdistrict": "บางใหญ่",
+  "district": "บางใหญ่",
+  "province": "นนทบุรี",
+  "in_training_data": true
+ },
+ "120306": {
+  "subdistrict": "บ้านใหม่",
+  "district": "บางใหญ่",
+  "province": "นนทบุรี",
+  "in_training_data": true
+ },
+ "120401": {
+  "subdistrict": "โสนลอย",
+  "district": "บางบัวทอง",
+  "province": "นนทบุรี",
+  "in_training_data": true
+ },
+ "120402": {
+  "subdistrict": "บางบัวทอง",
+  "district": "บางบัวทอง",
+  "province": "นนทบุรี",
+  "in_training_data": true
+ },
+ "120403": {
+  "subdistrict": "บางรักใหญ่",
+  "district": "บางบัวทอง",
+  "province": "นนทบุรี",
+  "in_training_data": true
+ },
+ "120404": {
+  "subdistrict": "บางคูรัด",
+  "district": "บางบัวทอง",
+  "province": "นนทบุรี",
+  "in_training_data": true
+ },
+ "120405": {
+  "subdistrict": "ละหาร",
+  "district": "บางบัวทอง",
+  "province": "นนทบุรี",
+  "in_training_data": true
+ },
+ "120406": {
+  "subdistrict": "ลำโพ",
+  "district": "บางบัวทอง",
+  "province": "นนทบุรี",
+  "in_training_data": true
+ },
+ "120407": {
+  "subdistrict": "พิมลราช",
+  "district": "บางบัวทอง",
+  "province": "นนทบุรี",
+  "in_training_data": true
+ },
+ "120408": {
+  "subdistrict": "บางรักพัฒนา",
+  "district": "บางบัวทอง",
+  "province": "นนทบุรี",
+  "in_training_data": true
+ },
+ "120501": {
+  "subdistrict": "ไทรน้อย",
+  "district": "ไทรน้อย",
+  "province": "นนทบุรี",
+  "in_training_data": true
+ },
+ "120502": {
+  "subdistrict": "ราษฎร์นิยม",
+  "district": "ไทรน้อย",
+  "province": "นนทบุรี",
+  "in_training_data": true
+ },
+ "120503": {
+  "subdistrict": "หนองเพรางาย",
+  "district": "ไทรน้อย",
+  "province": "นนทบุรี",
+  "in_training_data": true
+ },
+ "120504": {
+  "subdistrict": "ไทรใหญ่",
+  "district": "ไทรน้อย",
+  "province": "นนทบุรี",
+  "in_training_data": true
+ },
+ "120505": {
+  "subdistrict": "ขุนศรี",
+  "district": "ไทรน้อย",
+  "province": "นนทบุรี",
+  "in_training_data": true
+ },
+ "120506": {
+  "subdistrict": "คลองขวาง",
+  "district": "ไทรน้อย",
+  "province": "นนทบุรี",
+  "in_training_data": true
+ },
+ "120507": {
+  "subdistrict": "ทวีวัฒนา",
+  "district": "ไทรน้อย",
+  "province": "นนทบุรี",
+  "in_training_data": true
+ },
+ "120601": {
+  "subdistrict": "ปากเกร็ด",
+  "district": "ปากเกร็ด",
+  "province": "นนทบุรี",
+  "in_training_data": true
+ },
+ "120602": {
+  "subdistrict": "บางตลาด",
+  "district": "ปากเกร็ด",
+  "province": "นนทบุรี",
+  "in_training_data": true
+ },
+ "120603": {
+  "subdistrict": "บ้านใหม่",
+  "district": "ปากเกร็ด",
+  "province": "นนทบุรี",
+  "in_training_data": true
+ },
+ "120604": {
+  "subdistrict": "บางพูด",
+  "district": "ปากเกร็ด",
+  "province": "นนทบุรี",
+  "in_training_data": true
+ },
+ "120605": {
+  "subdistrict": "บางตะไนย์",
+  "district": "ปากเกร็ด",
+  "province": "นนทบุรี",
+  "in_training_data": true
+ },
+ "120606": {
+  "subdistrict": "คลองพระอุดม",
+  "district": "ปากเกร็ด",
+  "province": "นนทบุรี",
+  "in_training_data": true
+ },
+ "120607": {
+  "subdistrict": "ท่าอิฐ",
+  "district": "ปากเกร็ด",
+  "province": "นนทบุรี",
+  "in_training_data": true
+ },
+ "120608": {
+  "subdistrict": "เกาะเกร็ด",
+  "district": "ปากเกร็ด",
+  "province": "นนทบุรี",
+  "in_training_data": true
+ },
+ "120609": {
+  "subdistrict": "อ้อมเกร็ด",
+  "district": "ปากเกร็ด",
+  "province": "นนทบุรี",
+  "in_training_data": true
+ },
+ "120610": {
+  "subdistrict": "คลองข่อย",
+  "district": "ปากเกร็ด",
+  "province": "นนทบุรี",
+  "in_training_data": true
+ },
+ "120611": {
+  "subdistrict": "บางพลับ",
+  "district": "ปากเกร็ด",
+  "province": "นนทบุรี",
+  "in_training_data": true
+ },
+ "120612": {
+  "subdistrict": "คลองเกลือ",
+  "district": "ปากเกร็ด",
+  "province": "นนทบุรี",
+  "in_training_data": true
+ },
+ "130101": {
+  "subdistrict": "บางปรอก",
+  "district": "เมืองปทุมธานี",
+  "province": "ปทุมธานี",
+  "in_training_data": true
+ },
+ "130102": {
+  "subdistrict": "บ้านใหม่",
+  "district": "เมืองปทุมธานี",
+  "province": "ปทุมธานี",
+  "in_training_data": true
+ },
+ "130103": {
+  "subdistrict": "บ้านกลาง",
+  "district": "เมืองปทุมธานี",
+  "province": "ปทุมธานี",
+  "in_training_data": true
+ },
+ "130104": {
+  "subdistrict": "บ้านฉาง",
+  "district": "เมืองปทุมธานี",
+  "province": "ปทุมธานี",
+  "in_training_data": true
+ },
+ "130105": {
+  "subdistrict": "บ้านกระแชง",
+  "district": "เมืองปทุมธานี",
+  "province": "ปทุมธานี",
+  "in_training_data": true
+ },
+ "130106": {
+  "subdistrict": "บางขะแยง",
+  "district": "เมืองปทุมธานี",
+  "province": "ปทุมธานี",
+  "in_training_data": true
+ },
+ "130107": {
+  "subdistrict": "บางคูวัด",
+  "district": "เมืองปทุมธานี",
+  "province": "ปทุมธานี",
+  "in_training_data": true
+ },
+ "130108": {
+  "subdistrict": "บางหลวง",
+  "district": "เมืองปทุมธานี",
+  "province": "ปทุมธานี",
+  "in_training_data": true
+ },
+ "130109": {
+  "subdistrict": "บางเดื่อ",
+  "district": "เมืองปทุมธานี",
+  "province": "ปทุมธานี",
+  "in_training_data": true
+ },
+ "130110": {
+  "subdistrict": "บางพูด",
+  "district": "เมืองปทุมธานี",
+  "province": "ปทุมธานี",
+  "in_training_data": true
+ },
+ "130111": {
+  "subdistrict": "บางพูน",
+  "district": "เมืองปทุมธานี",
+  "province": "ปทุมธานี",
+  "in_training_data": true
+ },
+ "130112": {
+  "subdistrict": "บางกะดี",
+  "district": "เมืองปทุมธานี",
+  "province": "ปทุมธานี",
+  "in_training_data": true
+ },
+ "130113": {
+  "subdistrict": "สวนพริกไทย",
+  "district": "เมืองปทุมธานี",
+  "province": "ปทุมธานี",
+  "in_training_data": true
+ },
+ "130114": {
+  "subdistrict": "หลักหก",
+  "district": "เมืองปทุมธานี",
+  "province": "ปทุมธานี",
+  "in_training_data": true
+ },
+ "130201": {
+  "subdistrict": "คลองหนึ่ง",
+  "district": "คลองหลวง",
+  "province": "ปทุมธานี",
+  "in_training_data": true
+ },
+ "130202": {
+  "subdistrict": "คลองสอง",
+  "district": "คลองหลวง",
+  "province": "ปทุมธานี",
+  "in_training_data": true
+ },
+ "130203": {
+  "subdistrict": "คลองสาม",
+  "district": "คลองหลวง",
+  "province": "ปทุมธานี",
+  "in_training_data": true
+ },
+ "130204": {
+  "subdistrict": "คลองสี่",
+  "district": "คลองหลวง",
+  "province": "ปทุมธานี",
+  "in_training_data": true
+ },
+ "130205": {
+  "subdistrict": "คลองห้า",
+  "district": "คลองหลวง",
+  "province": "ปทุมธานี",
+  "in_training_data": true
+ },
+ "130206": {
+  "subdistrict": "คลองหก",
+  "district": "คลองหลวง",
+  "province": "ปทุมธานี",
+  "in_training_data": true
+ },
+ "130207": {
+  "subdistrict": "คลองเจ็ด",
+  "district": "คลองหลวง",
+  "province": "ปทุมธานี",
+  "in_training_data": true
+ },
+ "130301": {
+  "subdistrict": "ประชาธิปัตย์",
+  "district": "ธัญบุรี",
+  "province": "ปทุมธานี",
+  "in_training_data": true
+ },
+ "130302": {
+  "subdistrict": "บึงยี่โถ",
+  "district": "ธัญบุรี",
+  "province": "ปทุมธานี",
+  "in_training_data": true
+ },
+ "130303": {
+  "subdistrict": "รังสิต",
+  "district": "ธัญบุรี",
+  "province": "ปทุมธานี",
+  "in_training_data": true
+ },
+ "130304": {
+  "subdistrict": "ลำผักกูด",
+  "district": "ธัญบุรี",
+  "province": "ปทุมธานี",
+  "in_training_data": true
+ },
+ "130305": {
+  "subdistrict": "บึงสนั่น",
+  "district": "ธัญบุรี",
+  "province": "ปทุมธานี",
+  "in_training_data": true
+ },
+ "130306": {
+  "subdistrict": "บึงน้ำรักษ์",
+  "district": "ธัญบุรี",
+  "province": "ปทุมธานี",
+  "in_training_data": true
+ },
+ "130401": {
+  "subdistrict": "บึงบา",
+  "district": "หนองเสือ",
+  "province": "ปทุมธานี",
+  "in_training_data": true
+ },
+ "130402": {
+  "subdistrict": "บึงบอน",
+  "district": "หนองเสือ",
+  "province": "ปทุมธานี",
+  "in_training_data": true
+ },
+ "130403": {
+  "subdistrict": "บึงกาสาม",
+  "district": "หนองเสือ",
+  "province": "ปทุมธานี",
+  "in_training_data": true
+ },
+ "130404": {
+  "subdistrict": "บึงชำอ้อ",
+  "district": "หนองเสือ",
+  "province": "ปทุมธานี",
+  "in_training_data": true
+ },
+ "130405": {
+  "subdistrict": "หนองสามวัง",
+  "district": "หนองเสือ",
+  "province": "ปทุมธานี",
+  "in_training_data": true
+ },
+ "130406": {
+  "subdistrict": "ศาลาครุ",
+  "district": "หนองเสือ",
+  "province": "ปทุมธานี",
+  "in_training_data": true
+ },
+ "130407": {
+  "subdistrict": "นพรัตน์",
+  "district": "หนองเสือ",
+  "province": "ปทุมธานี",
+  "in_training_data": true
+ },
+ "130501": {
+  "subdistrict": "ระแหง",
+  "district": "ลาดหลุมแก้ว",
+  "province": "ปทุมธานี",
+  "in_training_data": true
+ },
+ "130502": {
+  "subdistrict": "ลาดหลุมแก้ว",
+  "district": "ลาดหลุมแก้ว",
+  "province": "ปทุมธานี",
+  "in_training_data": true
+ },
+ "130503": {
+  "subdistrict": "คูบางหลวง",
+  "district": "ลาดหลุมแก้ว",
+  "province": "ปทุมธานี",
+  "in_training_data": true
+ },
+ "130504": {
+  "subdistrict": "คูขวาง",
+  "district": "ลาดหลุมแก้ว",
+  "province": "ปทุมธานี",
+  "in_training_data": true
+ },
+ "130505": {
+  "subdistrict": "คลองพระอุดม",
+  "district": "ลาดหลุมแก้ว",
+  "province": "ปทุมธานี",
+  "in_training_data": true
+ },
+ "130506": {
+  "subdistrict": "บ่อเงิน",
+  "district": "ลาดหลุมแก้ว",
+  "province": "ปทุมธานี",
+  "in_training_data": true
+ },
+ "130507": {
+  "subdistrict": "หน้าไม้",
+  "district": "ลาดหลุมแก้ว",
+  "province": "ปทุมธานี",
+  "in_training_data": true
+ },
+ "130601": {
+  "subdistrict": "คูคต",
+  "district": "ลำลูกกา",
+  "province": "ปทุมธานี",
+  "in_training_data": true
+ },
+ "130602": {
+  "subdistrict": "ลาดสวาย",
+  "district": "ลำลูกกา",
+  "province": "ปทุมธานี",
+  "in_training_data": true
+ },
+ "130603": {
+  "subdistrict": "บึงคำพร้อย",
+  "district": "ลำลูกกา",
+  "province": "ปทุมธานี",
+  "in_training_data": true
+ },
+ "130604": {
+  "subdistrict": "ลำลูกกา",
+  "district": "ลำลูกกา",
+  "province": "ปทุมธานี",
+  "in_training_data": true
+ },
+ "130605": {
+  "subdistrict": "บึงทองหลาง",
+  "district": "ลำลูกกา",
+  "province": "ปทุมธานี",
+  "in_training_data": true
+ },
+ "130606": {
+  "subdistrict": "ลำไทร",
+  "district": "ลำลูกกา",
+  "province": "ปทุมธานี",
+  "in_training_data": true
+ },
+ "130607": {
+  "subdistrict": "บึงคอไห",
+  "district": "ลำลูกกา",
+  "province": "ปทุมธานี",
+  "in_training_data": true
+ },
+ "130608": {
+  "subdistrict": "พืชอุดม",
+  "district": "ลำลูกกา",
+  "province": "ปทุมธานี",
+  "in_training_data": true
+ },
+ "130701": {
+  "subdistrict": "บางเตย",
+  "district": "สามโคก",
+  "province": "ปทุมธานี",
+  "in_training_data": true
+ },
+ "130702": {
+  "subdistrict": "คลองควาย",
+  "district": "สามโคก",
+  "province": "ปทุมธานี",
+  "in_training_data": true
+ },
+ "130703": {
+  "subdistrict": "สามโคก",
+  "district": "สามโคก",
+  "province": "ปทุมธานี",
+  "in_training_data": true
+ },
+ "130704": {
+  "subdistrict": "กระแชง",
+  "district": "สามโคก",
+  "province": "ปทุมธานี",
+  "in_training_data": true
+ },
+ "130705": {
+  "subdistrict": "บางโพธิ์เหนือ",
+  "district": "สามโคก",
+  "province": "ปทุมธานี",
+  "in_training_data": true
+ },
+ "130706": {
+  "subdistrict": "เชียงรากใหญ่",
+  "district": "สามโคก",
+  "province": "ปทุมธานี",
+  "in_training_data": true
+ },
+ "130707": {
+  "subdistrict": "บ้านปทุม",
+  "district": "สามโคก",
+  "province": "ปทุมธานี",
+  "in_training_data": true
+ },
+ "130708": {
+  "subdistrict": "บ้านงิ้ว",
+  "district": "สามโคก",
+  "province": "ปทุมธานี",
+  "in_training_data": true
+ },
+ "130709": {
+  "subdistrict": "เชียงรากน้อย",
+  "district": "สามโคก",
+  "province": "ปทุมธานี",
+  "in_training_data": true
+ },
+ "130710": {
+  "subdistrict": "บางกระบือ",
+  "district": "สามโคก",
+  "province": "ปทุมธานี",
+  "in_training_data": true
+ },
+ "130711": {
+  "subdistrict": "ท้ายเกาะ",
+  "district": "สามโคก",
+  "province": "ปทุมธานี",
+  "in_training_data": true
+ },
+ "730101": {
+  "subdistrict": "พระปฐมเจดีย์",
+  "district": "เมืองนครปฐม",
+  "province": "นครปฐม",
+  "in_training_data": true
+ },
+ "730102": {
+  "subdistrict": "บางแขม",
+  "district": "เมืองนครปฐม",
+  "province": "นครปฐม",
+  "in_training_data": true
+ },
+ "730103": {
+  "subdistrict": "พระประโทน",
+  "district": "เมืองนครปฐม",
+  "province": "นครปฐม",
+  "in_training_data": true
+ },
+ "730104": {
+  "subdistrict": "ธรรมศาลา",
+  "district": "เมืองนครปฐม",
+  "province": "นครปฐม",
+  "in_training_data": true
+ },
+ "730105": {
+  "subdistrict": "ตาก้อง",
+  "district": "เมืองนครปฐม",
+  "province": "นครปฐม",
+  "in_training_data": true
+ },
+ "730106": {
+  "subdistrict": "มาบแค",
+  "district": "เมืองนครปฐม",
+  "province": "นครปฐม",
+  "in_training_data": true
+ },
+ "730107": {
+  "subdistrict": "สนามจันทร์",
+  "district": "เมืองนครปฐม",
+  "province": "นครปฐม",
+  "in_training_data": true
+ },
+ "730108": {
+  "subdistrict": "ดอนยายหอม",
+  "district": "เมืองนครปฐม",
+  "province": "นครปฐม",
+  "in_training_data": true
+ },
+ "730109": {
+  "subdistrict": "ถนนขาด",
+  "district": "เมืองนครปฐม",
+  "province": "นครปฐม",
+  "in_training_data": true
+ },
+ "730110": {
+  "subdistrict": "บ่อพลับ",
+  "district": "เมืองนครปฐม",
+  "province": "นครปฐม",
+  "in_training_data": true
+ },
+ "730111": {
+  "subdistrict": "นครปฐม",
+  "district": "เมืองนครปฐม",
+  "province": "นครปฐม",
+  "in_training_data": true
+ },
+ "730112": {
+  "subdistrict": "วังตะกู",
+  "district": "เมืองนครปฐม",
+  "province": "นครปฐม",
+  "in_training_data": true
+ },
+ "730113": {
+  "subdistrict": "หนองปากโลง",
+  "district": "เมืองนครปฐม",
+  "province": "นครปฐม",
+  "in_training_data": true
+ },
+ "730114": {
+  "subdistrict": "สามควายเผือก",
+  "district": "เมืองนครปฐม",
+  "province": "นครปฐม",
+  "in_training_data": true
+ },
+ "730115": {
+  "subdistrict": "ทุ่งน้อย",
+  "district": "เมืองนครปฐม",
+  "province": "นครปฐม",
+  "in_training_data": true
+ },
+ "730116": {
+  "subdistrict": "หนองดินแดง",
+  "district": "เมืองนครปฐม",
+  "province": "นครปฐม",
+  "in_training_data": true
+ },
+ "730117": {
+  "subdistrict": "วังเย็น",
+  "district": "เมืองนครปฐม",
+  "province": "นครปฐม",
+  "in_training_data": true
+ },
+ "730118": {
+  "subdistrict": "โพรงมะเดื่อ",
+  "district": "เมืองนครปฐม",
+  "province": "นครปฐม",
+  "in_training_data": true
+ },
+ "730119": {
+  "subdistrict": "ลำพยา",
+  "district": "เมืองนครปฐม",
+  "province": "นครปฐม",
+  "in_training_data": true
+ },
+ "730120": {
+  "subdistrict": "สระกะเทียม",
+  "district": "เมืองนครปฐม",
+  "province": "นครปฐม",
+  "in_training_data": true
+ },
+ "730121": {
+  "subdistrict": "สวนป่าน",
+  "district": "เมืองนครปฐม",
+  "province": "นครปฐม",
+  "in_training_data": true
+ },
+ "730122": {
+  "subdistrict": "ห้วยจรเข้",
+  "district": "เมืองนครปฐม",
+  "province": "นครปฐม",
+  "in_training_data": true
+ },
+ "730123": {
+  "subdistrict": "ทัพหลวง",
+  "district": "เมืองนครปฐม",
+  "province": "นครปฐม",
+  "in_training_data": true
+ },
+ "730124": {
+  "subdistrict": "หนองงูเหลือม",
+  "district": "เมืองนครปฐม",
+  "province": "นครปฐม",
+  "in_training_data": true
+ },
+ "730125": {
+  "subdistrict": "บ้านยาง",
+  "district": "เมืองนครปฐม",
+  "province": "นครปฐม",
+  "in_training_data": true
+ },
+ "730201": {
+  "subdistrict": "ทุ่งกระพังโหม",
+  "district": "กำแพงแสน",
+  "province": "นครปฐม",
+  "in_training_data": true
+ },
+ "730202": {
+  "subdistrict": "กระตีบ",
+  "district": "กำแพงแสน",
+  "province": "นครปฐม",
+  "in_training_data": true
+ },
+ "730203": {
+  "subdistrict": "ทุ่งลูกนก",
+  "district": "กำแพงแสน",
+  "province": "นครปฐม",
+  "in_training_data": true
+ },
+ "730204": {
+  "subdistrict": "ห้วยขวาง",
+  "district": "กำแพงแสน",
+  "province": "นครปฐม",
+  "in_training_data": true
+ },
+ "730205": {
+  "subdistrict": "ทุ่งขวาง",
+  "district": "กำแพงแสน",
+  "province": "นครปฐม",
+  "in_training_data": true
+ },
+ "730206": {
+  "subdistrict": "สระสี่มุม",
+  "district": "กำแพงแสน",
+  "province": "นครปฐม",
+  "in_training_data": true
+ },
+ "730207": {
+  "subdistrict": "ทุ่งบัว",
+  "district": "กำแพงแสน",
+  "province": "นครปฐม",
+  "in_training_data": true
+ },
+ "730208": {
+  "subdistrict": "ดอนข่อย",
+  "district": "กำแพงแสน",
+  "province": "นครปฐม",
+  "in_training_data": true
+ },
+ "730209": {
+  "subdistrict": "สระพัฒนา",
+  "district": "กำแพงแสน",
+  "province": "นครปฐม",
+  "in_training_data": true
+ },
+ "730210": {
+  "subdistrict": "ห้วยหมอนทอง",
+  "district": "กำแพงแสน",
+  "province": "นครปฐม",
+  "in_training_data": true
+ },
+ "730211": {
+  "subdistrict": "ห้วยม่วง",
+  "district": "กำแพงแสน",
+  "province": "นครปฐม",
+  "in_training_data": true
+ },
+ "730212": {
+  "subdistrict": "กำแพงแสน",
+  "district": "กำแพงแสน",
+  "province": "นครปฐม",
+  "in_training_data": true
+ },
+ "730213": {
+  "subdistrict": "รางพิกุล",
+  "district": "กำแพงแสน",
+  "province": "นครปฐม",
+  "in_training_data": true
+ },
+ "730214": {
+  "subdistrict": "หนองกระทุ่ม",
+  "district": "กำแพงแสน",
+  "province": "นครปฐม",
+  "in_training_data": true
+ },
+ "730215": {
+  "subdistrict": "วังน้ำเขียว",
+  "district": "กำแพงแสน",
+  "province": "นครปฐม",
+  "in_training_data": true
+ },
+ "730301": {
+  "subdistrict": "นครชัยศรี",
+  "district": "นครชัยศรี",
+  "province": "นครปฐม",
+  "in_training_data": true
+ },
+ "730302": {
+  "subdistrict": "บางกระเบา",
+  "district": "นครชัยศรี",
+  "province": "นครปฐม",
+  "in_training_data": true
+ },
+ "730303": {
+  "subdistrict": "วัดแค",
+  "district": "นครชัยศรี",
+  "province": "นครปฐม",
+  "in_training_data": true
+ },
+ "730304": {
+  "subdistrict": "ท่าตำหนัก",
+  "district": "นครชัยศรี",
+  "province": "นครปฐม",
+  "in_training_data": true
+ },
+ "730305": {
+  "subdistrict": "บางแก้ว",
+  "district": "นครชัยศรี",
+  "province": "นครปฐม",
+  "in_training_data": true
+ },
+ "730306": {
+  "subdistrict": "ท่ากระชับ",
+  "district": "นครชัยศรี",
+  "province": "นครปฐม",
+  "in_training_data": true
+ },
+ "730307": {
+  "subdistrict": "ขุนแก้ว",
+  "district": "นครชัยศรี",
+  "province": "นครปฐม",
+  "in_training_data": true
+ },
+ "730308": {
+  "subdistrict": "ท่าพระยา",
+  "district": "นครชัยศรี",
+  "province": "นครปฐม",
+  "in_training_data": true
+ },
+ "730309": {
+  "subdistrict": "พะเนียด",
+  "district": "นครชัยศรี",
+  "province": "นครปฐม",
+  "in_training_data": true
+ },
+ "730310": {
+  "subdistrict": "บางระกำ",
+  "district": "นครชัยศรี",
+  "province": "นครปฐม",
+  "in_training_data": true
+ },
+ "730311": {
+  "subdistrict": "โคกพระเจดีย์",
+  "district": "นครชัยศรี",
+  "province": "นครปฐม",
+  "in_training_data": true
+ },
+ "730312": {
+  "subdistrict": "ศรีษะทอง",
+  "district": "นครชัยศรี",
+  "province": "นครปฐม",
+  "in_training_data": true
+ },
+ "730313": {
+  "subdistrict": "แหลมบัว",
+  "district": "นครชัยศรี",
+  "province": "นครปฐม",
+  "in_training_data": true
+ },
+ "730314": {
+  "subdistrict": "ศรีมหาโพธิ์",
+  "district": "นครชัยศรี",
+  "province": "นครปฐม",
+  "in_training_data": true
+ },
+ "730315": {
+  "subdistrict": "สัมปทวน",
+  "district": "นครชัยศรี",
+  "province": "นครปฐม",
+  "in_training_data": true
+ },
+ "730316": {
+  "subdistrict": "วัดสำโรง",
+  "district": "นครชัยศรี",
+  "province": "นครปฐม",
+  "in_training_data": true
+ },
+ "730317": {
+  "subdistrict": "ดอนแฝก",
+  "district": "นครชัยศรี",
+  "province": "นครปฐม",
+  "in_training_data": true
+ },
+ "730318": {
+  "subdistrict": "ห้วยพลู",
+  "district": "นครชัยศรี",
+  "province": "นครปฐม",
+  "in_training_data": true
+ },
+ "730319": {
+  "subdistrict": "วัดละมุด",
+  "district": "นครชัยศรี",
+  "province": "นครปฐม",
+  "in_training_data": true
+ },
+ "730320": {
+  "subdistrict": "บางพระ",
+  "district": "นครชัยศรี",
+  "province": "นครปฐม",
+  "in_training_data": true
+ },
+ "730321": {
+  "subdistrict": "บางแก้วฟ้า",
+  "district": "นครชัยศรี",
+  "province": "นครปฐม",
+  "in_training_data": true
+ },
+ "730322": {
+  "subdistrict": "ลานตากฟ้า",
+  "district": "นครชัยศรี",
+  "province": "นครปฐม",
+  "in_training_data": true
+ },
+ "730323": {
+  "subdistrict": "งิ้วราย",
+  "district": "นครชัยศรี",
+  "province": "นครปฐม",
+  "in_training_data": true
+ },
+ "730324": {
+  "subdistrict": "ไทยาวาส",
+  "district": "นครชัยศรี",
+  "province": "นครปฐม",
+  "in_training_data": true
+ },
+ "730401": {
+  "subdistrict": "สามง่าม",
+  "district": "ดอนตูม",
+  "province": "นครปฐม",
+  "in_training_data": true
+ },
+ "730402": {
+  "subdistrict": "ห้วยพระ",
+  "district": "ดอนตูม",
+  "province": "นครปฐม",
+  "in_training_data": true
+ },
+ "730403": {
+  "subdistrict": "ลำเหย",
+  "district": "ดอนตูม",
+  "province": "นครปฐม",
+  "in_training_data": true
+ },
+ "730404": {
+  "subdistrict": "ดอนพุทรา",
+  "district": "ดอนตูม",
+  "province": "นครปฐม",
+  "in_training_data": true
+ },
+ "730405": {
+  "subdistrict": "บ้านหลวง",
+  "district": "ดอนตูม",
+  "province": "นครปฐม",
+  "in_training_data": true
+ },
+ "730406": {
+  "subdistrict": "ดอนรวก",
+  "district": "ดอนตูม",
+  "province": "นครปฐม",
+  "in_training_data": true
+ },
+ "730407": {
+  "subdistrict": "ห้วยด้วน",
+  "district": "ดอนตูม",
+  "province": "นครปฐม",
+  "in_training_data": true
+ },
+ "730408": {
+  "subdistrict": "ลำลูกบัว",
+  "district": "ดอนตูม",
+  "province": "นครปฐม",
+  "in_training_data": true
+ },
+ "730501": {
+  "subdistrict": "บางเลน",
+  "district": "บางเลน",
+  "province": "นครปฐม",
+  "in_training_data": true
+ },
+ "730502": {
+  "subdistrict": "บางปลา",
+  "district": "บางเลน",
+  "province": "นครปฐม",
+  "in_training_data": true
+ },
+ "730503": {
+  "subdistrict": "บางหลวง",
+  "district": "บางเลน",
+  "province": "นครปฐม",
+  "in_training_data": true
+ },
+ "730504": {
+  "subdistrict": "บางภาษี",
+  "district": "บางเลน",
+  "province": "นครปฐม",
+  "in_training_data": true
+ },
+ "730505": {
+  "subdistrict": "บางระกำ",
+  "district": "บางเลน",
+  "province": "นครปฐม",
+  "in_training_data": true
+ },
+ "730506": {
+  "subdistrict": "บางไทรป่า",
+  "district": "บางเลน",
+  "province": "นครปฐม",
+  "in_training_data": true
+ },
+ "730507": {
+  "subdistrict": "หินมูล",
+  "district": "บางเลน",
+  "province": "นครปฐม",
+  "in_training_data": true
+ },
+ "730508": {
+  "subdistrict": "ไทรงาม",
+  "district": "บางเลน",
+  "province": "นครปฐม",
+  "in_training_data": true
+ },
+ "730509": {
+  "subdistrict": "ดอนตูม",
+  "district": "บางเลน",
+  "province": "นครปฐม",
+  "in_training_data": true
+ },
+ "730510": {
+  "subdistrict": "นิลเพชร",
+  "district": "บางเลน",
+  "province": "นครปฐม",
+  "in_training_data": true
+ },
+ "730511": {
+  "subdistrict": "บัวปากท่า",
+  "district": "บางเลน",
+  "province": "นครปฐม",
+  "in_training_data": true
+ },
+ "730512": {
+  "subdistrict": "คลองนกกระทุง",
+  "district": "บางเลน",
+  "province": "นครปฐม",
+  "in_training_data": true
+ },
+ "730513": {
+  "subdistrict": "นราภิรมย์",
+  "district": "บางเลน",
+  "province": "นครปฐม",
+  "in_training_data": true
+ },
+ "730514": {
+  "subdistrict": "ลำพญา",
+  "district": "บางเลน",
+  "province": "นครปฐม",
+  "in_training_data": true
+ },
+ "730515": {
+  "subdistrict": "ไผ่หูช้าง",
+  "district": "บางเลน",
+  "province": "นครปฐม",
+  "in_training_data": true
+ },
+ "730601": {
+  "subdistrict": "ท่าข้าม",
+  "district": "สามพราน",
+  "province": "นครปฐม",
+  "in_training_data": true
+ },
+ "730602": {
+  "subdistrict": "ทรงคนอง",
+  "district": "สามพราน",
+  "province": "นครปฐม",
+  "in_training_data": true
+ },
+ "730603": {
+  "subdistrict": "หอมเกร็ด",
+  "district": "สามพราน",
+  "province": "นครปฐม",
+  "in_training_data": true
+ },
+ "730604": {
+  "subdistrict": "บางกระทึก",
+  "district": "สามพราน",
+  "province": "นครปฐม",
+  "in_training_data": true
+ },
+ "730605": {
+  "subdistrict": "บางเตย",
+  "district": "สามพราน",
+  "province": "นครปฐม",
+  "in_training_data": true
+ },
+ "730606": {
+  "subdistrict": "สามพราน",
+  "district": "สามพราน",
+  "province": "นครปฐม",
+  "in_training_data": true
+ },
+ "730607": {
+  "subdistrict": "บางช้าง",
+  "district": "สามพราน",
+  "province": "นครปฐม",
+  "in_training_data": true
+ },
+ "730608": {
+  "subdistrict": "ไร่ขิง",
+  "district": "สามพราน",
+  "province": "นครปฐม",
+  "in_training_data": true
+ },
+ "730609": {
+  "subdistrict": "ท่าตลาด",
+  "district": "สามพราน",
+  "province": "นครปฐม",
+  "in_training_data": true
+ },
+ "730610": {
+  "subdistrict": "กระทุ่มล้ม",
+  "district": "สามพราน",
+  "province": "นครปฐม",
+  "in_training_data": true
+ },
+ "730611": {
+  "subdistrict": "คลองใหม่",
+  "district": "สามพราน",
+  "province": "นครปฐม",
+  "in_training_data": true
+ },
+ "730612": {
+  "subdistrict": "ตลาดจินดา",
+  "district": "สามพราน",
+  "province": "นครปฐม",
+  "in_training_data": true
+ },
+ "730613": {
+  "subdistrict": "คลองจินดา",
+  "district": "สามพราน",
+  "province": "นครปฐม",
+  "in_training_data": true
+ },
+ "730614": {
+  "subdistrict": "ยายชา",
+  "district": "สามพราน",
+  "province": "นครปฐม",
+  "in_training_data": true
+ },
+ "730615": {
+  "subdistrict": "บ้านใหม่",
+  "district": "สามพราน",
+  "province": "นครปฐม",
+  "in_training_data": true
+ },
+ "730616": {
+  "subdistrict": "อ้อมใหญ่",
+  "district": "สามพราน",
+  "province": "นครปฐม",
+  "in_training_data": true
+ },
+ "730701": {
+  "subdistrict": "ศาลายา",
+  "district": "พุทธมณฑล",
+  "province": "นครปฐม",
+  "in_training_data": true
+ },
+ "730702": {
+  "subdistrict": "คลองโยง",
+  "district": "พุทธมณฑล",
+  "province": "นครปฐม",
+  "in_training_data": true
+ },
+ "730703": {
+  "subdistrict": "มหาสวัสดิ์",
+  "district": "พุทธมณฑล",
+  "province": "นครปฐม",
+  "in_training_data": true
+ },
+ "740101": {
+  "subdistrict": "มหาชัย",
+  "district": "เมืองสมุทรสาคร",
+  "province": "สมุทรสาคร",
+  "in_training_data": true
+ },
+ "740102": {
+  "subdistrict": "ท่าฉลอม",
+  "district": "เมืองสมุทรสาคร",
+  "province": "สมุทรสาคร",
+  "in_training_data": true
+ },
+ "740103": {
+  "subdistrict": "โกรกกราก",
+  "district": "เมืองสมุทรสาคร",
+  "province": "สมุทรสาคร",
+  "in_training_data": true
+ },
+ "740104": {
+  "subdistrict": "บ้านบ่อ",
+  "district": "เมืองสมุทรสาคร",
+  "province": "สมุทรสาคร",
+  "in_training_data": true
+ },
+ "740105": {
+  "subdistrict": "บางโทรัด",
+  "district": "เมืองสมุทรสาคร",
+  "province": "สมุทรสาคร",
+  "in_training_data": true
+ },
+ "740106": {
+  "subdistrict": "กาหลง",
+  "district": "เมืองสมุทรสาคร",
+  "province": "สมุทรสาคร",
+  "in_training_data": true
+ },
+ "740107": {
+  "subdistrict": "นาโคก",
+  "district": "เมืองสมุทรสาคร",
+  "province": "สมุทรสาคร",
+  "in_training_data": true
+ },
+ "740108": {
+  "subdistrict": "ท่าจีน",
+  "district": "เมืองสมุทรสาคร",
+  "province": "สมุทรสาคร",
+  "in_training_data": true
+ },
+ "740109": {
+  "subdistrict": "นาดี",
+  "district": "เมืองสมุทรสาคร",
+  "province": "สมุทรสาคร",
+  "in_training_data": true
+ },
+ "740110": {
+  "subdistrict": "ท่าทราย",
+  "district": "เมืองสมุทรสาคร",
+  "province": "สมุทรสาคร",
+  "in_training_data": true
+ },
+ "740111": {
+  "subdistrict": "คอกกระบือ",
+  "district": "เมืองสมุทรสาคร",
+  "province": "สมุทรสาคร",
+  "in_training_data": true
+ },
+ "740112": {
+  "subdistrict": "บางน้ำจืด",
+  "district": "เมืองสมุทรสาคร",
+  "province": "สมุทรสาคร",
+  "in_training_data": true
+ },
+ "740113": {
+  "subdistrict": "พันท้ายนรสิงห์",
+  "district": "เมืองสมุทรสาคร",
+  "province": "สมุทรสาคร",
+  "in_training_data": true
+ },
+ "740114": {
+  "subdistrict": "โคกขาม",
+  "district": "เมืองสมุทรสาคร",
+  "province": "สมุทรสาคร",
+  "in_training_data": true
+ },
+ "740115": {
+  "subdistrict": "บ้านเกาะ",
+  "district": "เมืองสมุทรสาคร",
+  "province": "สมุทรสาคร",
+  "in_training_data": true
+ },
+ "740116": {
+  "subdistrict": "บางกระเจ้า",
+  "district": "เมืองสมุทรสาคร",
+  "province": "สมุทรสาคร",
+  "in_training_data": true
+ },
+ "740117": {
+  "subdistrict": "บางหญ้าแพรก",
+  "district": "เมืองสมุทรสาคร",
+  "province": "สมุทรสาคร",
+  "in_training_data": true
+ },
+ "740118": {
+  "subdistrict": "ชัยมงคล",
+  "district": "เมืองสมุทรสาคร",
+  "province": "สมุทรสาคร",
+  "in_training_data": true
+ },
+ "740201": {
+  "subdistrict": "ตลาดกระทุ่มแบน",
+  "district": "กระทุ่มแบน",
+  "province": "สมุทรสาคร",
+  "in_training_data": true
+ },
+ "740202": {
+  "subdistrict": "อ้อมน้อย",
+  "district": "กระทุ่มแบน",
+  "province": "สมุทรสาคร",
+  "in_training_data": true
+ },
+ "740203": {
+  "subdistrict": "ท่าไม้",
+  "district": "กระทุ่มแบน",
+  "province": "สมุทรสาคร",
+  "in_training_data": true
+ },
+ "740204": {
+  "subdistrict": "สวนหลวง",
+  "district": "กระทุ่มแบน",
+  "province": "สมุทรสาคร",
+  "in_training_data": true
+ },
+ "740205": {
+  "subdistrict": "บางยาง",
+  "district": "กระทุ่มแบน",
+  "province": "สมุทรสาคร",
+  "in_training_data": true
+ },
+ "740206": {
+  "subdistrict": "คลองมะเดื่อ",
+  "district": "กระทุ่มแบน",
+  "province": "สมุทรสาคร",
+  "in_training_data": true
+ },
+ "740207": {
+  "subdistrict": "หนองนกไข่",
+  "district": "กระทุ่มแบน",
+  "province": "สมุทรสาคร",
+  "in_training_data": true
+ },
+ "740208": {
+  "subdistrict": "ดอนไก่ดี",
+  "district": "กระทุ่มแบน",
+  "province": "สมุทรสาคร",
+  "in_training_data": true
+ },
+ "740209": {
+  "subdistrict": "แคราย",
+  "district": "กระทุ่มแบน",
+  "province": "สมุทรสาคร",
+  "in_training_data": true
+ },
+ "740210": {
+  "subdistrict": "ท่าเสา",
+  "district": "กระทุ่มแบน",
+  "province": "สมุทรสาคร",
+  "in_training_data": true
+ },
+ "740301": {
+  "subdistrict": "บ้านแพ้ว",
+  "district": "บ้านแพ้ว",
+  "province": "สมุทรสาคร",
+  "in_training_data": true
+ },
+ "740302": {
+  "subdistrict": "หลักสาม",
+  "district": "บ้านแพ้ว",
+  "province": "สมุทรสาคร",
+  "in_training_data": true
+ },
+ "740303": {
+  "subdistrict": "ยกกระบัตร",
+  "district": "บ้านแพ้ว",
+  "province": "สมุทรสาคร",
+  "in_training_data": true
+ },
+ "740304": {
+  "subdistrict": "โรงเข้",
+  "district": "บ้านแพ้ว",
+  "province": "สมุทรสาคร",
+  "in_training_data": true
+ },
+ "740305": {
+  "subdistrict": "หนองสองห้อง",
+  "district": "บ้านแพ้ว",
+  "province": "สมุทรสาคร",
+  "in_training_data": true
+ },
+ "740306": {
+  "subdistrict": "หนองบัว",
+  "district": "บ้านแพ้ว",
+  "province": "สมุทรสาคร",
+  "in_training_data": true
+ },
+ "740307": {
+  "subdistrict": "หลักสอง",
+  "district": "บ้านแพ้ว",
+  "province": "สมุทรสาคร",
+  "in_training_data": true
+ },
+ "740308": {
+  "subdistrict": "เจ็ดริ้ว",
+  "district": "บ้านแพ้ว",
+  "province": "สมุทรสาคร",
+  "in_training_data": true
+ },
+ "740309": {
+  "subdistrict": "คลองตัน",
+  "district": "บ้านแพ้ว",
+  "province": "สมุทรสาคร",
+  "in_training_data": true
+ },
+ "740310": {
+  "subdistrict": "อำแพง",
+  "district": "บ้านแพ้ว",
+  "province": "สมุทรสาคร",
+  "in_training_data": true
+ },
+ "740311": {
+  "subdistrict": "สวนส้ม",
+  "district": "บ้านแพ้ว",
+  "province": "สมุทรสาคร",
+  "in_training_data": true
+ },
+ "740312": {
+  "subdistrict": "เกษตรพัฒนา",
+  "district": "บ้านแพ้ว",
+  "province": "สมุทรสาคร",
+  "in_training_data": true
+ }
+}
