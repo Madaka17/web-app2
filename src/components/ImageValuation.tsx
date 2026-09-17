@@ -374,7 +374,7 @@ export function ImageValuation() {
               variant="empty"
               icon={AlertCircle}
               title="เรียกโมเดลไม่สำเร็จ"
-              description={`${predictError} — ตรวจว่า API รันอยู่ที่ http://127.0.0.1:8000`}
+              description={`${predictError} — ตรวจว่า API รันอยู่ที่ http://127.0.0.1:3030`}
             />
           ) : result && mergedInput ? (
             <div className="space-y-6">

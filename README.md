@@ -9,7 +9,7 @@ Price predictions come from a CatBoost + LightGBM + XGBoost ensemble trained on
 from earlier years. Start it before using the app:
 
 ```bash
-cd ml && .venv/bin/python api.py     # http://127.0.0.1:8000
+cd ml && .venv/bin/python api.py     # http://127.0.0.1:3030
 ```
 
 See [ml/README.md](ml/README.md) for accuracy figures, what the model does and

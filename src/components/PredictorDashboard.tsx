@@ -256,7 +256,7 @@ export function PredictorDashboard() {
               variant="empty"
               icon={TrendingUp}
               title="เรียกโมเดลไม่สำเร็จ"
-              description={`${error} — ตรวจว่า API รันอยู่ที่ http://127.0.0.1:8000 (cd ml && .venv/bin/python api.py)`}
+              description={`${error} — ตรวจว่า API รันอยู่ที่ http://127.0.0.1:3030 (cd ml && .venv/bin/python api.py)`}
             />
           ) : result ? (
             <ResultPanel result={result} input={input} />
