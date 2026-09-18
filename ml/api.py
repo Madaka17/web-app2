@@ -101,7 +101,7 @@ def health():
         "status": "ok",
         "models": list(BUNDLE["models"]),
         "weights": {k: float(v) for k, v in BUNDLE["weights"].items()},
-        "trained_on": "Data/dotproperty_listings.csv",
+        "trained_on": "Data/{dotproperty,ddproperty,hipflat,baania}_listings.csv",
         "fit_years": METRICS["protocol"]["served_model_fit_years"],
         "rows_trained": METRICS["rows"]["fit"] + METRICS["rows"]["validation"],
     })
@@ -187,7 +187,7 @@ def predict():
             "median_abs_pct_error": round(calib["MdAPE"], 1),
             "within_20pct": round(calib["within_20pct"], 1),
             "sample_size": calib["n"],
-            "source": "dotproperty asking prices",
+            "source": "asking prices (dotproperty, ddproperty, hipflat, baania)",
         },
     })
 
