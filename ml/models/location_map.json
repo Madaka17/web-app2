@@ -1365,19 +1365,19 @@
   "subdistrict": "บางเสาธง",
   "district": "บางเสาธง",
   "province": "สมุทรปราการ",
-  "in_training_data": false
+  "in_training_data": true
  },
  "110602": {
   "subdistrict": "ศีรษะจรเข้น้อย",
   "district": "บางเสาธง",
   "province": "สมุทรปราการ",
-  "in_training_data": false
+  "in_training_data": true
  },
  "110603": {
   "subdistrict": "ศีรษะจรเข้ใหญ่",
   "district": "บางเสาธง",
   "province": "สมุทรปราการ",
-  "in_training_data": false
+  "in_training_data": true
  },
  "120101": {
   "subdistrict": "สวนใหญ่",

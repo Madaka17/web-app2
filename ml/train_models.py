@@ -1,10 +1,10 @@
 """
-Train CatBoost, LightGBM and XGBoost on the real appraisal data and blend them.
+Train CatBoost, LightGBM and XGBoost on the scraped listings and blend them.
 
 Protocol, chosen so the reported numbers mean something:
-  fit    years 2561-2566
-  weight years 2567          (validation - picks the ensemble weights)
-  score  years 2568-2569     (test - touched only once, at the end)
+  fit    years 2559-2567
+  weight years 2568          (validation - picks the ensemble weights)
+  score  years 2569          (test - touched only once, at the end)
 
 The target is log price per sqm (see prepare_data.log_ppsqm) and the loss is
 absolute error, not squared. Squared error fits the conditional mean, which the
@@ -34,7 +34,7 @@ from prepare_data import (
 OUT = Path(__file__).parent / "models"
 OUT.mkdir(exist_ok=True)
 
-VAL_YEAR = 2567
+VAL_YEAR = 2568
 SEED = 42
 
 

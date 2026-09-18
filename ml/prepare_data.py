@@ -1,9 +1,11 @@
 """
-Load and clean the real appraisal dataset (Data real/appraisal_2561-2569.parquet).
+Load and clean the scraped dotproperty listings (Data/dotproperty_listings.csv).
 
-The file is the only source on this machine carrying real recorded prices
-(appraisal_value). It has 8 columns; six of them are usable as features:
-collateral_type, district, province, area_sqm, n_units, year.
+The appraisal parquet this pipeline was written for is not on this machine, so
+load_raw() reshapes the listings into the same 7-column frame instead. The
+target is the asking price (price_thb), not a recorded appraisal. Six columns
+are usable as features: collateral_type, district, province, area_sqm, n_units
+(always 1 - listings have no unit count), year (from date_posted).
 
 It carries NO bedroom, bathroom, floor, building-age, parking or transit-distance
 column, so the models cannot learn from those even though the web form collects
@@ -24,7 +26,10 @@ from pathlib import Path
 import numpy as np
 import pandas as pd
 
-DATA_PATH = Path("/Users/vexila/Desktop/Data real/appraisal_2561-2569.parquet")
+DATA_PATH = Path(__file__).parent.parent / "Data/dotproperty_listings.csv"
+
+# Listing types the app prices. Shops, warehouses, hotels etc. are dropped.
+PROPERTY_TYPES = ("คอนโด", "บ้านเดี่ยว", "ทาวน์เฮ้าส์", "ที่ดิน")
 
 CATEGORICAL = ["collateral_type", "province", "district"]
 # Everything below is derived in add_features(); none of it is a raw column.
@@ -62,8 +67,9 @@ MAX_VALUE = 200_000_000
 MIN_AREA = 10.0
 MAX_AREA = 20_000.0
 
-# Held out for testing: the most recent years the model has never seen.
-TEST_YEARS = (2568, 2569)
+# Held out for testing: the most recent year the model has never seen.
+# Listings are concentrated in 2568-2569, so only one year can be spared.
+TEST_YEARS = (2569,)
 
 # Comparable lookups, narrowest first. Each is shrunk toward the next one out.
 CELL = ["province", "district", "collateral_type"]
@@ -79,7 +85,25 @@ SHRINK = {"prov_type": 20.0, "district": 20.0, "dt": 20.0, "band": 5.0, "exact":
 
 
 def load_raw() -> pd.DataFrame:
-    return pd.read_parquet(DATA_PATH)
+    df = pd.read_csv(DATA_PATH, usecols=[
+        "project_name", "property_type", "bedrooms", "area_sqm", "price_thb",
+        "district", "province", "date_posted",
+    ])
+    df = df[df["property_type"].isin(PROPERTY_TYPES)].dropna(subset=["date_posted"])
+    # The same unit is often re-posted; keep one copy so it cannot sit in both
+    # train and test.
+    df = df.drop_duplicates(
+        ["project_name", "property_type", "area_sqm", "price_thb", "bedrooms", "district"],
+        keep="last")
+    return pd.DataFrame({
+        "collateral_type": df["property_type"],
+        "province": df["province"],
+        "district": df["district"],
+        "area_sqm": df["area_sqm"],
+        "n_units": 1,
+        "year": (pd.to_datetime(df["date_posted"], utc=True).dt.year + 543).astype(int),
+        TARGET: df["price_thb"],
+    })
 
 
 def clean(df: pd.DataFrame) -> tuple[pd.DataFrame, dict]:

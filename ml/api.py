@@ -32,10 +32,10 @@ METRICS = json.loads((HERE / "models/metrics.json").read_text(encoding="utf-8"))
 
 # The web form's property choices -> the categories the model was trained on.
 PROPERTY_TYPES = {
-    "condo": "ห้องชุด (คอนโดมิเนียม)",
-    "house": "ที่ดิน/สิ่งปลูกสร้าง/ที่ดินพร้อมสิ่งปลูกสร้าง",
-    "townhome": "ที่ดิน/สิ่งปลูกสร้าง/ที่ดินพร้อมสิ่งปลูกสร้าง",
-    "land": "ที่ดิน/สิ่งปลูกสร้าง/ที่ดินพร้อมสิ่งปลูกสร้าง",
+    "condo": "คอนโด",
+    "house": "บ้านเดี่ยว",
+    "townhome": "ทาวน์เฮ้าส์",
+    "land": "ที่ดิน",
 }
 LATEST_YEAR = max(METRICS["protocol"]["served_model_fit_years"])
 # The span the appraisal data actually covers, fit years plus the held-out ones.
@@ -101,7 +101,7 @@ def health():
         "status": "ok",
         "models": list(BUNDLE["models"]),
         "weights": {k: float(v) for k, v in BUNDLE["weights"].items()},
-        "trained_on": "Data real/appraisal_2561-2569.parquet",
+        "trained_on": "Data/dotproperty_listings.csv",
         "fit_years": METRICS["protocol"]["served_model_fit_years"],
         "rows_trained": METRICS["rows"]["fit"] + METRICS["rows"]["validation"],
     })
@@ -187,7 +187,7 @@ def predict():
             "median_abs_pct_error": round(calib["MdAPE"], 1),
             "within_20pct": round(calib["within_20pct"], 1),
             "sample_size": calib["n"],
-            "source": "real appraisal data 2561-2567",
+            "source": "dotproperty asking prices",
         },
     })
 

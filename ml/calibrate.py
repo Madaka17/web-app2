@@ -1,8 +1,9 @@
 """
 Derive prediction intervals from the model's real out-of-sample error.
 
-The served ensemble was fit on 2561-2567 and has never seen 2568-2569, so the
-ratio actual/predicted on those years is an honest picture of how wrong it is.
+The served ensemble has never seen the held-out test years (prepare_data.
+TEST_YEARS), so the ratio actual/predicted there is an honest picture of how
+wrong it is.
 We store the 10th/90th percentile of that ratio per property type and use them
 as the low/high bounds instead of an invented +/-6% band.
 """
@@ -76,7 +77,7 @@ def main() -> None:
     m["calibration"] = calibration
     m["calibration_note"] = (
         "Intervals are the 10th-90th percentile of actual/predicted on the "
-        "held-out years 2568-2569, per property type."
+        "held-out test years, per property type."
     )
     Path("models/metrics.json").write_text(
         json.dumps(m, indent=2, ensure_ascii=False), encoding="utf-8")
