@@ -1,6 +1,7 @@
 import { PredictionInput, PredictionResult } from "./types";
 
-const BASE = import.meta.env.VITE_API_URL ?? "http://127.0.0.1:3030";
+// Same origin by default: the Vite dev server proxies /api to Flask (vite.config.ts).
+const BASE = import.meta.env.VITE_API_URL ?? "";
 
 export interface PredictionMeta {
   province: string;
@@ -19,6 +20,8 @@ export interface PredictionMeta {
 export interface Comparables {
   district_ppsqm: number;
   district_n: number;
+  subdistrict_ppsqm: number;
+  subdistrict_n: number;
   size_band_ppsqm: number;
   size_band_n: number;
   exact_size_ppsqm: number;
