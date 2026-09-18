@@ -34,28 +34,3 @@ export interface PredictionResult {
   contributions: ModelContribution[];
   features: FeatureImportance[];
 }
-
-export type PipelineStatus = "building" | "validating" | "review" | "ready";
-
-export interface PipelineStage {
-  id: PipelineStatus;
-  title: string;
-  subtitle: string;
-  state: "done" | "active" | "queued";
-  progress: number;
-  tasks: string[];
-  badge: { label: string; tone: "green" | "yellow" | "blue" | "gray" };
-}
-
-export interface ModelMetric {
-  name: string;
-  shortName: string;
-  color: string;
-  rmse: number;
-  mae: number;
-  r2: number;
-  mape: number;
-  inferenceMs: number;
-  weight: number;
-  strengths: string[];
-}

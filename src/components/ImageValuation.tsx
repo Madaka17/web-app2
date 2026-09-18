@@ -1,21 +1,17 @@
 import { useState, useRef, useCallback, useEffect } from "react";
 import {
   ImagePlus,
-  Upload,
   X,
   Loader2,
   ScanLine,
-  Sparkles,
-  Home,
   BedDouble,
   Bath,
   Maximize,
   Building2,
-  CheckCircle2,
-  ChevronRight,
+  Check,
   Camera,
-  Wand2,
   AlertCircle,
+  ArrowRight,
 } from "lucide-react";
 import { PredictionInput } from "@/lib/types";
 import { ApiPrediction, predict } from "@/lib/api";
@@ -218,16 +214,20 @@ export function ImageValuation() {
   const allAnalyzed = imageCount > 0 && analyzedCount === imageCount;
 
   return (
-    <div className="space-y-6">
-      <div className="flex items-center gap-2 text-sm text-slate-500 dark:text-slate-400">
-        <span>ประเมินด้วยรูปภาพ</span>
-        <ChevronRight className="w-3.5 h-3.5" />
-        <span className="text-slate-900 dark:text-white font-medium">Image-Based Valuation</span>
+    <div className="space-y-8">
+      <div className="max-w-xl">
+        <h2 className="font-display text-[28px] font-semibold leading-[1.15] tracking-tight text-ink sm:text-[32px]">
+          ถ่ายรูปห้อง แล้วให้ระบบเดาขนาด
+        </h2>
+        <p className="mt-3 text-[14px] leading-relaxed text-muted">
+          ระบบอ่านรูปเพื่อประเมินพื้นที่คร่าว ๆ แล้วส่งเข้าโมเดลราคาเดียวกับหน้าประเมิน
+          <span className="text-faint"> — ตัวอ่านรูปยังเป็นตัวจำลอง ผลจากรูปจึงเป็นค่าประมาณ</span>
+        </p>
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+      <div className="grid grid-cols-1 gap-6 lg:grid-cols-12 lg:gap-8">
         {/* Left: Upload + Images */}
-        <div className="space-y-6">
+        <div className="space-y-5 lg:col-span-5">
           {/* Upload Zone */}
           <div
             onDragOver={(e) => {
@@ -241,14 +241,19 @@ export function ImageValuation() {
               handleFiles(e.dataTransfer.files);
             }}
             onClick={() => fileInputRef.current?.click()}
-            className={`
-              relative cursor-pointer rounded-2xl border-2 border-dashed p-8 text-center transition-all duration-300
-              ${
-                isDragging
-                  ? "border-brand-500 bg-brand-50 dark:bg-brand-500/10 scale-[1.02]"
-                  : "border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900 hover:border-brand-400 dark:hover:border-brand-500/40"
+            role="button"
+            tabIndex={0}
+            onKeyDown={(e) => {
+              if (e.key === "Enter" || e.key === " ") {
+                e.preventDefault();
+                fileInputRef.current?.click();
               }
-            `}
+            }}
+            className={`relative cursor-pointer rounded-2xl border border-dashed p-8 text-center transition-all duration-200 ease-out ${
+              isDragging
+                ? "border-accent bg-accent-soft"
+                : "border-line bg-surface hover:border-faint/70 hover:bg-raised/60"
+            }`}
           >
             <input
               ref={fileInputRef}
@@ -263,21 +268,14 @@ export function ImageValuation() {
               className="hidden"
             />
             <div className="flex flex-col items-center gap-3">
-              <div className="w-16 h-16 rounded-2xl bg-gradient-to-br from-brand-500/10 to-brand-600/5 dark:from-brand-500/15 dark:to-brand-600/10 flex items-center justify-center">
-                <ImagePlus className="w-8 h-8 text-brand-500" />
-              </div>
+              <span className="grid h-11 w-11 place-items-center rounded-xl bg-raised text-muted">
+                <ImagePlus className="h-5 w-5" strokeWidth={1.75} />
+              </span>
               <div>
-                <p className="text-sm font-bold text-slate-900 dark:text-white">
-                  อัปโหลดรูปอสังหาริมทรัพย์
+                <p className="text-[14px] font-semibold text-ink">ลากรูปมาวาง หรือคลิกเลือก</p>
+                <p className="mt-1 text-[12px] text-muted">
+                  รูปภาพเท่านั้น · สูงสุด {MAX_IMAGES} รูป · ไฟล์ละไม่เกิน 10 MB
                 </p>
-                <p className="text-xs text-slate-500 dark:text-slate-400 mt-1">
-                  ลากรูปมาวาง หรือคลิกเพื่อเลือกไฟล์ — ไฟล์รูปภาพเท่านั้น สูงสุด {MAX_IMAGES} รูป
-                  ไฟล์ละไม่เกิน 10 MB
-                </p>
-              </div>
-              <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-brand-500/10 text-brand-600 dark:text-brand-400">
-                <Upload className="w-3.5 h-3.5" />
-                <span className="text-xs font-semibold">เลือกรูปภาพ</span>
               </div>
             </div>
           </div>
@@ -285,10 +283,10 @@ export function ImageValuation() {
           {uploadError && (
             <div
               role="alert"
-              className="flex items-start gap-2 rounded-xl border border-red-200 bg-red-50 px-4 py-3 dark:border-red-500/25 dark:bg-red-500/10"
+              className="flex items-start gap-2 rounded-xl border border-bad/25 bg-bad-soft px-4 py-3"
             >
-              <AlertCircle className="mt-0.5 h-4 w-4 flex-shrink-0 text-red-500" />
-              <p className="text-xs leading-5 text-red-700 dark:text-red-300">
+              <AlertCircle className="mt-0.5 h-4 w-4 flex-shrink-0 text-bad" />
+              <p className="text-[12.5px] leading-5 text-bad">
                 ข้ามบางไฟล์: {uploadError}
               </p>
             </div>
@@ -297,16 +295,13 @@ export function ImageValuation() {
           {/* Uploaded Images */}
           {images.length > 0 && (
             <div className="space-y-3">
-              <div className="flex items-center justify-between">
-                <h3 className="text-sm font-bold text-slate-900 dark:text-white">
-                  รูปที่อัปโหลด ({images.length})
+              <div className="flex items-baseline justify-between">
+                <h3 className="label">
+                  รูป <span className="num">{images.length}</span>/{MAX_IMAGES}
                 </h3>
-                {allAnalyzed && (
-                  <span className="flex items-center gap-1 text-xs font-semibold text-green-600 dark:text-green-400">
-                    <CheckCircle2 className="w-3.5 h-3.5" />
-                    วิเคราะห์เสร็จแล้ว
-                  </span>
-                )}
+                <span className="num text-[11px] text-muted">
+                  {allAnalyzed ? "อ่านครบแล้ว" : `อ่านแล้ว ${analyzedCount}/${images.length}`}
+                </span>
               </div>
 
               <div className="grid grid-cols-2 gap-3">
@@ -319,16 +314,7 @@ export function ImageValuation() {
 
           {/* Location Override */}
           {images.length > 0 && (
-            <div className="rounded-2xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 p-5 shadow-sm">
-              <div className="flex items-center gap-2 mb-4">
-                <div className="p-1.5 rounded-lg bg-orange-50 dark:bg-orange-500/10">
-                  <Home className="w-4 h-4 text-orange-500 dark:text-orange-400" />
-                </div>
-                <h3 className="text-sm font-bold text-slate-900 dark:text-white">
-                  ข้อมูลเพิ่มเติม — ทำเลที่ตั้ง
-                </h3>
-              </div>
-
+            <div className="card p-5 sm:p-6">
               <LocationSelector
                 subdistrictId={subdistrictId}
                 onChange={setSubdistrictId}
@@ -341,33 +327,31 @@ export function ImageValuation() {
             <button
               onClick={handlePredict}
               disabled={!allAnalyzed || isPredicting}
-              className="w-full group relative overflow-hidden rounded-2xl bg-gradient-to-r from-brand-600 to-brand-500 hover:from-brand-700 hover:to-brand-600 text-white font-semibold py-4 px-6 shadow-lg shadow-brand-500/30 transition-all duration-300 disabled:opacity-60 disabled:cursor-not-allowed"
+              className="btn-primary group w-full py-3.5 text-[15px]"
             >
-              <div className="flex items-center justify-center gap-2.5">
-                {isPredicting ? (
-                  <>
-                    <Loader2 className="w-5 h-5 animate-spin" />
-                    <span>กำลังประเมินราคาจากรูปภาพ...</span>
-                  </>
-                ) : (
-                  <>
-                    <Sparkles className="w-5 h-5 group-hover:scale-110 transition-transform" />
-                    <span>ประเมินราคาจากรูปภาพ (Run Image Valuation)</span>
-                  </>
-                )}
-              </div>
+              {isPredicting ? (
+                <>
+                  <Loader2 className="h-4 w-4 animate-spin" />
+                  กำลังประเมิน
+                </>
+              ) : (
+                <>
+                  ประเมินราคาจากรูป
+                  <ArrowRight className="h-4 w-4 transition-transform duration-200 group-hover:translate-x-0.5" />
+                </>
+              )}
             </button>
           )}
         </div>
 
         {/* Right: Results */}
-        <div>
+        <div className="lg:col-span-7">
           {isPredicting ? (
             <StatusPanel
               variant="loading"
               icon={ScanLine}
-              title="AI กำลังประเมินราคา..."
-              description="ส่งพื้นที่และทำเลที่วิเคราะห์ได้เข้าโมเดล Ensemble"
+              title="ส่งพื้นที่กับทำเลเข้าโมเดล"
+              description="ใช้พื้นที่เฉลี่ยจากทุกรูป ประเภททรัพย์เป็นคอนโด"
             />
           ) : predictError ? (
             <StatusPanel
@@ -377,7 +361,7 @@ export function ImageValuation() {
               description={`${predictError} — ตรวจว่า API รันอยู่ที่ http://127.0.0.1:3030`}
             />
           ) : result && mergedInput ? (
-            <div className="space-y-6">
+            <div className="space-y-4">
               <ImageSummary images={images} />
               <ResultPanel result={result} input={mergedInput} />
             </div>
@@ -385,8 +369,8 @@ export function ImageValuation() {
             <StatusPanel
               variant="empty"
               icon={Camera}
-              title="ยังไม่มีผลการประเมิน"
-              description="อัปโหลดรูปภาพอสังหาริมทรัพย์เพื่อให้ AI วิเคราะห์และประเมินราคาให้อัตโนมัติ"
+              title="ยังไม่มีผล"
+              description="อัปโหลดรูปห้องอย่างน้อยหนึ่งรูป รอระบบอ่านเสร็จ แล้วกด “ประเมินราคาจากรูป”"
             />
           )}
         </div>
@@ -397,73 +381,62 @@ export function ImageValuation() {
 
 function ImageCard({ image, onRemove }: { image: UploadedImage; onRemove: () => void }) {
   return (
-    <div className="relative group rounded-xl overflow-hidden border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 shadow-sm">
-      <div className="relative aspect-[4/3] overflow-hidden">
-        <img src={image.url} alt={image.name} className="w-full h-full object-cover" />
+    <div className="group relative overflow-hidden rounded-xl border border-line/80 bg-surface shadow-card">
+      <div className="relative aspect-[4/3] overflow-hidden bg-raised">
+        <img src={image.url} alt={image.name} className="h-full w-full object-cover" />
         <button
           onClick={onRemove}
-          className="absolute top-2 right-2 p-1.5 rounded-lg bg-black/60 backdrop-blur-sm text-white opacity-0 group-hover:opacity-100 transition-opacity hover:bg-red-500/80"
+          className="absolute right-2 top-2 grid h-7 w-7 place-items-center rounded-full bg-ink/60 text-white opacity-0 backdrop-blur transition-all duration-200 hover:bg-bad focus-visible:opacity-100 group-hover:opacity-100 active:scale-90"
+          aria-label={`ลบ ${image.name}`}
         >
-          <X className="w-3.5 h-3.5" />
+          <X className="h-3.5 w-3.5" />
         </button>
 
         {image.isAnalyzing && (
-          <div className="absolute inset-0 bg-black/40 backdrop-blur-sm flex flex-col items-center justify-center gap-2">
-            <ScanLine className="w-6 h-6 text-white animate-pulse" />
-            <span className="text-xs font-semibold text-white">AI กำลังวิเคราะห์...</span>
+          <div className="absolute inset-0 flex flex-col items-center justify-center gap-2 bg-ink/50 backdrop-blur-sm">
+            <ScanLine className="h-5 w-5 animate-pulse text-white" />
+            <span className="text-[11px] font-medium text-white">กำลังอ่านรูป</span>
           </div>
         )}
 
         {image.analysis && (
-          <div className="absolute top-2 left-2 flex items-center gap-1 px-2 py-1 rounded-lg bg-green-500/90 backdrop-blur-sm">
-            <CheckCircle2 className="w-3 h-3 text-white" />
-            <span className="text-[10px] font-bold text-white">Analyzed</span>
-          </div>
+          <span className="absolute left-2 top-2 inline-flex items-center gap-1 rounded-md bg-surface/95 px-1.5 py-0.5 text-[10px] font-semibold text-ok">
+            <Check className="h-3 w-3" strokeWidth={2.5} />
+            {image.analysis.confidence}%
+          </span>
         )}
       </div>
 
       {image.analysis && (
-        <div className="p-3 space-y-2">
-          <div className="flex items-center justify-between">
-            <span className="text-xs font-bold text-slate-900 dark:text-white">
-              {image.analysis.detectedRoom}
+        <div className="space-y-2 p-3">
+          <div className="flex items-baseline justify-between gap-2">
+            <span className="truncate text-[13px] font-semibold text-ink">{image.analysis.detectedRoom}</span>
+            <span className="num flex-shrink-0 text-[11px] text-muted">
+              {image.analysis.condition} · {image.analysis.conditionScore}
             </span>
-            <span className="text-[10px] text-slate-400">
-              {image.analysis.confidence}% match
+          </div>
+
+          <div className="num flex flex-wrap gap-x-3 gap-y-1 text-[11.5px] text-muted">
+            <span className="inline-flex items-center gap-1">
+              <Maximize className="h-3 w-3 text-faint" />
+              {image.analysis.estimatedArea} ตร.ม.
+            </span>
+            <span className="inline-flex items-center gap-1">
+              <BedDouble className="h-3 w-3 text-faint" />
+              {image.analysis.estimatedBedrooms}
+            </span>
+            <span className="inline-flex items-center gap-1">
+              <Bath className="h-3 w-3 text-faint" />
+              {image.analysis.estimatedBathrooms}
             </span>
           </div>
 
           <div className="flex flex-wrap gap-1">
             {image.analysis.detectedFeatures.slice(0, 3).map((f, i) => (
-              <span
-                key={i}
-                className="px-1.5 py-0.5 rounded text-[9px] font-medium bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400"
-              >
+              <span key={i} className="chip border-line bg-raised text-muted">
                 {f}
               </span>
             ))}
-          </div>
-
-          <div className="grid grid-cols-3 gap-1.5 pt-1">
-            <div className="flex items-center gap-1 text-[10px] text-slate-500 dark:text-slate-400">
-              <Maximize className="w-2.5 h-2.5" />
-              {image.analysis.estimatedArea}㎡
-            </div>
-            <div className="flex items-center gap-1 text-[10px] text-slate-500 dark:text-slate-400">
-              <BedDouble className="w-2.5 h-2.5" />
-              {image.analysis.estimatedBedrooms}BR
-            </div>
-            <div className="flex items-center gap-1 text-[10px] text-slate-500 dark:text-slate-400">
-              <Bath className="w-2.5 h-2.5" />
-              {image.analysis.estimatedBathrooms}BA
-            </div>
-          </div>
-
-          <div className="flex items-center justify-between pt-1 border-t border-slate-100 dark:border-slate-800">
-            <span className="text-[10px] text-slate-400">Condition</span>
-            <span className="text-[10px] font-semibold text-slate-700 dark:text-slate-300">
-              {image.analysis.condition} ({image.analysis.conditionScore})
-            </span>
           </div>
         </div>
       )}
@@ -475,58 +448,58 @@ function ImageSummary({ images }: { images: UploadedImage[] }) {
   const analyzed = images.filter((i) => i.analysis);
   if (analyzed.length === 0) return null;
 
-  const avgArea = Math.round(analyzed.reduce((s, i) => s + (i.analysis?.estimatedArea ?? 0), 0) / analyzed.length);
-  const avgBed = Math.round(analyzed.reduce((s, i) => s + (i.analysis?.estimatedBedrooms ?? 0), 0) / analyzed.length);
-  const avgBath = Math.round(analyzed.reduce((s, i) => s + (i.analysis?.estimatedBathrooms ?? 0), 0) / analyzed.length);
-  const avgCond = Math.round(analyzed.reduce((s, i) => s + (i.analysis?.conditionScore ?? 0), 0) / analyzed.length);
+  const avg = (pick: (a: ImageAnalysis) => number) =>
+    Math.round(analyzed.reduce((s, i) => s + (i.analysis ? pick(i.analysis) : 0), 0) / analyzed.length);
+  const avgArea = avg((a) => a.estimatedArea);
+  const avgBed = avg((a) => a.estimatedBedrooms);
+  const avgBath = avg((a) => a.estimatedBathrooms);
+  const avgCond = avg((a) => a.conditionScore);
 
-  const allFeatures = analyzed.flatMap((i) => i.analysis?.detectedFeatures ?? []);
-  const uniqueFeatures = [...new Set(allFeatures)];
+  const uniqueFeatures = [...new Set(analyzed.flatMap((i) => i.analysis?.detectedFeatures ?? []))];
 
   return (
-    <div className="rounded-2xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 p-5 shadow-sm animate-slide-up">
-      <div className="flex items-center gap-2 mb-4">
-        <div className="p-1.5 rounded-lg bg-brand-50 dark:bg-brand-500/10">
-          <Wand2 className="w-4 h-4 text-brand-600 dark:text-brand-400" />
-        </div>
-        <h3 className="text-sm font-bold text-slate-900 dark:text-white">
-          สรุปการวิเคราะห์รูปภาพด้วย AI
-        </h3>
+    <section className="card p-5 animate-slide-up">
+      <div className="flex items-baseline justify-between">
+        <h3 className="label">สรุปจาก {analyzed.length} รูป</h3>
+        <span className="text-[11px] text-faint">เฉพาะพื้นที่ที่ถูกส่งเข้าโมเดล</span>
       </div>
 
-      <div className="grid grid-cols-4 gap-3 mb-4">
-        <SummaryStat icon={Maximize} label="พื้นที่เฉลี่ย" value={`${avgArea}㎡`} />
+      <dl className="mt-4 grid grid-cols-2 gap-x-6 gap-y-3 sm:grid-cols-4">
+        <SummaryStat icon={Maximize} label="พื้นที่เฉลี่ย" value={`${avgArea} ตร.ม.`} emphasis />
         <SummaryStat icon={BedDouble} label="ห้องนอน" value={`${avgBed}`} />
         <SummaryStat icon={Bath} label="ห้องน้ำ" value={`${avgBath}`} />
         <SummaryStat icon={Building2} label="สภาพ" value={`${avgCond}/100`} />
-      </div>
+      </dl>
 
-      <div>
-        <p className="text-xs font-semibold text-slate-600 dark:text-slate-400 mb-2">
-          คุณสมบัติที่ตรวจพบ:
-        </p>
-        <div className="flex flex-wrap gap-1.5">
-          {uniqueFeatures.map((f, i) => (
-            <span
-              key={i}
-              className="flex items-center gap-1 px-2 py-1 rounded-lg bg-green-50 dark:bg-green-500/10 text-xs font-medium text-green-700 dark:text-green-400"
-            >
-              <CheckCircle2 className="w-3 h-3" />
-              {f}
-            </span>
-          ))}
-        </div>
+      <div className="mt-4 flex flex-wrap gap-1.5 border-t border-line/70 pt-4">
+        {uniqueFeatures.map((f, i) => (
+          <span key={i} className="chip border-ok/20 bg-ok-soft text-ok">
+            {f}
+          </span>
+        ))}
       </div>
-    </div>
+    </section>
   );
 }
 
-function SummaryStat({ icon: Icon, label, value }: { icon: typeof Home; label: string; value: string }) {
+function SummaryStat({
+  icon: Icon,
+  label,
+  value,
+  emphasis,
+}: {
+  icon: typeof Maximize;
+  label: string;
+  value: string;
+  emphasis?: boolean;
+}) {
   return (
-    <div className="rounded-xl bg-slate-50 dark:bg-slate-800/50 p-3 text-center">
-      <Icon className="w-4 h-4 text-brand-500 mx-auto mb-1" />
-      <p className="text-sm font-bold text-slate-900 dark:text-white">{value}</p>
-      <p className="text-[10px] text-slate-400">{label}</p>
+    <div>
+      <dt className="flex items-center gap-1.5 text-[11px] text-muted">
+        <Icon className="h-3 w-3 text-faint" strokeWidth={1.75} />
+        {label}
+      </dt>
+      <dd className={`num mt-0.5 font-medium text-ink ${emphasis ? "text-[20px]" : "text-[15px]"}`}>{value}</dd>
     </div>
   );
 }

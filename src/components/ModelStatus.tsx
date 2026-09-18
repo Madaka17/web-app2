@@ -1,61 +1,50 @@
-import { useEffect, useState } from "react";
-import { CircleAlert, Cpu, Loader2 } from "lucide-react";
-import { getHealth, ModelHealth } from "@/lib/api";
+import { CircleAlert, Loader2 } from "lucide-react";
+import { useModelHealth } from "@/lib/useApi";
 
-/** Shows whether the page is talking to the trained ensemble or nothing at all. */
+/** One line under the page title: is the page talking to the trained ensemble or not. */
 export function ModelStatus() {
-  const [health, setHealth] = useState<ModelHealth | null>(null);
-  const [failed, setFailed] = useState(false);
+  const health = useModelHealth();
 
-  useEffect(() => {
-    const controller = new AbortController();
-    getHealth(controller.signal)
-      .then(setHealth)
-      .catch((e: Error) => {
-        if (e.name !== "AbortError") setFailed(true);
-      });
-    return () => controller.abort();
-  }, []);
-
-  if (failed) {
+  if (health.status === "error") {
     return (
-      <div className="flex items-start gap-2.5 rounded-xl border border-red-200 bg-red-50 px-4 py-3 dark:border-red-500/25 dark:bg-red-500/10">
-        <CircleAlert className="mt-0.5 h-4 w-4 flex-shrink-0 text-red-500" />
-        <p className="text-xs leading-5 text-red-700 dark:text-red-300">
+      <div
+        role="alert"
+        className="flex items-start gap-2.5 rounded-xl border border-bad/25 bg-bad-soft px-4 py-3 text-[13px] leading-relaxed text-bad"
+      >
+        <CircleAlert className="mt-0.5 h-4 w-4 flex-shrink-0" />
+        <p>
           ต่อกับ Model API ไม่ได้ — เปิดด้วย{" "}
-          <code className="rounded bg-red-100 px-1 dark:bg-red-500/20">
-            cd ml &amp;&amp; .venv/bin/python api.py
-          </code>
+          <code className="num rounded bg-bad/10 px-1.5 py-0.5 text-xs">cd ml &amp;&amp; python api.py</code>{" "}
+          แล้วรีเฟรชหน้านี้
         </p>
       </div>
     );
   }
 
-  if (!health) {
+  if (health.status === "loading") {
     return (
-      <div className="flex items-center gap-2 rounded-xl border border-slate-200 bg-white px-4 py-3 dark:border-slate-800 dark:bg-slate-900">
-        <Loader2 className="h-4 w-4 animate-spin text-slate-400" />
-        <p className="text-xs text-slate-500 dark:text-slate-400">กำลังเช็คสถานะโมเดล...</p>
-      </div>
+      <p className="flex items-center gap-2 text-xs text-muted">
+        <Loader2 className="h-3.5 w-3.5 animate-spin" />
+        กำลังเช็คสถานะโมเดล
+      </p>
     );
   }
 
-  const weights = Object.entries(health.weights)
-    .sort((a, b) => b[1] - a[1])
-    .map(([name, w]) => `${name} ${Math.round(w * 100)}%`)
-    .join(" · ");
+  const { data } = health;
+  const years = `${Math.min(...data.fit_years)}–${Math.max(...data.fit_years)}`;
 
   return (
-    <div className="flex flex-wrap items-center gap-x-3 gap-y-1 rounded-xl border border-green-200 bg-green-50 px-4 py-3 dark:border-green-500/25 dark:bg-green-500/10">
-      <span className="flex items-center gap-1.5 text-xs font-bold text-green-700 dark:text-green-400">
-        <Cpu className="h-3.5 w-3.5" />
-        โมเดลจริงพร้อมใช้งาน
+    <p className="flex flex-wrap items-center gap-x-2 gap-y-1 text-xs text-muted">
+      <span className="inline-flex items-center gap-1.5 font-medium text-ok">
+        <span className="h-1.5 w-1.5 rounded-full bg-ok" />
+        โมเดลพร้อม
       </span>
-      <span className="text-xs text-green-800/80 dark:text-green-300/80">{weights}</span>
-      <span className="text-xs text-green-800/60 dark:text-green-300/60">
-        เทรนจากข้อมูลประเมินจริง {health.rows_trained.toLocaleString("en-US")} รายการ (ปี{" "}
-        {Math.min(...health.fit_years)}–{Math.max(...health.fit_years)})
+      <span className="text-faint">·</span>
+      <span>
+        เทรนจากประกาศ <span className="num text-ink">{data.rows_trained.toLocaleString("en-US")}</span> รายการ
       </span>
-    </div>
+      <span className="text-faint">·</span>
+      <span>ปี {years}</span>
+    </p>
   );
 }

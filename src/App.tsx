@@ -15,7 +15,7 @@ function AppContent() {
   const [sidebarOpen, setSidebarOpen] = useState(false);
 
   return (
-    <div className="min-h-screen bg-slate-50 dark:bg-slate-950 transition-colors">
+    <div className="min-h-dvh bg-canvas text-ink">
       <div className="flex">
         <Sidebar
           activePage={activePage}
@@ -24,22 +24,10 @@ function AppContent() {
           onClose={() => setSidebarOpen(false)}
         />
 
-        <div className="flex-1 min-w-0">
-          <Header onMenuClick={() => setSidebarOpen(true)} />
+        <div className="min-w-0 flex-1">
+          <Header activePage={activePage} onMenuClick={() => setSidebarOpen(true)} />
 
-          <main className="p-4 sm:p-6 lg:p-8 max-w-7xl mx-auto">
-            <div className="mb-6 flex items-start gap-2.5 rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 dark:border-amber-500/25 dark:bg-amber-500/10">
-              <span className="mt-0.5 rounded bg-amber-400 px-1.5 py-0.5 text-[10px] font-bold text-slate-900">
-                ข้อจำกัด
-              </span>
-              <p className="text-xs leading-5 text-amber-800 dark:text-amber-200">
-                โมเดล CatBoost / LightGBM / XGBoost เทรนจากข้อมูลประเมินจริง 250,697 รายการ (ปี
-                2561–2567) แต่ข้อมูลชุดนี้มีแค่ พื้นที่ · ประเภท · เขต · จังหวัด · จำนวนหน่วย · ปี
-                ค่าคลาดเคลื่อนกลางจึงอยู่ที่ 20% (คอนโด) ถึง 34% (บ้าน/ที่ดิน) —
-                ใช้เป็นตัวเลขตั้งต้น ไม่ใช่ราคาประเมินทางการ
-              </p>
-            </div>
-
+          <main className="mx-auto w-full max-w-6xl px-4 py-6 sm:px-6 lg:px-8 lg:py-8">
             {activePage === "predictor" && <PredictorDashboard />}
             {activePage === "used-homes" && <UsedHomes />}
             {activePage === "image-valuation" && <ImageValuation />}
@@ -47,13 +35,15 @@ function AppContent() {
             {activePage === "metrics" && <ModelMetrics />}
           </main>
 
-          <footer className="px-4 sm:px-6 lg:px-8 py-6 border-t border-slate-200 dark:border-slate-800 mt-8">
-            <div className="max-w-7xl mx-auto flex flex-col sm:flex-row items-center justify-between gap-2">
-              <p className="text-xs text-slate-400 dark:text-slate-600">
-                AI Real Estate Price Predictor — CatBoost · LightGBM · XGBoost ensemble
+          <footer className="mx-auto mt-6 w-full max-w-6xl px-4 pb-8 sm:px-6 lg:px-8">
+            <div className="flex flex-col gap-1.5 border-t border-line/70 pt-5 text-[11.5px] leading-relaxed text-faint sm:flex-row sm:items-start sm:justify-between">
+              <p>
+                CatBoost · LightGBM · XGBoost — เทรนจากประกาศขายบน dotproperty
+                ทดสอบกับปีที่โมเดลไม่เคยเห็น
               </p>
-              <p className="text-xs text-slate-400 dark:text-slate-600">
-                เทรนจากข้อมูลประเมินจริง 2561–2567 · ทดสอบกับปี 2568–2569
+              <p className="sm:max-w-sm sm:text-right">
+                โมเดลเห็นแค่ ประเภท · พื้นที่ · เขต · จังหวัด · ปี — ใช้เป็นตัวเลขตั้งต้น
+                ไม่ใช่ราคาประเมินทางการ
               </p>
             </div>
           </footer>

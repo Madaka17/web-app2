@@ -6,9 +6,9 @@
 export const DEFAULT_SUBDISTRICT_ID = "103301"; // แขวงคลองเตย เขตคลองเตย กรุงเทพมหานคร
 
 /**
- * The appraisal data runs 2561-2569 (BE); the served model is fit through 2567,
- * so that is what an unspecified valuation is dated to.
+ * The listings run 2559-2569 (BE) but are thin before 2561; the served model
+ * is fit through 2568, so an unspecified valuation is dated to the current year.
  */
 export const YEAR_MIN = 2561;
 export const YEAR_MAX = 2569;
-export const DEFAULT_YEAR = 2567;
+export const DEFAULT_YEAR = 2569;

@@ -27,6 +27,41 @@ export interface ModelHealth {
   rows_trained: number;
 }
 
+export interface TestMetrics {
+  RMSE: number;
+  MAE: number;
+  R2: number;
+  MAPE: number;
+  MdAPE: number;
+  Within_10Pct: number;
+  Within_20Pct: number;
+}
+
+export interface Calibration {
+  n: number;
+  q10: number;
+  q90: number;
+  median_ratio: number;
+  MdAPE: number;
+  within_20pct: number;
+}
+
+/** Shape of ml/models/metrics.json, served verbatim by /api/metrics. */
+export interface ModelMetricsReport {
+  protocol: {
+    fit_years: number[];
+    validation_year: number;
+    test_years: number[];
+    served_model_fit_years: number[];
+  };
+  rows: { fit: number; validation: number; test: number };
+  cleaning: Record<string, number>;
+  features: string[];
+  feature_importance: Record<string, number>;
+  results: Record<string, { test: TestMetrics; weight: number; train_seconds?: number }>;
+  calibration?: Record<string, Calibration>;
+}
+
 async function request<T>(path: string, init?: RequestInit): Promise<T> {
   const res = await fetch(`${BASE}${path}`, init);
   if (!res.ok) {
@@ -38,6 +73,10 @@ async function request<T>(path: string, init?: RequestInit): Promise<T> {
 
 export function getHealth(signal?: AbortSignal): Promise<ModelHealth> {
   return request<ModelHealth>("/api/health", { signal });
+}
+
+export function getMetrics(signal?: AbortSignal): Promise<ModelMetricsReport> {
+  return request<ModelMetricsReport>("/api/metrics", { signal });
 }
 
 export function predict(

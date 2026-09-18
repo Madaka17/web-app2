@@ -25,23 +25,23 @@ export class ErrorBoundary extends Component<Props, State> {
     if (!error) return this.props.children;
 
     return (
-      <div className="min-h-screen flex items-center justify-center bg-slate-50 dark:bg-slate-950 p-6">
-        <div className="max-w-md w-full rounded-2xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 p-6 text-center shadow-sm">
-          <div className="mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-2xl bg-red-50 dark:bg-red-500/10">
-            <AlertTriangle className="h-7 w-7 text-red-500" />
+      <div className="flex min-h-dvh items-center justify-center bg-canvas p-6">
+        <div className="card w-full max-w-md p-6 text-center">
+          <div className="mx-auto mb-4 grid h-11 w-11 place-items-center rounded-xl bg-bad-soft">
+            <AlertTriangle className="h-5 w-5 text-bad" />
           </div>
-          <h1 className="text-base font-bold text-slate-900 dark:text-white">
+          <h1 className="font-display text-[16px] font-semibold text-ink">
             เกิดข้อผิดพลาดในหน้านี้
           </h1>
-          <p className="mt-2 text-sm text-slate-500 dark:text-slate-400">
+          <p className="mt-2 text-sm text-muted">
             ระบบหยุดทำงานชั่วคราว ลองโหลดหน้าใหม่อีกครั้ง
           </p>
-          <pre className="mt-3 overflow-x-auto rounded-lg bg-slate-50 dark:bg-slate-800/60 p-3 text-left text-[11px] text-slate-500 dark:text-slate-400">
+          <pre className="num mt-3 overflow-x-auto rounded-lg bg-raised p-3 text-left text-[11px] text-muted">
             {error.message}
           </pre>
           <button
             onClick={() => window.location.reload()}
-            className="mt-4 inline-flex items-center gap-2 rounded-xl bg-brand-600 px-4 py-2.5 text-sm font-semibold text-white transition-colors hover:bg-brand-700"
+            className="btn-primary mt-4"
           >
             <RotateCcw className="h-4 w-4" />
             โหลดหน้าใหม่

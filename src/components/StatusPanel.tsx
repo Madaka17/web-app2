@@ -4,36 +4,49 @@ interface StatusPanelProps {
   icon: LucideIcon;
   title: string;
   description: string;
-  /** "empty" draws a dashed placeholder, "loading" draws a spinning ring. */
+  /** "empty" draws a dashed placeholder, "loading" draws a result skeleton. */
   variant: "empty" | "loading";
 }
 
 export function StatusPanel({ icon: Icon, title, description, variant }: StatusPanelProps) {
-  const isLoading = variant === "loading";
-
-  return (
-    <div
-      className={`h-full min-h-[400px] rounded-2xl bg-white dark:bg-slate-900 flex flex-col items-center justify-center p-8 text-center border ${
-        isLoading
-          ? "border-slate-200 dark:border-slate-800"
-          : "border-dashed border-slate-300 dark:border-slate-700"
-      }`}
-    >
-      {isLoading ? (
-        <div className="relative w-20 h-20 mb-6">
-          <div className="absolute inset-0 rounded-full border-4 border-slate-200 dark:border-slate-800" />
-          <div className="absolute inset-0 rounded-full border-4 border-brand-500 border-t-transparent animate-spin" />
-          <div className="absolute inset-0 flex items-center justify-center">
-            <Icon className="w-8 h-8 text-brand-500 animate-pulse" />
+  if (variant === "loading") {
+    return (
+      <div className="card animate-fade-in p-6" role="status" aria-live="polite">
+        <span className="sr-only">{title}</span>
+        <div className="flex items-center gap-2 text-xs text-muted">
+          <Icon className="h-3.5 w-3.5 animate-pulse text-accent" />
+          {title}
+        </div>
+        <div className="mt-5 space-y-3">
+          <Bone className="h-3 w-24" />
+          <Bone className="h-11 w-3/4" />
+          <div className="flex gap-2 pt-1">
+            <Bone className="h-6 w-28" />
+            <Bone className="h-6 w-28" />
           </div>
         </div>
-      ) : (
-        <div className="w-16 h-16 rounded-2xl bg-slate-100 dark:bg-slate-800 flex items-center justify-center mb-4">
-          <Icon className="w-8 h-8 text-slate-400 dark:text-slate-600" />
+        <div className="mt-8 space-y-2.5">
+          <Bone className="h-3 w-32" />
+          <Bone className="h-2.5 w-full" />
+          <Bone className="h-2.5 w-5/6" />
+          <Bone className="h-2.5 w-2/3" />
         </div>
-      )}
-      <h3 className="text-base font-bold text-slate-700 dark:text-slate-300 mb-2">{title}</h3>
-      <p className="text-sm text-slate-500 dark:text-slate-400 max-w-xs">{description}</p>
+        <p className="mt-6 text-[11px] text-faint">{description}</p>
+      </div>
+    );
+  }
+
+  return (
+    <div className="flex h-full min-h-[380px] flex-col items-center justify-center rounded-2xl border border-dashed border-line bg-surface/60 p-8 text-center">
+      <span className="grid h-11 w-11 place-items-center rounded-xl bg-raised text-faint">
+        <Icon className="h-5 w-5" strokeWidth={1.75} />
+      </span>
+      <h3 className="mt-4 font-display text-[15px] font-semibold text-ink">{title}</h3>
+      <p className="mt-1.5 max-w-xs text-[13px] leading-relaxed text-muted">{description}</p>
     </div>
   );
+}
+
+function Bone({ className }: { className: string }) {
+  return <div className={`animate-pulse rounded-md bg-raised ${className}`} />;
 }

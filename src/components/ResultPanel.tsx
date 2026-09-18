@@ -1,9 +1,4 @@
 import {
-  TrendingUp,
-  CheckCircle2,
-  Info,
-  ArrowUp,
-  ArrowDown,
   Train,
   Maximize,
   MapPin,
@@ -15,8 +10,9 @@ import {
   FileJson,
   FileText,
   FileSpreadsheet,
+  Check,
 } from "lucide-react";
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { PredictionInput } from "@/lib/types";
 import { formatBaht } from "@/lib/prediction";
 import { ApiPrediction } from "@/lib/api";
@@ -40,7 +36,172 @@ interface ResultPanelProps {
 export function ResultPanel({ result, input }: ResultPanelProps) {
   const maxFeatureValue = Math.max(...result.features.map((f) => f.value));
   const barTotal = result.contributions.reduce((sum, c) => sum + c.weight, 0);
-  const [menuOpen, setMenuOpen] = useState(false);
+  const perSqm = result.predictedPrice / input.area;
+  // Where the point estimate sits inside its own interval, for the range rule.
+  const span = result.upperBound - result.lowerBound || 1;
+  const pointPct = ((result.predictedPrice - result.lowerBound) / span) * 100;
+
+  return (
+    <div className="space-y-4 animate-slide-up">
+      {/* Price */}
+      <section className="card relative overflow-hidden p-6 sm:p-7">
+        <div className="bg-grid pointer-events-none absolute inset-0 opacity-60 [mask-image:linear-gradient(to_bottom_left,black,transparent_60%)]" />
+        <div className="relative">
+          <div className="flex flex-wrap items-start justify-between gap-3">
+            <div>
+              <p className="label">ราคาคาดการณ์ · {result.meta.collateral_type}</p>
+              <p className="mt-2 font-display text-[40px] font-semibold leading-none tracking-tight text-accent sm:text-[48px]">
+                {formatBaht(result.predictedPrice)}
+              </p>
+              <p className="mt-2 text-[13px] text-muted">
+                ≈ <span className="num text-ink">฿{Math.round(perSqm).toLocaleString("en-US")}</span> ต่อ ตร.ม. ·{" "}
+                {result.meta.subdistrict}, {result.meta.district}
+              </p>
+            </div>
+            <DownloadMenu input={input} result={result} />
+          </div>
+
+          {/* Interval rule */}
+          <div className="mt-7">
+            <div className="relative h-1.5 rounded-full bg-line">
+              <div
+                className="absolute top-1/2 h-3.5 w-0.5 -translate-y-1/2 rounded-full bg-ink"
+                style={{ left: `${pointPct}%` }}
+                aria-hidden="true"
+              />
+            </div>
+            <div className="mt-2 flex justify-between text-[12px]">
+              <span className="text-muted">
+                ต่ำ <span className="num font-medium text-ink">{formatBaht(result.lowerBound)}</span>
+              </span>
+              <span className="text-muted">
+                สูง <span className="num font-medium text-ink">{formatBaht(result.upperBound)}</span>
+              </span>
+            </div>
+            <p className="mt-2 text-[11.5px] leading-relaxed text-faint">
+              ช่วงนี้คือเปอร์เซ็นไทล์ที่ 10–90 ของ ราคาจริง ÷ ราคาที่ทำนาย บนชุดทดสอบของ{result.meta.collateral_type}
+            </p>
+          </div>
+        </div>
+      </section>
+
+      {/* Accuracy + ensemble, side by side with different weights */}
+      <div className="grid grid-cols-1 gap-4 md:grid-cols-5">
+        <section className="card p-5 md:col-span-2">
+          <h3 className="label">แม่นแค่ไหนกับกลุ่มนี้</h3>
+          <dl className="mt-4 space-y-3.5">
+            <Stat label="ถูกต้องภายใน ±20%" value={`${result.meta.within_20pct}%`} emphasis />
+            <Stat label="คลาดเคลื่อนกลาง" value={`${result.meta.median_abs_pct_error}%`} />
+            <Stat label="ตัวอย่างที่วัด" value={result.meta.sample_size.toLocaleString("en-US")} />
+          </dl>
+          <p className="mt-4 border-t border-line/80 pt-3 text-[11.5px] leading-relaxed text-faint">
+            วัดจากประกาศปีล่าสุดที่โมเดลไม่เคยเห็นตอนเทรน
+            {!result.meta.district_in_training_data && (
+              <span className="mt-1 block text-warn">
+                เขตนี้ไม่มีในข้อมูลเทรน — ใช้ค่าระดับจังหวัดแทน
+              </span>
+            )}
+          </p>
+        </section>
+
+        <section className="card p-5 md:col-span-3">
+          <div className="flex items-baseline justify-between">
+            <h3 className="label">สามโมเดลว่าอย่างไร</h3>
+            <span className="text-[11px] text-faint">น้ำหนักเลือกจากชุด validation</span>
+          </div>
+
+          <div className="mt-4 flex h-2 gap-0.5 overflow-hidden rounded-full">
+            {result.contributions.map((c) => (
+              <div
+                key={c.name}
+                className="h-full origin-left animate-grow-x rounded-sm"
+                style={{ width: `${(c.weight / barTotal) * 100}%`, backgroundColor: c.color }}
+              />
+            ))}
+          </div>
+
+          <ul className="mt-4 divide-y divide-line/70">
+            {result.contributions.map((c) => (
+              <li key={c.name} className="flex items-center gap-3 py-2 first:pt-0 last:pb-0">
+                <span className="h-2.5 w-2.5 flex-shrink-0 rounded-sm" style={{ backgroundColor: c.color }} />
+                <span className="flex-1 text-[13px] font-medium text-ink">{c.name}</span>
+                <span className="num w-10 text-right text-[12px] text-muted">
+                  {(c.weight * 100).toFixed(0)}%
+                </span>
+                <span className="num w-28 text-right text-[13px] text-ink">{formatBaht(c.prediction)}</span>
+              </li>
+            ))}
+          </ul>
+        </section>
+      </div>
+
+      {/* Feature importance */}
+      <section className="card p-5 sm:p-6">
+        <div className="flex items-baseline justify-between">
+          <h3 className="label">อะไรดันราคามากที่สุด</h3>
+          <span className="text-[11px] text-faint">ความสำคัญจาก CatBoost</span>
+        </div>
+        <ul className="mt-4 space-y-3">
+          {result.features.map((feature, i) => {
+            const Icon = ICON_MAP[feature.icon] ?? MapPin;
+            const widthPct = (feature.value / maxFeatureValue) * 100;
+            return (
+              <li key={i} className="grid grid-cols-[auto_minmax(0,1fr)_auto] items-center gap-3">
+                <Icon className="h-3.5 w-3.5 text-faint" strokeWidth={1.75} />
+                <div className="min-w-0">
+                  <div className="flex items-baseline justify-between gap-3">
+                    <span className="truncate text-[13px] text-ink">{feature.label}</span>
+                  </div>
+                  <div className="mt-1.5 h-1.5 overflow-hidden rounded-full bg-raised">
+                    <div
+                      className="h-full origin-left animate-grow-x rounded-full bg-ink/80"
+                      style={{ width: `${widthPct}%`, animationDelay: `${i * 40}ms` }}
+                    />
+                  </div>
+                </div>
+                <span className="num w-10 text-right text-[12px] text-muted">
+                  {(feature.value * 100).toFixed(0)}%
+                </span>
+              </li>
+            );
+          })}
+        </ul>
+      </section>
+    </div>
+  );
+}
+
+function Stat({ label, value, emphasis }: { label: string; value: string; emphasis?: boolean }) {
+  return (
+    <div className="flex items-baseline justify-between gap-3">
+      <dt className="text-[13px] text-muted">{label}</dt>
+      <dd className={`num font-medium ${emphasis ? "text-[22px] text-ink" : "text-[15px] text-ink"}`}>
+        {value}
+      </dd>
+    </div>
+  );
+}
+
+function DownloadMenu({ input, result }: ResultPanelProps) {
+  const [open, setOpen] = useState(false);
+  const [done, setDone] = useState<string | null>(null);
+  const rootRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    if (!open) return;
+    const onClick = (e: MouseEvent) => {
+      if (!rootRef.current?.contains(e.target as Node)) setOpen(false);
+    };
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === "Escape") setOpen(false);
+    };
+    document.addEventListener("mousedown", onClick);
+    document.addEventListener("keydown", onKey);
+    return () => {
+      document.removeEventListener("mousedown", onClick);
+      document.removeEventListener("keydown", onKey);
+    };
+  }, [open]);
 
   const handleDownload = (format: "json" | "csv" | "txt") => {
     const ts = new Date().toISOString().slice(0, 19).replace(/[:T]/g, "-");
@@ -51,226 +212,50 @@ export function ResultPanel({ result, input }: ResultPanelProps) {
     } else {
       downloadFile(reportToText(input, result), `prediction-report-${ts}.txt`, "text/plain");
     }
-    setMenuOpen(false);
+    setOpen(false);
+    setDone(format);
+    window.setTimeout(() => setDone(null), 1600);
   };
 
+  const options = [
+    { id: "json" as const, icon: FileJson, label: "JSON", hint: "ข้อมูลดิบ" },
+    { id: "csv" as const, icon: FileSpreadsheet, label: "CSV", hint: "เปิดใน Excel / Sheets" },
+    { id: "txt" as const, icon: FileText, label: "Text", hint: "สรุปอ่านง่าย" },
+  ];
+
   return (
-    <div className="space-y-6 animate-slide-up">
-      {/* Price Display */}
-      <div className="relative overflow-hidden rounded-2xl bg-gradient-to-br from-brand-600 via-brand-600 to-brand-800 p-6 shadow-xl shadow-brand-500/20">
-        <div className="absolute top-0 right-0 w-40 h-40 bg-white/10 rounded-full blur-3xl -mr-10 -mt-10" />
-        <div className="absolute bottom-0 left-0 w-32 h-32 bg-brand-400/20 rounded-full blur-3xl -ml-8 -mb-8" />
-
-        <div className="relative">
-          <div className="flex items-center gap-2 mb-3">
-            <div className="p-1.5 rounded-lg bg-white/15 backdrop-blur-sm">
-              <TrendingUp className="w-4 h-4 text-white" />
-            </div>
-            <span className="text-sm font-medium text-brand-100">ราคาประเมินคาดการณ์</span>
-          </div>
-
-          <p className="text-4xl sm:text-5xl font-bold text-white tracking-tight mb-3">
-            {formatBaht(result.predictedPrice)}
-          </p>
-
-          <div className="flex flex-wrap items-center gap-3">
-            <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-white/15 backdrop-blur-sm">
-              <ArrowDown className="w-3.5 h-3.5 text-green-300" />
-              <span className="text-xs font-semibold text-white">
-                ต่ำสุด {formatBaht(result.lowerBound)}
-              </span>
-            </div>
-            <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-white/15 backdrop-blur-sm">
-              <ArrowUp className="w-3.5 h-3.5 text-orange-300" />
-              <span className="text-xs font-semibold text-white">
-                สูงสุด {formatBaht(result.upperBound)}
-              </span>
-            </div>
-          </div>
-
-          <div className="mt-4 flex items-center gap-2">
-            <div className="flex-1 h-1.5 bg-white/20 rounded-full overflow-hidden">
-              <div
-                className="h-full bg-gradient-to-r from-green-400 to-green-300 rounded-full"
-                style={{ width: `${result.confidence}%` }}
-              />
-            </div>
-            <span className="text-xs font-semibold text-white">
-              {result.confidence.toFixed(1)}% เข้าเป้า ±20%
-            </span>
-          </div>
-
-          {/* Download button */}
-          <div className="mt-4 relative">
+    <div className="relative" ref={rootRef}>
+      <button
+        type="button"
+        onClick={() => setOpen((v) => !v)}
+        aria-haspopup="menu"
+        aria-expanded={open}
+        className="btn-ghost"
+      >
+        {done ? <Check className="h-4 w-4 text-ok" /> : <Download className="h-4 w-4" />}
+        {done ? "บันทึกแล้ว" : "บันทึกรายงาน"}
+      </button>
+      {open && (
+        <div
+          role="menu"
+          className="absolute right-0 top-full z-20 mt-1.5 w-56 overflow-hidden rounded-xl border border-line bg-surface p-1 shadow-pop animate-fade-in"
+        >
+          {options.map((o) => (
             <button
-              onClick={() => setMenuOpen((v) => !v)}
-              className="flex items-center gap-2 px-4 py-2 rounded-xl bg-white/15 hover:bg-white/25 backdrop-blur-sm text-white text-xs font-semibold transition-all"
+              key={o.id}
+              role="menuitem"
+              onClick={() => handleDownload(o.id)}
+              className="flex w-full items-center gap-3 rounded-lg px-3 py-2 text-left transition-colors hover:bg-raised"
             >
-              <Download className="w-4 h-4" />
-              ดาวน์โหลดรายงาน (Download Report)
+              <o.icon className="h-4 w-4 flex-shrink-0 text-muted" strokeWidth={1.75} />
+              <span>
+                <span className="block text-[13px] font-medium text-ink">{o.label}</span>
+                <span className="block text-[11px] text-faint">{o.hint}</span>
+              </span>
             </button>
-            {menuOpen && (
-              <>
-                <div
-                  className="fixed inset-0 z-10"
-                  onClick={() => setMenuOpen(false)}
-                />
-                <div className="absolute bottom-full mb-2 left-0 z-20 w-56 rounded-xl bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 shadow-xl overflow-hidden animate-fade-in">
-                  <button
-                    onClick={() => handleDownload("json")}
-                    className="w-full flex items-center gap-3 px-4 py-3 hover:bg-slate-50 dark:hover:bg-slate-700/50 transition-colors text-left"
-                  >
-                    <FileJson className="w-4 h-4 text-brand-500 flex-shrink-0" />
-                    <div>
-                      <p className="text-xs font-semibold text-slate-900 dark:text-white">JSON</p>
-                      <p className="text-[10px] text-slate-400">ข้อมูลดิบสำหรับนำไปประมวลผลต่อ</p>
-                    </div>
-                  </button>
-                  <button
-                    onClick={() => handleDownload("csv")}
-                    className="w-full flex items-center gap-3 px-4 py-3 hover:bg-slate-50 dark:hover:bg-slate-700/50 transition-colors text-left border-t border-slate-100 dark:border-slate-700"
-                  >
-                    <FileSpreadsheet className="w-4 h-4 text-green-500 flex-shrink-0" />
-                    <div>
-                      <p className="text-xs font-semibold text-slate-900 dark:text-white">CSV</p>
-                      <p className="text-[10px] text-slate-400">เปิดด้วย Excel / Google Sheets</p>
-                    </div>
-                  </button>
-                  <button
-                    onClick={() => handleDownload("txt")}
-                    className="w-full flex items-center gap-3 px-4 py-3 hover:bg-slate-50 dark:hover:bg-slate-700/50 transition-colors text-left border-t border-slate-100 dark:border-slate-700"
-                  >
-                    <FileText className="w-4 h-4 text-orange-500 flex-shrink-0" />
-                    <div>
-                      <p className="text-xs font-semibold text-slate-900 dark:text-white">Text</p>
-                      <p className="text-[10px] text-slate-400">รายงานสรุปแบบอ่านง่าย</p>
-                    </div>
-                  </button>
-                </div>
-              </>
-            )}
-          </div>
-        </div>
-      </div>
-
-      {/* What the model actually used */}
-      <div className="rounded-2xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 p-5 shadow-sm">
-        <div className="flex items-center gap-2 mb-3">
-          <div className="p-1.5 rounded-lg bg-amber-50 dark:bg-amber-500/10">
-            <Info className="w-4 h-4 text-amber-600 dark:text-amber-400" />
-          </div>
-          <h3 className="text-sm font-bold text-slate-900 dark:text-white">
-            ความแม่นยำจริงของกลุ่มนี้
-          </h3>
-        </div>
-
-        <div className="grid grid-cols-3 gap-3 mb-3">
-          <Stat label="ค่าคลาดเคลื่อนกลาง" value={`${result.meta.median_abs_pct_error}%`} />
-          <Stat label="อยู่ในช่วง ±20%" value={`${result.meta.within_20pct}%`} />
-          <Stat
-            label="ตัวอย่างที่วัด"
-            value={result.meta.sample_size.toLocaleString("en-US")}
-          />
-        </div>
-
-        <p className="text-[11px] leading-5 text-slate-500 dark:text-slate-400">
-          วัดจากปี 2568–2569 ที่โมเดลไม่เคยเห็น · ทำเล{" "}
-          <span className="font-semibold text-slate-700 dark:text-slate-300">
-            {result.meta.province} › {result.meta.district}
-          </span>
-          {!result.meta.district_in_training_data && " (เขตนี้ไม่มีในข้อมูลเทรน ใช้ค่าระดับจังหวัดแทน)"}
-        </p>
-      </div>
-
-      {/* Ensemble Breakdown */}
-      <div className="rounded-2xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 p-6 shadow-sm">
-        <div className="flex items-center gap-2 mb-4">
-          <div className="p-1.5 rounded-lg bg-brand-50 dark:bg-brand-500/10">
-            <Info className="w-4 h-4 text-brand-600 dark:text-brand-400" />
-          </div>
-          <h3 className="text-sm font-bold text-slate-900 dark:text-white">
-            Ensemble Breakdown — น้ำหนักการทำนายของโมเดล
-          </h3>
-        </div>
-
-        {/* Stacked bar */}
-        <div className="flex h-3 rounded-full overflow-hidden mb-4">
-          {result.contributions.map((c) => (
-            <div
-              key={c.name}
-              className="h-full transition-all duration-500"
-              style={{
-                width: `${(c.weight / barTotal) * 100}%`,
-                backgroundColor: c.color,
-              }}
-            />
           ))}
         </div>
-
-        <div className="space-y-3">
-          {result.contributions.map((c) => (
-            <div key={c.name} className="flex items-center gap-3">
-              <div className="w-3 h-3 rounded-md flex-shrink-0" style={{ backgroundColor: c.color }} />
-              <span className="text-sm font-medium text-slate-700 dark:text-slate-300 flex-1">
-                {c.name}
-              </span>
-              <span className="text-sm font-bold text-slate-900 dark:text-white">
-                {(c.weight * 100).toFixed(0)}%
-              </span>
-              <span className="text-xs text-slate-400 dark:text-slate-500 w-28 text-right">
-                {formatBaht(c.prediction)}
-              </span>
-            </div>
-          ))}
-        </div>
-      </div>
-
-      {/* Feature Importance */}
-      <div className="rounded-2xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 p-6 shadow-sm">
-        <div className="flex items-center gap-2 mb-4">
-          <div className="p-1.5 rounded-lg bg-orange-50 dark:bg-orange-500/10">
-            <CheckCircle2 className="w-4 h-4 text-orange-500 dark:text-orange-400" />
-          </div>
-          <h3 className="text-sm font-bold text-slate-900 dark:text-white">
-            ปัจจัยที่มีผลต่อราคามากที่สุด — Feature Importance
-          </h3>
-        </div>
-
-        <div className="space-y-2.5">
-          {result.features.map((feature, i) => {
-            const Icon = ICON_MAP[feature.icon] ?? MapPin;
-            const widthPct = (feature.value / maxFeatureValue) * 100;
-            return (
-              <div key={i} className="flex items-center gap-3">
-                <div className="p-1.5 rounded-lg bg-slate-100 dark:bg-slate-800 flex-shrink-0">
-                  <Icon className="w-3.5 h-3.5 text-slate-500 dark:text-slate-400" />
-                </div>
-                <span className="text-xs font-medium text-slate-600 dark:text-slate-400 w-32 flex-shrink-0">
-                  {feature.label}
-                </span>
-                <div className="flex-1 h-2 bg-slate-100 dark:bg-slate-800 rounded-full overflow-hidden">
-                  <div
-                    className="h-full rounded-full bg-gradient-to-r from-brand-500 to-brand-400 transition-all duration-700 ease-out"
-                    style={{ width: `${widthPct}%` }}
-                  />
-                </div>
-                <span className="text-xs font-bold text-slate-900 dark:text-white w-10 text-right">
-                  {(feature.value * 100).toFixed(0)}%
-                </span>
-              </div>
-            );
-          })}
-        </div>
-      </div>
-    </div>
-  );
-}
-
-function Stat({ label, value }: { label: string; value: string }) {
-  return (
-    <div className="rounded-xl bg-slate-50 dark:bg-slate-800/50 p-3 text-center">
-      <p className="text-sm font-bold text-slate-900 dark:text-white">{value}</p>
-      <p className="mt-0.5 text-[10px] text-slate-400">{label}</p>
+      )}
     </div>
   );
 }

@@ -1,15 +1,114 @@
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Bai+Jamjuree:wght@500;600;700&family=IBM+Plex+Sans+Thai:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap');
 
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
 
 @layer base {
+  :root {
+    /* Warm paper neutrals. Never pure white on pure black. */
+    --c-canvas: 246 244 240;
+    --c-surface: 255 255 255;
+    --c-raised: 250 249 247;
+    --c-line: 230 226 219;
+    --c-ink: 28 25 23;
+    --c-muted: 120 113 108;
+    --c-faint: 168 162 158;
+    --c-accent: 180 83 31;
+    --c-accent-soft: 251 238 228;
+    --c-accent-ink: 122 52 14;
+    --c-ok: 22 101 52;
+    --c-ok-soft: 236 247 239;
+    --c-warn: 161 98 7;
+    --c-warn-soft: 253 246 228;
+    --c-bad: 185 28 28;
+    --c-bad-soft: 254 236 236;
+  }
+
+  .dark {
+    --c-canvas: 18 17 16;
+    --c-surface: 27 25 24;
+    --c-raised: 35 33 32;
+    --c-line: 48 45 42;
+    --c-ink: 245 243 239;
+    --c-muted: 161 155 147;
+    --c-faint: 110 104 98;
+    --c-accent: 228 145 96;
+    --c-accent-soft: 46 31 22;
+    --c-accent-ink: 250 208 180;
+    --c-ok: 110 201 140;
+    --c-ok-soft: 22 40 29;
+    --c-warn: 234 179 8;
+    --c-warn-soft: 45 36 16;
+    --c-bad: 248 113 113;
+    --c-bad-soft: 52 24 24;
+  }
+
   * {
     -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
   }
+
+  html {
+    color-scheme: light;
+  }
+  html.dark {
+    color-scheme: dark;
+  }
+
   body {
-    font-family: 'Inter', system-ui, sans-serif;
+    @apply bg-canvas text-ink font-sans;
+    font-feature-settings: 'ss01', 'cv11';
+  }
+
+  ::selection {
+    @apply bg-accent/20;
+  }
+
+  /* One focus style for the whole app. */
+  :focus-visible {
+    outline: 2px solid rgb(var(--c-accent));
+    outline-offset: 2px;
+    border-radius: 6px;
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    *,
+    *::before,
+    *::after {
+      animation-duration: 0.01ms !important;
+      animation-iteration-count: 1 !important;
+      transition-duration: 0.01ms !important;
+    }
+  }
+}
+
+@layer components {
+  .card {
+    @apply rounded-2xl border border-line/80 bg-surface shadow-card;
+  }
+  .label {
+    @apply text-[11px] font-medium uppercase tracking-label text-muted;
+  }
+  .num {
+    @apply font-mono tabular-nums;
+  }
+  .btn-primary {
+    @apply inline-flex items-center justify-center gap-2 rounded-xl bg-ink px-4 py-2.5 text-sm font-semibold text-canvas
+      transition-all duration-200 ease-out hover:bg-ink/90 active:scale-[0.98]
+      disabled:cursor-not-allowed disabled:opacity-50 disabled:active:scale-100;
+  }
+  .btn-ghost {
+    @apply inline-flex items-center justify-center gap-2 rounded-xl border border-line bg-surface px-3.5 py-2 text-sm font-medium text-ink
+      transition-all duration-200 ease-out hover:border-faint/60 hover:bg-raised active:scale-[0.98];
+  }
+  .chip {
+    @apply inline-flex items-center gap-1.5 rounded-md border px-2 py-0.5 text-[11px] font-medium;
+  }
+  .field {
+    @apply w-full rounded-xl border border-line bg-raised px-3 py-2.5 text-sm font-medium text-ink
+      transition-all duration-200 placeholder:text-faint
+      hover:border-faint/60 focus:border-accent/50 focus:bg-surface focus:outline-none focus:ring-4 focus:ring-accent/10;
   }
 }
 
@@ -22,27 +121,17 @@
     background: transparent;
   }
   .scrollbar-thin::-webkit-scrollbar-thumb {
-    background: rgba(148, 163, 184, 0.3);
+    background: rgb(var(--c-faint) / 0.35);
     border-radius: 3px;
   }
   .scrollbar-thin::-webkit-scrollbar-thumb:hover {
-    background: rgba(148, 163, 184, 0.5);
+    background: rgb(var(--c-faint) / 0.6);
   }
-}
-
-.gradient-text {
-  background: linear-gradient(135deg, #6366f1 0%, #818cf8 100%);
-  -webkit-background-clip: text;
-  -webkit-text-fill-color: transparent;
-  background-clip: text;
-}
-
-.shimmer-bg {
-  background: linear-gradient(
-    90deg,
-    rgba(99, 102, 241, 0) 0%,
-    rgba(99, 102, 241, 0.1) 50%,
-    rgba(99, 102, 241, 0) 100%
-  );
-  background-size: 200% 100%;
+  /* Faint ruled-paper texture for hero surfaces. */
+  .bg-grid {
+    background-image:
+      linear-gradient(rgb(var(--c-line) / 0.55) 1px, transparent 1px),
+      linear-gradient(90deg, rgb(var(--c-line) / 0.55) 1px, transparent 1px);
+    background-size: 28px 28px;
+  }
 }
