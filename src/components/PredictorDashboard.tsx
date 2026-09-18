@@ -1,5 +1,5 @@
-import { useState, useEffect, useRef } from "react";
-import { ArrowRight, Loader2, Search, TrendingUp } from "lucide-react";
+import { useState, useEffect, useRef, useCallback } from "react";
+import { ArrowRight, Loader2, RefreshCw, Search, TrendingUp } from "lucide-react";
 import { PredictionInput, PropertyType } from "@/lib/types";
 import { DEFAULT_SUBDISTRICT_ID, DEFAULT_YEAR, YEAR_MAX, YEAR_MIN } from "@/lib/defaults";
 import { ApiPrediction, predict } from "@/lib/api";
@@ -34,7 +34,7 @@ interface FieldConfig {
 }
 
 const GENERAL_FIELDS: FieldConfig[] = [
-  { key: "area", label: "พื้นที่ใช้สอย", unit: "ตร.ม.", hint: "20–500", min: 20, max: 500, step: 5 },
+  { key: "area", label: "พื้นที่ใช้สอย", unit: "ตร.ม.", hint: "20–500", min: 20, max: 500, step: 1 },
   { key: "nUnits", label: "จำนวนหน่วย", unit: "หน่วย", hint: "1–4", min: 1, max: 4, step: 1 },
   { key: "year", label: "ปีที่ประเมิน", unit: "พ.ศ.", hint: `${YEAR_MIN}–${YEAR_MAX}`, min: YEAR_MIN, max: YEAR_MAX, step: 1 },
 ];
@@ -43,9 +43,22 @@ function clamp(value: number, min: number, max: number): number {
   return Math.min(max, Math.max(min, value));
 }
 
+// Keystrokes inside this window collapse into one request.
+const AUTO_PREDICT_DELAY_MS = 450;
+
+function clampAll(input: PredictionInput): PredictionInput {
+  return GENERAL_FIELDS.reduce<PredictionInput>(
+    (acc, f) => ({ ...acc, [f.key]: clamp(acc[f.key] as number, f.min, f.max) }),
+    input,
+  );
+}
+
 export function PredictorDashboard() {
   const [input, setInput] = useState<PredictionInput>(DEFAULT_INPUT);
   const [result, setResult] = useState<ApiPrediction | null>(null);
+  // The form values the current result was priced from; `input` may already
+  // have moved on while the next request is in flight.
+  const [resultInput, setResultInput] = useState<PredictionInput>(DEFAULT_INPUT);
   const [isRunning, setIsRunning] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const abortRef = useRef<AbortController>();
@@ -85,31 +98,43 @@ export function PredictorDashboard() {
     setInput((prev) => ({ ...prev, subdistrictId }));
   };
 
-  const handlePredict = async () => {
-    // A field can still hold an unclamped draft if the button is clicked
-    // without blurring it first.
-    const payload = GENERAL_FIELDS.reduce<PredictionInput>(
-      (acc, f) => ({ ...acc, [f.key]: clamp(acc[f.key] as number, f.min, f.max) }),
-      input,
-    );
-    setInput(payload);
-    setDrafts({});
-
+  // The previous result stays on screen while the next one loads, so the
+  // numbers glide from old to new instead of flashing through a spinner.
+  const runPredict = useCallback(async (payload: PredictionInput) => {
     abortRef.current?.abort();
     const controller = new AbortController();
     abortRef.current = controller;
 
     setIsRunning(true);
-    setResult(null);
     setError(null);
     try {
-      setResult(await predict(payload, controller.signal));
+      const next = await predict(payload, controller.signal);
+      setResult(next);
+      setResultInput(payload);
     } catch (e) {
       if ((e as Error).name === "AbortError") return;
       setError((e as Error).message);
     } finally {
       if (!controller.signal.aborted) setIsRunning(false);
     }
+  }, []);
+
+  // Every change to the form re-prices it after a short pause - no button
+  // press needed. The button remains for an explicit re-run.
+  useEffect(() => {
+    if (!GENERAL_FIELDS.every((f) => Number.isFinite(input[f.key] as number))) return;
+    const payload = clampAll(input);
+    const timer = window.setTimeout(() => void runPredict(payload), AUTO_PREDICT_DELAY_MS);
+    return () => window.clearTimeout(timer);
+  }, [input, runPredict]);
+
+  const handlePredict = () => {
+    // A field can still hold an unclamped draft if the button is clicked
+    // without blurring it first.
+    const payload = clampAll(input);
+    setInput(payload);
+    setDrafts({});
+    void runPredict(payload);
   };
 
   return (
@@ -133,6 +158,9 @@ export function PredictorDashboard() {
         {/* Form */}
         <form
           className="space-y-5 lg:col-span-5"
+          // Values are clamped in handlePredict; the browser's own step/range
+          // popup would otherwise block any area that is not a multiple of 5.
+          noValidate
           onSubmit={(e) => {
             e.preventDefault();
             void handlePredict();
@@ -209,11 +237,18 @@ export function PredictorDashboard() {
               </>
             )}
           </button>
+          <p className="text-center text-[11.5px] text-faint">ราคาอัปเดตเองทุกครั้งที่แก้ข้อมูล</p>
         </form>
 
         {/* Result */}
-        <div className="lg:col-span-7">
-          {isRunning ? (
+        <div className="relative lg:col-span-7">
+          {isRunning && result && (
+            <span className="absolute right-4 top-4 z-10 inline-flex items-center gap-1.5 rounded-full border border-line bg-surface/95 px-2.5 py-1 text-[11px] text-muted shadow-card backdrop-blur animate-fade-in">
+              <RefreshCw className="h-3 w-3 animate-spin" />
+              กำลังอัปเดต
+            </span>
+          )}
+          {isRunning && !result ? (
             <StatusPanel
               variant="loading"
               icon={Search}
@@ -228,7 +263,9 @@ export function PredictorDashboard() {
               description={`${error} — ตรวจว่า API รันอยู่ที่ http://127.0.0.1:3030 (cd ml && python api.py)`}
             />
           ) : result ? (
-            <ResultPanel result={result} input={input} />
+            <div className={`transition-opacity duration-300 ${isRunning ? "opacity-60" : "opacity-100"}`}>
+              <ResultPanel result={result} input={resultInput} />
+            </div>
           ) : (
             <StatusPanel
               variant="empty"

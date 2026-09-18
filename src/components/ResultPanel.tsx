@@ -15,6 +15,7 @@ import {
 import { useEffect, useRef, useState } from "react";
 import { PredictionInput } from "@/lib/types";
 import { formatBaht } from "@/lib/prediction";
+import { useAnimatedNumber } from "@/lib/useAnimatedNumber";
 import { ApiPrediction, Comparables } from "@/lib/api";
 import {
   DEFAULT_GROWTH_PCT,
@@ -59,10 +60,10 @@ export function ResultPanel({ result, input }: ResultPanelProps) {
             <div>
               <p className="label">ราคาคาดการณ์ · {result.meta.collateral_type}</p>
               <p className="mt-2 font-display text-[40px] font-semibold leading-none tracking-tight text-accent sm:text-[48px]">
-                {formatBaht(result.predictedPrice)}
+                <Baht value={result.predictedPrice} />
               </p>
               <p className="mt-2 text-[13px] text-muted">
-                ≈ <span className="num text-ink">฿{Math.round(perSqm).toLocaleString("en-US")}</span> ต่อ ตร.ม. ·{" "}
+                ≈ <span className="num text-ink">฿<Num value={perSqm} /></span> ต่อ ตร.ม. ·{" "}
                 {result.meta.subdistrict}, {result.meta.district}
               </p>
             </div>
@@ -73,17 +74,17 @@ export function ResultPanel({ result, input }: ResultPanelProps) {
           <div className="mt-7">
             <div className="relative h-1.5 rounded-full bg-line">
               <div
-                className="absolute top-1/2 h-3.5 w-0.5 -translate-y-1/2 rounded-full bg-ink"
+                className="absolute top-1/2 h-3.5 w-0.5 -translate-y-1/2 rounded-full bg-ink transition-[left] duration-500 ease-out"
                 style={{ left: `${pointPct}%` }}
                 aria-hidden="true"
               />
             </div>
             <div className="mt-2 flex justify-between text-[12px]">
               <span className="text-muted">
-                ต่ำ <span className="num font-medium text-ink">{formatBaht(result.lowerBound)}</span>
+                ต่ำ <span className="num font-medium text-ink"><Baht value={result.lowerBound} /></span>
               </span>
               <span className="text-muted">
-                สูง <span className="num font-medium text-ink">{formatBaht(result.upperBound)}</span>
+                สูง <span className="num font-medium text-ink"><Baht value={result.upperBound} /></span>
               </span>
             </div>
             <p className="mt-2 text-[11.5px] leading-relaxed text-faint">
@@ -123,7 +124,7 @@ export function ResultPanel({ result, input }: ResultPanelProps) {
               <div
                 key={c.name}
                 className="h-full origin-left animate-grow-x rounded-sm"
-                style={{ width: `${(c.weight / barTotal) * 100}%`, backgroundColor: c.color }}
+                style={{ width: `${(c.weight / barTotal) * 100}%`, backgroundColor: c.color, transition: "width 500ms ease-out" }}
               />
             ))}
           </div>
@@ -136,7 +137,7 @@ export function ResultPanel({ result, input }: ResultPanelProps) {
                 <span className="num w-10 text-right text-[12px] text-muted">
                   {(c.weight * 100).toFixed(0)}%
                 </span>
-                <span className="num w-28 text-right text-[13px] text-ink">{formatBaht(c.prediction)}</span>
+                <span className="num w-28 text-right text-[13px] text-ink"><Baht value={c.prediction} /></span>
               </li>
             ))}
           </ul>
@@ -166,7 +167,7 @@ export function ResultPanel({ result, input }: ResultPanelProps) {
                   </div>
                   <div className="mt-1.5 h-1.5 overflow-hidden rounded-full bg-raised">
                     <div
-                      className="h-full origin-left animate-grow-x rounded-full bg-ink/80"
+                      className="h-full origin-left animate-grow-x rounded-full bg-ink/80 transition-[width] duration-500 ease-out"
                       style={{ width: `${widthPct}%`, animationDelay: `${i * 40}ms` }}
                     />
                   </div>
@@ -299,11 +300,11 @@ function FutureValue({ result, input }: ResultPanelProps) {
               <td className="py-2 text-muted">
                 {input.year + y} <span className="text-faint">(+{y} ปี)</span>
               </td>
-              <td className="num py-2 text-right text-muted">{formatBaht(compound(result.lowerBound, rate, y))}</td>
+              <td className="num py-2 text-right text-muted"><Baht value={compound(result.lowerBound, rate, y)} /></td>
               <td className="num py-2 text-right font-medium text-ink">
-                {formatBaht(compound(result.predictedPrice, rate, y))}
+                <Baht value={compound(result.predictedPrice, rate, y)} />
               </td>
-              <td className="num py-2 text-right text-muted">{formatBaht(compound(result.upperBound, rate, y))}</td>
+              <td className="num py-2 text-right text-muted"><Baht value={compound(result.upperBound, rate, y)} /></td>
             </tr>
           ))}
         </tbody>
@@ -316,6 +317,14 @@ function FutureValue({ result, input }: ResultPanelProps) {
       </p>
     </section>
   );
+}
+
+function Baht({ value }: { value: number }) {
+  return <>{formatBaht(useAnimatedNumber(value))}</>;
+}
+
+function Num({ value }: { value: number }) {
+  return <>{Math.round(useAnimatedNumber(value)).toLocaleString("en-US")}</>;
 }
 
 function Stat({ label, value, emphasis }: { label: string; value: string; emphasis?: boolean }) {
