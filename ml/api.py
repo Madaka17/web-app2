@@ -80,10 +80,9 @@ app = Flask(__name__)
 CORS(app)
 
 
-def _predict_each(frame: pd.DataFrame) -> dict[str, float]:
+def _predict_each(featured: pd.DataFrame) -> dict[str, float]:
     """Comparables are looked up from the reference tables in the bundle, the
     same tables and the same code path the models were fitted under."""
-    featured = add_features(frame, BUNDLE["reference"])
     area = featured["area_sqm"].to_numpy(dtype=float)
     X_raw = featured[FEATURES]
     X_cat = X_raw.copy()
@@ -150,9 +149,28 @@ def predict():
         "year": year,
     }])
 
-    per_model = _predict_each(frame)
+    featured = add_features(frame, BUNDLE["reference"])
+    per_model = _predict_each(featured)
     weights = {k: float(v) for k, v in BUNDLE["weights"].items()}
     price = sum(weights[n] * p for n, p in per_model.items())
+
+    # The comparables the models were handed, back in baht per sqm, so the UI
+    # can say what the district goes for and how far this estimate sits from it.
+    f = featured.iloc[0]
+    ppsqm = lambda col: round(float(np.exp(f[col])), -2)
+    district_ppsqm = ppsqm("dt_ppsqm")
+    comparables = {
+        "district_ppsqm": district_ppsqm,
+        "district_n": int(f["dt_n"]),
+        "size_band_ppsqm": ppsqm("band_ppsqm"),
+        "size_band_n": int(f["band_n"]),
+        "exact_size_ppsqm": ppsqm("comp_ppsqm"),
+        "exact_size_n": int(f["comp_n"]),
+        "nearest_size_ppsqm": ppsqm("nn_ppsqm"),
+        "province_type_ppsqm": ppsqm("prov_type_ppsqm"),
+        "predicted_ppsqm": round(price / area, -2),
+        "vs_district_pct": round((price / area / district_ppsqm - 1) * 100, 1),
+    }
 
     calib = BUNDLE["calibration"].get(collateral_type, BUNDLE["calibration"]["__default__"])
     lower, upper = price * calib["q10"], price * calib["q90"]
@@ -178,6 +196,7 @@ def predict():
             for n, p in sorted(per_model.items(), key=lambda kv: -weights[kv[0]])
         ],
         "features": features,
+        "comparables": comparables,
         "meta": {
             "province": location["province"],
             "district": location["district"],

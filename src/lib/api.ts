@@ -14,7 +14,23 @@ export interface PredictionMeta {
   source: string;
 }
 
+/** What comparable listings go for, in baht per sqm - the numbers the
+ * models were handed (ml/prepare_data.add_features), not a post-hoc story. */
+export interface Comparables {
+  district_ppsqm: number;
+  district_n: number;
+  size_band_ppsqm: number;
+  size_band_n: number;
+  exact_size_ppsqm: number;
+  exact_size_n: number;
+  nearest_size_ppsqm: number;
+  province_type_ppsqm: number;
+  predicted_ppsqm: number;
+  vs_district_pct: number;
+}
+
 export interface ApiPrediction extends PredictionResult {
+  comparables: Comparables;
   meta: PredictionMeta;
 }
 

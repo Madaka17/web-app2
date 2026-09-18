@@ -15,7 +15,15 @@ import {
 import { useEffect, useRef, useState } from "react";
 import { PredictionInput } from "@/lib/types";
 import { formatBaht } from "@/lib/prediction";
-import { ApiPrediction } from "@/lib/api";
+import { ApiPrediction, Comparables } from "@/lib/api";
+import {
+  DEFAULT_GROWTH_PCT,
+  GROWTH_MAX_PCT,
+  GROWTH_MIN_PCT,
+  GROWTH_STEP_PCT,
+  HORIZONS_YEARS,
+  compound,
+} from "@/lib/growth";
 import { downloadFile, reportToJSON, reportToCSV, reportToText } from "@/lib/download";
 
 const ICON_MAP: Record<string, typeof Train> = {
@@ -135,6 +143,10 @@ export function ResultPanel({ result, input }: ResultPanelProps) {
         </section>
       </div>
 
+      <WhyThisPrice result={result} input={input} />
+
+      <FutureValue result={result} input={input} />
+
       {/* Feature importance */}
       <section className="card p-5 sm:p-6">
         <div className="flex items-baseline justify-between">
@@ -168,6 +180,141 @@ export function ResultPanel({ result, input }: ResultPanelProps) {
         </ul>
       </section>
     </div>
+  );
+}
+
+const perSqm = (v: number) => `฿${Math.round(v).toLocaleString("en-US")}/ตร.ม.`;
+
+/** Turn the comparables the models were handed into plain sentences. */
+function explain(c: Comparables, r: ApiPrediction, input: PredictionInput): string[] {
+  const type = r.meta.collateral_type;
+  const dist = r.meta.district;
+  const lines: string[] = [];
+
+  if (c.district_n > 0) {
+    lines.push(
+      `${type}ในเขต${dist}ที่ประกาศขายอยู่ ${c.district_n.toLocaleString("en-US")} รายการ ราคากลาง ${perSqm(c.district_ppsqm)}`,
+    );
+  } else {
+    lines.push(
+      `ไม่มี${type}ในเขต${dist}ในข้อมูล จึงใช้ค่ากลางของ${type}ทั้งจังหวัด ${perSqm(c.province_type_ppsqm)}`,
+    );
+  }
+
+  if (c.size_band_n > 0) {
+    const gap = (c.size_band_ppsqm / c.district_ppsqm - 1) * 100;
+    const dir = Math.abs(gap) < 3 ? "ใกล้เคียงค่ากลางของเขต" : gap > 0 ? `แพงกว่าค่ากลางของเขต ${gap.toFixed(0)}%` : `ถูกกว่าค่ากลางของเขต ${(-gap).toFixed(0)}%`;
+    lines.push(
+      `ขนาดใกล้เคียง ${input.area} ตร.ม. (±28%) มี ${c.size_band_n.toLocaleString("en-US")} รายการ ราคา ${perSqm(c.size_band_ppsqm)} — ${dir}`,
+    );
+  }
+
+  if (c.exact_size_n > 0) {
+    lines.push(
+      `ขนาด ${input.area} ตร.ม. พอดี มี ${c.exact_size_n.toLocaleString("en-US")} รายการ ราคา ${perSqm(c.exact_size_ppsqm)}`,
+    );
+  } else {
+    lines.push(
+      `ไม่มีประกาศขนาด ${input.area} ตร.ม. พอดีในเขตนี้ ขนาดที่ใกล้ที่สุดอยู่ที่ ${perSqm(c.nearest_size_ppsqm)}`,
+    );
+  }
+
+  const vs = c.vs_district_pct;
+  const rel = Math.abs(vs) < 3 ? "เท่ากับค่ากลางของเขต" : vs > 0 ? `สูงกว่าค่ากลางของเขต ${vs.toFixed(0)}%` : `ต่ำกว่าค่ากลางของเขต ${(-vs).toFixed(0)}%`;
+  lines.push(`โมเดลจึงตั้งราคาที่ ${perSqm(c.predicted_ppsqm)} ${rel} × ${input.area} ตร.ม. = ${formatBaht(r.predictedPrice)}`);
+
+  return lines;
+}
+
+function WhyThisPrice({ result, input }: ResultPanelProps) {
+  const c = result.comparables;
+  const thin = c.district_n < 30;
+  return (
+    <section className="card p-5 sm:p-6">
+      <div className="flex items-baseline justify-between">
+        <h3 className="label">ทำไมถึงราคานี้</h3>
+        <span className="text-[11px] text-faint">จากประกาศเทียบเคียงที่โมเดลใช้</span>
+      </div>
+      <ol className="mt-4 space-y-2.5">
+        {explain(c, result, input).map((line, i) => (
+          <li key={i} className="flex gap-3 text-[13px] leading-relaxed text-ink">
+            <span className="num mt-0.5 w-4 flex-shrink-0 text-[11px] text-faint">{i + 1}</span>
+            <span>{line}</span>
+          </li>
+        ))}
+      </ol>
+      {thin && (
+        <p className="mt-4 border-t border-line/80 pt-3 text-[11.5px] leading-relaxed text-warn">
+          เขตนี้มีประกาศเทียบเคียงน้อย ({c.district_n} รายการ) ราคาจึงพึ่งค่าระดับจังหวัดมากขึ้นและคลาดเคลื่อนได้มากกว่าปกติ
+        </p>
+      )}
+    </section>
+  );
+}
+
+function FutureValue({ result, input }: ResultPanelProps) {
+  const [rate, setRate] = useState<number>(DEFAULT_GROWTH_PCT[input.propertyType]);
+  // A new property type brings its own starting rate.
+  useEffect(() => setRate(DEFAULT_GROWTH_PCT[input.propertyType]), [input.propertyType]);
+
+  return (
+    <section className="card p-5 sm:p-6">
+      <div className="flex items-baseline justify-between">
+        <h3 className="label">มูลค่าในอนาคต</h3>
+        <span className="text-[11px] text-faint">สมมติฐาน ไม่ใช่คำทำนาย</span>
+      </div>
+
+      <div className="mt-4 flex items-center gap-4">
+        <label htmlFor="growth-rate" className="text-[13px] text-muted">
+          ราคาขึ้นปีละ
+        </label>
+        <input
+          id="growth-rate"
+          type="range"
+          min={GROWTH_MIN_PCT}
+          max={GROWTH_MAX_PCT}
+          step={GROWTH_STEP_PCT}
+          value={rate}
+          onChange={(e) => setRate(parseFloat(e.target.value))}
+          className="flex-1 accent-ink"
+        />
+        <span className="num w-14 text-right text-[15px] font-medium text-ink">
+          {rate > 0 ? "+" : ""}
+          {rate.toFixed(1)}%
+        </span>
+      </div>
+
+      <table className="mt-4 w-full text-[13px]">
+        <thead>
+          <tr className="text-[11px] text-faint">
+            <th className="pb-2 text-left font-medium">ปี</th>
+            <th className="pb-2 text-right font-medium">ต่ำ</th>
+            <th className="pb-2 text-right font-medium">คาดการณ์</th>
+            <th className="pb-2 text-right font-medium">สูง</th>
+          </tr>
+        </thead>
+        <tbody className="divide-y divide-line/70">
+          {HORIZONS_YEARS.map((y) => (
+            <tr key={y}>
+              <td className="py-2 text-muted">
+                {input.year + y} <span className="text-faint">(+{y} ปี)</span>
+              </td>
+              <td className="num py-2 text-right text-muted">{formatBaht(compound(result.lowerBound, rate, y))}</td>
+              <td className="num py-2 text-right font-medium text-ink">
+                {formatBaht(compound(result.predictedPrice, rate, y))}
+              </td>
+              <td className="num py-2 text-right text-muted">{formatBaht(compound(result.upperBound, rate, y))}</td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
+
+      <p className="mt-4 border-t border-line/80 pt-3 text-[11.5px] leading-relaxed text-faint">
+        ทบต้นจากราคาคาดการณ์วันนี้ด้วยอัตราที่เลือก ค่าเริ่มต้นเป็นค่าเฉลี่ยระยะยาวคร่าว ๆ ของดัชนีราคาที่อยู่อาศัย
+        ไม่ได้คำนวณจากประกาศในชุดข้อมูล เพราะประกาศส่วนใหญ่เป็นปีเดียวกันและประกาศเก่าที่ยังค้างคือของที่ขายไม่ออก
+        จึงบอกแนวโน้มตลาดไม่ได้
+      </p>
+    </section>
   );
 }
 
