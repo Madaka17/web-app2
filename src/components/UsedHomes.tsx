@@ -1,76 +1,104 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import {
   Bath,
   BedDouble,
-  BadgeCheck,
   ChevronDown,
   Clock3,
+  ExternalLink,
   Heart,
-  Home,
-  Locate,
+  Loader2,
   MapPin,
   Maximize,
   Search,
   SlidersHorizontal,
   X,
 } from "lucide-react";
-import {
-  USED_HOME_DISTRICTS,
-  USED_HOME_LISTINGS,
-  USED_HOME_TYPES,
-  UsedHomeListing,
-  UsedHomeType,
-} from "@/lib/usedHomes";
+import { CircleMarker, MapContainer, TileLayer, useMap } from "react-leaflet";
+import "leaflet/dist/leaflet.css";
+import { UsedHomeListing, formatPosted, loadUsedHomes } from "@/lib/usedHomes";
 
+const ALL = "ทั้งหมด";
 const PRICE_OPTIONS = [
   { label: "ทุกราคา", value: 0 },
   { label: "ไม่เกิน 3 ล้าน", value: 3000000 },
   { label: "ไม่เกิน 5 ล้าน", value: 5000000 },
   { label: "ไม่เกิน 10 ล้าน", value: 10000000 },
+  { label: "ไม่เกิน 30 ล้าน", value: 30000000 },
 ];
+// Cards rendered at once; the map always shows every match.
+const PAGE = 40;
+const BANGKOK: [number, number] = [13.7563, 100.5018];
 
 export function UsedHomes() {
-  const [district, setDistrict] = useState("ทั้งหมด");
-  const [type, setType] = useState<"ทั้งหมด" | UsedHomeType>("ทั้งหมด");
+  const [homes, setHomes] = useState<UsedHomeListing[]>([]);
+  const [loadError, setLoadError] = useState<string | null>(null);
+  const [province, setProvince] = useState(ALL);
+  const [district, setDistrict] = useState(ALL);
+  const [type, setType] = useState(ALL);
   const [maxPrice, setMaxPrice] = useState(0);
   const [minBeds, setMinBeds] = useState(0);
   const [query, setQuery] = useState("");
-  const [selectedId, setSelectedId] = useState(USED_HOME_LISTINGS[0]?.id ?? "");
+  const [selectedId, setSelectedId] = useState<string | null>(null);
   const [showFilters, setShowFilters] = useState(false);
   const [favorites, setFavorites] = useState<string[]>([]);
+  const [shown, setShown] = useState(PAGE);
+
+  useEffect(() => {
+    const controller = new AbortController();
+    loadUsedHomes(controller.signal)
+      .then(setHomes)
+      .catch((e: Error) => {
+        if (e.name !== "AbortError") setLoadError(e.message);
+      });
+    return () => controller.abort();
+  }, []);
+
+  const provinces = useMemo(() => [ALL, ...new Set(homes.map((h) => h.province))], [homes]);
+  const districts = useMemo(
+    () => [ALL, ...new Set(homes.filter((h) => province === ALL || h.province === province).map((h) => h.district)).values()].sort(),
+    [homes, province],
+  );
+  const types = useMemo(() => {
+    const counts = new Map<string, number>();
+    for (const h of homes) counts.set(h.type, (counts.get(h.type) ?? 0) + 1);
+    return [ALL, ...[...counts.entries()].sort((a, b) => b[1] - a[1]).map(([t]) => t)];
+  }, [homes]);
 
   const filteredHomes = useMemo(() => {
     const q = query.trim().toLowerCase();
-    return USED_HOME_LISTINGS.filter((home) => {
-      const districtMatch = district === "ทั้งหมด" || home.district === district;
-      const typeMatch = type === "ทั้งหมด" || home.type === type;
-      const priceMatch = maxPrice === 0 || home.price <= maxPrice;
-      const bedsMatch = minBeds === 0 || home.bedrooms >= minBeds;
-      const queryMatch =
-        q === "" ||
-        [home.title, home.location, home.type, ...home.tags].some((field) =>
-          field.toLowerCase().includes(q),
-        );
-      return districtMatch && typeMatch && priceMatch && bedsMatch && queryMatch;
+    return homes.filter((home) => {
+      if (province !== ALL && home.province !== province) return false;
+      if (district !== ALL && home.district !== district) return false;
+      if (type !== ALL && home.type !== type) return false;
+      if (maxPrice && home.price > maxPrice) return false;
+      if (minBeds && (home.bedrooms ?? 0) < minBeds) return false;
+      return q === "" || [home.title, home.subdistrict, home.district, home.type].some((f) => f.toLowerCase().includes(q));
     });
-  }, [district, type, maxPrice, minBeds, query]);
+  }, [homes, province, district, type, maxPrice, minBeds, query]);
 
-  const selectedHome = filteredHomes.find((home) => home.id === selectedId) ?? filteredHomes[0];
+  // A new filter set starts the list over and drops a selection it hid.
+  useEffect(() => setShown(PAGE), [province, district, type, maxPrice, minBeds, query]);
+  const selectedHome = filteredHomes.find((home) => home.id === selectedId) ?? null;
+
   const activeFilterCount =
-    (district !== "ทั้งหมด" ? 1 : 0) + (type !== "ทั้งหมด" ? 1 : 0) + (maxPrice ? 1 : 0) + (minBeds ? 1 : 0);
+    (province !== ALL ? 1 : 0) + (district !== ALL ? 1 : 0) + (type !== ALL ? 1 : 0) + (maxPrice ? 1 : 0) + (minBeds ? 1 : 0);
 
   const toggleFavorite = (id: string) => {
-    setFavorites((current) =>
-      current.includes(id) ? current.filter((favoriteId) => favoriteId !== id) : [...current, id],
-    );
+    setFavorites((current) => (current.includes(id) ? current.filter((f) => f !== id) : [...current, id]));
   };
 
   const resetFilters = () => {
-    setDistrict("ทั้งหมด");
-    setType("ทั้งหมด");
+    setProvince(ALL);
+    setDistrict(ALL);
+    setType(ALL);
     setMaxPrice(0);
     setMinBeds(0);
     setQuery("");
+  };
+
+  const select = (id: string) => {
+    setSelectedId(id);
+    document.getElementById(`home-${id}`)?.scrollIntoView({ block: "nearest", behavior: "smooth" });
   };
 
   return (
@@ -81,8 +109,8 @@ export function UsedHomes() {
             บ้านมือสองในระบบ
           </h2>
           <p className="mt-2 text-[14px] text-muted">
-            <span className="num text-ink">{filteredHomes.length}</span> จาก{" "}
-            <span className="num">{USED_HOME_LISTINGS.length}</span> รายการ · กรุงเทพฯ นนทบุรี สมุทรปราการ
+            <span className="num text-ink">{filteredHomes.length.toLocaleString("en-US")}</span> จาก{" "}
+            <span className="num">{homes.length.toLocaleString("en-US")}</span> ประกาศ · กรุงเทพฯ และปริมณฑล · จาก baania.com
           </p>
         </div>
         {favorites.length > 0 && (
@@ -103,7 +131,7 @@ export function UsedHomes() {
               type="search"
               value={query}
               onChange={(event) => setQuery(event.target.value)}
-              placeholder="ค้นจากทำเล ชื่อโครงการ หรือแท็ก"
+              placeholder="ค้นจากชื่อประกาศ แขวง หรือเขต"
               className="w-full bg-transparent text-sm text-ink outline-none placeholder:text-faint"
             />
             {query && (
@@ -118,8 +146,17 @@ export function UsedHomes() {
             )}
           </label>
           <span className="hidden h-6 w-px bg-line sm:block" />
-          <FilterSelect label="ทำเล" value={district} options={USED_HOME_DISTRICTS} onChange={setDistrict} />
-          <FilterSelect label="ประเภท" value={type} options={USED_HOME_TYPES} onChange={setType} />
+          <FilterSelect
+            label="จังหวัด"
+            value={province}
+            options={provinces}
+            onChange={(p) => {
+              setProvince(p);
+              setDistrict(ALL);
+            }}
+          />
+          <FilterSelect label="เขต" value={district} options={districts} onChange={setDistrict} />
+          <FilterSelect label="ประเภท" value={type} options={types} onChange={setType} />
           <FilterSelect
             label="ราคา"
             value={PRICE_OPTIONS.find((option) => option.value === maxPrice)?.label ?? "ทุกราคา"}
@@ -155,7 +192,7 @@ export function UsedHomes() {
                     minBeds === beds ? "bg-surface text-ink shadow-card" : "text-muted hover:text-ink"
                   }`}
                 >
-                  {beds === 0 ? "ทั้งหมด" : `${beds}+`}
+                  {beds === 0 ? ALL : `${beds}+`}
                 </button>
               ))}
             </div>
@@ -172,33 +209,52 @@ export function UsedHomes() {
         )}
       </div>
 
-      <div className="grid grid-cols-1 gap-5 xl:grid-cols-[minmax(0,1fr)_minmax(400px,0.85fr)]">
+      <div className="grid grid-cols-1 gap-5 xl:grid-cols-[minmax(0,1fr)_minmax(420px,0.9fr)]">
         <div className="space-y-3">
-          {filteredHomes.length === 0 ? (
-            <EmptyResults onReset={resetFilters} />
+          {loadError ? (
+            <EmptyResults
+              title="โหลดรายการไม่สำเร็จ"
+              hint={`${loadError} — สร้างไฟล์ด้วย cd Data && python build_map_listings.py`}
+            />
+          ) : homes.length === 0 ? (
+            <div className="flex min-h-[360px] items-center justify-center text-muted">
+              <Loader2 className="mr-2 h-4 w-4 animate-spin" /> กำลังโหลดประกาศ
+            </div>
+          ) : filteredHomes.length === 0 ? (
+            <EmptyResults title="ไม่มีรายการตรงเงื่อนไข" hint="ลองขยายช่วงราคา หรือเลือกทำเลอื่น" onReset={resetFilters} />
           ) : (
-            filteredHomes.map((home) => (
-              <ListingCard
-                key={home.id}
-                home={home}
-                selected={selectedHome?.id === home.id}
-                favorite={favorites.includes(home.id)}
-                onSelect={() => setSelectedId(home.id)}
-                onToggleFavorite={() => toggleFavorite(home.id)}
-              />
-            ))
+            <>
+              {filteredHomes.slice(0, shown).map((home) => (
+                <ListingCard
+                  key={home.id}
+                  home={home}
+                  selected={selectedHome?.id === home.id}
+                  favorite={favorites.includes(home.id)}
+                  onSelect={() => setSelectedId(home.id)}
+                  onToggleFavorite={() => toggleFavorite(home.id)}
+                />
+              ))}
+              {shown < filteredHomes.length && (
+                <button onClick={() => setShown((n) => n + PAGE)} className="btn-ghost w-full justify-center py-3">
+                  แสดงอีก {Math.min(PAGE, filteredHomes.length - shown)} รายการ
+                  <span className="num text-faint">
+                    ({shown}/{filteredHomes.length})
+                  </span>
+                </button>
+              )}
+            </>
           )}
         </div>
 
         <div className="xl:sticky xl:top-20 xl:self-start">
-          <PropertyMap listings={filteredHomes} selectedId={selectedHome?.id} onSelect={setSelectedId} />
+          <PropertyMap listings={filteredHomes} selected={selectedHome} onSelect={select} onClose={() => setSelectedId(null)} />
         </div>
       </div>
     </div>
   );
 }
 
-function FilterSelect<T extends string>({
+function FilterSelect({
   label,
   value,
   options,
@@ -206,16 +262,16 @@ function FilterSelect<T extends string>({
 }: {
   label: string;
   value: string;
-  options: readonly T[];
-  onChange: (value: T) => void;
+  options: readonly string[];
+  onChange: (value: string) => void;
 }) {
   return (
     <label className="relative flex items-center rounded-xl border border-line bg-surface transition-colors hover:border-faint/60">
       <span className="sr-only">{label}</span>
       <select
         value={value}
-        onChange={(event) => onChange(event.target.value as T)}
-        className="w-full cursor-pointer appearance-none bg-transparent py-2 pl-3 pr-8 text-sm font-medium text-ink outline-none"
+        onChange={(event) => onChange(event.target.value)}
+        className="w-full max-w-[180px] cursor-pointer appearance-none bg-transparent py-2 pl-3 pr-8 text-sm font-medium text-ink outline-none"
       >
         {options.map((option) => (
           <option key={option} value={option}>
@@ -226,6 +282,12 @@ function FilterSelect<T extends string>({
       <ChevronDown className="pointer-events-none absolute right-2.5 h-3.5 w-3.5 text-faint" />
     </label>
   );
+}
+
+function sizeLabel(home: UsedHomeListing): string | null {
+  if (home.area) return `${home.area.toLocaleString("en-US")} ตร.ม.`;
+  if (home.landSqwa) return `${home.landSqwa.toLocaleString("en-US")} ตร.วา`;
+  return null;
 }
 
 function ListingCard({
@@ -241,9 +303,10 @@ function ListingCard({
   onSelect: () => void;
   onToggleFavorite: () => void;
 }) {
-  const perSqm = Math.round(home.price / home.area);
+  const size = sizeLabel(home);
   return (
     <article
+      id={`home-${home.id}`}
       onClick={onSelect}
       onKeyDown={(e) => {
         if (e.key === "Enter" || e.key === " ") {
@@ -258,11 +321,12 @@ function ListingCard({
       }`}
     >
       <div className="grid grid-cols-[124px_minmax(0,1fr)] sm:grid-cols-[176px_minmax(0,1fr)]">
-        <div className="relative overflow-hidden">
+        <div className="relative overflow-hidden bg-raised">
           <img
             src={home.image}
-            alt={home.imageAlt}
+            alt=""
             loading="lazy"
+            referrerPolicy="no-referrer"
             className="h-full w-full object-cover transition-transform duration-500 ease-out group-hover:scale-[1.03]"
           />
           <button
@@ -271,59 +335,42 @@ function ListingCard({
               onToggleFavorite();
             }}
             className={`absolute right-2 top-2 grid h-8 w-8 place-items-center rounded-full border backdrop-blur transition-all duration-200 active:scale-90 ${
-              favorite
-                ? "border-accent/40 bg-accent text-white"
-                : "border-white/30 bg-ink/40 text-white hover:bg-ink/70"
+              favorite ? "border-accent/40 bg-accent text-white" : "border-white/30 bg-ink/40 text-white hover:bg-ink/70"
             }`}
             aria-label={favorite ? "เอาออกจากรายการโปรด" : "บันทึกเป็นรายการโปรด"}
             aria-pressed={favorite}
           >
             <Heart className={`h-3.5 w-3.5 ${favorite ? "fill-current" : ""}`} />
           </button>
-          {home.featured && (
-            <span className="absolute left-2 top-2 rounded-md bg-surface/95 px-1.5 py-0.5 text-[10px] font-semibold uppercase tracking-label text-ink">
-              แนะนำ
-            </span>
-          )}
         </div>
 
         <div className="min-w-0 p-4 sm:p-5">
-          <div className="flex items-start justify-between gap-3">
-            <div className="min-w-0">
-              <p className="label">{home.type}</p>
-              <h3 className="mt-1 truncate font-display text-[16px] font-semibold text-ink sm:text-[17px]">
-                {home.title}
-              </h3>
-              <p className="mt-1 flex items-start gap-1 text-[12px] leading-5 text-muted">
-                <MapPin className="mt-0.5 h-3.5 w-3.5 flex-shrink-0 text-faint" strokeWidth={1.75} />
-                <span className="truncate">{home.location}</span>
-              </p>
-            </div>
-            {home.verified && (
-              <BadgeCheck className="h-5 w-5 flex-shrink-0 text-ok" aria-label="ยืนยันข้อมูลแล้ว" strokeWidth={1.75} />
-            )}
-          </div>
+          <p className="label">{home.type}</p>
+          <h3 className="mt-1 line-clamp-2 font-display text-[15px] font-semibold leading-snug text-ink sm:text-[16px]">
+            {home.title}
+          </h3>
+          <p className="mt-1 flex items-start gap-1 text-[12px] leading-5 text-muted">
+            <MapPin className="mt-0.5 h-3.5 w-3.5 flex-shrink-0 text-faint" strokeWidth={1.75} />
+            <span className="truncate">
+              {home.subdistrict && `${home.subdistrict} · `}
+              {home.district} · {home.province}
+            </span>
+          </p>
 
           <div className="mt-3 flex flex-wrap items-baseline gap-x-3 gap-y-0.5">
             <p className="num font-display text-[22px] font-semibold text-accent sm:text-[24px]">
               ฿{home.price.toLocaleString("en-US")}
             </p>
-            <p className="num text-[12px] text-faint">฿{perSqm.toLocaleString("en-US")}/ตร.ม.</p>
+            {home.area && (
+              <p className="num text-[12px] text-faint">฿{Math.round(home.price / home.area).toLocaleString("en-US")}/ตร.ม.</p>
+            )}
           </div>
 
           <div className="mt-3 flex flex-wrap gap-x-4 gap-y-1 text-[12.5px] text-muted">
-            <ListingStat icon={Maximize} value={`${home.area} ตร.ม.`} />
-            <ListingStat icon={BedDouble} value={`${home.bedrooms} นอน`} />
-            <ListingStat icon={Bath} value={`${home.bathrooms} น้ำ`} />
-            <ListingStat icon={Clock3} value={home.listedAt} muted />
-          </div>
-
-          <div className="mt-3 flex flex-wrap gap-1.5">
-            {home.tags.map((tag) => (
-              <span key={tag} className="chip border-line bg-raised text-muted">
-                {tag}
-              </span>
-            ))}
+            {size && <ListingStat icon={Maximize} value={size} />}
+            {home.bedrooms != null && <ListingStat icon={BedDouble} value={`${home.bedrooms} นอน`} />}
+            {home.bathrooms != null && <ListingStat icon={Bath} value={`${home.bathrooms} น้ำ`} />}
+            <ListingStat icon={Clock3} value={formatPosted(home.postedAt)} muted />
           </div>
         </div>
       </div>
@@ -340,103 +387,129 @@ function ListingStat({ icon: Icon, value, muted }: { icon: typeof Maximize; valu
   );
 }
 
+/** Pans to the selected listing whenever it changes. */
+function FlyToSelected({ selected }: { selected: UsedHomeListing | null }) {
+  const map = useMap();
+  useEffect(() => {
+    if (!selected) return;
+    const zoom = Math.max(map.getZoom(), 14);
+    // Aim a little below the pin so the detail card at the bottom does not cover it.
+    const target = map.unproject(map.project([selected.lat, selected.lng], zoom).add([0, 130]), zoom);
+    map.flyTo(target, zoom, { duration: 0.6 });
+  }, [map, selected]);
+  return null;
+}
+
 function PropertyMap({
   listings,
-  selectedId,
+  selected,
   onSelect,
+  onClose,
 }: {
   listings: UsedHomeListing[];
-  selectedId?: string;
+  selected: UsedHomeListing | null;
   onSelect: (id: string) => void;
+  onClose: () => void;
 }) {
-  const selected = listings.find((l) => l.id === selectedId);
   return (
-    <div className="relative min-h-[520px] overflow-hidden rounded-2xl border border-line/80 bg-raised shadow-card">
-      {/* Schematic map: ruled grid with a few soft "park" and "river" shapes. */}
-      <div className="bg-grid absolute inset-0" />
-      <div className="absolute -bottom-20 -right-12 h-64 w-72 rotate-12 rounded-[45%] bg-sky-200/50 dark:bg-sky-900/25" />
-      <div className="absolute left-[9%] top-[14%] h-28 w-40 rounded-[45%] bg-emerald-200/50 dark:bg-emerald-900/25" />
-      <div className="absolute left-[53%] top-[34%] h-20 w-24 rounded-full bg-emerald-200/50 dark:bg-emerald-900/25" />
+    <div className="relative h-[560px] overflow-hidden rounded-2xl border border-line/80 bg-raised shadow-card xl:h-[calc(100vh-7rem)]">
+      <MapContainer center={BANGKOK} zoom={11} preferCanvas className="h-full w-full" scrollWheelZoom>
+        <TileLayer
+          attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>'
+          url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
+        />
+        {listings.map((home) => {
+          const active = home.id === selected?.id;
+          return (
+            <CircleMarker
+              key={home.id}
+              center={[home.lat, home.lng]}
+              radius={active ? 9 : 4.5}
+              pathOptions={{
+                color: "#fff",
+                weight: active ? 2.5 : 1.5,
+                fillColor: active ? "#1c1917" : "#c2410c",
+                fillOpacity: active ? 1 : 0.7,
+              }}
+              eventHandlers={{ click: () => onSelect(home.id) }}
+            />
+          );
+        })}
+        <FlyToSelected selected={selected} />
+      </MapContainer>
 
-      <div className="relative z-10 flex items-start justify-between p-3">
-        <div className="rounded-lg border border-line bg-surface/95 px-3 py-2 backdrop-blur">
-          <p className="text-[13px] font-semibold text-ink">แผนที่</p>
-          <p className="num text-[11px] text-muted">{listings.length} ตำแหน่ง</p>
-        </div>
-        <button
-          className="btn-ghost h-9 w-9 p-0"
-          aria-label="ไปตำแหน่งปัจจุบัน"
-          type="button"
-        >
-          <Locate className="h-4 w-4" />
-        </button>
+      <div className="pointer-events-none absolute left-3 top-3 z-[1000] rounded-lg border border-line bg-surface/95 px-3 py-2 backdrop-blur">
+        <p className="text-[13px] font-semibold text-ink">แผนที่</p>
+        <p className="num text-[11px] text-muted">{listings.length.toLocaleString("en-US")} ตำแหน่ง · กดหมุดเพื่อดูรายละเอียด</p>
       </div>
 
-      {[
-        { text: "BANGKOK", cls: "left-[8%] top-[54%] -rotate-[18deg]" },
-        { text: "SAMUT PRAKAN", cls: "left-[62%] top-[78%] rotate-12" },
-        { text: "NONTHABURI", cls: "left-[12%] top-[26%] -rotate-12" },
-      ].map((l) => (
-        <span
-          key={l.text}
-          className={`absolute z-10 select-none text-[10px] font-semibold tracking-[0.2em] text-faint/70 ${l.cls}`}
-        >
-          {l.text}
-        </span>
-      ))}
-
-      {listings.map((home) => {
-        const isSelected = home.id === selectedId;
-        return (
-          <button
-            key={home.id}
-            onClick={() => onSelect(home.id)}
-            className={`absolute z-20 -translate-x-1/2 -translate-y-1/2 transition-transform duration-200 ease-out ${
-              isSelected ? "scale-110" : "hover:scale-110"
-            }`}
-            style={{ top: home.position.top, left: home.position.left }}
-            aria-label={`เลือก ${home.title}`}
-            aria-pressed={isSelected}
-          >
-            <span
-              className={`relative grid h-8 w-8 place-items-center rounded-full border-2 border-surface shadow-pop ${
-                isSelected ? "bg-ink text-canvas" : "bg-accent text-white"
-              }`}
-            >
-              <Home className="h-3.5 w-3.5" strokeWidth={2.25} />
-              {isSelected && <span className="absolute -inset-1.5 -z-10 animate-ping rounded-full bg-ink/25" />}
-            </span>
-          </button>
-        );
-      })}
-
-      {selected && (
-        <div className="absolute inset-x-3 bottom-3 z-30 flex items-center gap-3 rounded-xl border border-line bg-surface/95 p-2.5 shadow-pop backdrop-blur animate-slide-up">
-          <img src={selected.image} alt="" className="h-12 w-16 flex-shrink-0 rounded-lg object-cover" />
-          <div className="min-w-0 flex-1">
-            <p className="truncate text-[13px] font-semibold text-ink">{selected.title}</p>
-            <p className="truncate text-[11px] text-muted">{selected.location}</p>
-          </div>
-          <p className="num flex-shrink-0 text-[14px] font-semibold text-accent">
-            ฿{(selected.price / 1_000_000).toFixed(2)}M
-          </p>
-        </div>
-      )}
+      {selected && <ListingDetail home={selected} onClose={onClose} />}
     </div>
   );
 }
 
-function EmptyResults({ onReset }: { onReset: () => void }) {
+function ListingDetail({ home, onClose }: { home: UsedHomeListing; onClose: () => void }) {
+  const size = sizeLabel(home);
+  return (
+    <div className="absolute inset-x-3 bottom-3 z-[1000] overflow-hidden rounded-xl border border-line bg-surface/97 shadow-pop backdrop-blur animate-slide-up">
+      <div className="relative h-40 bg-raised sm:h-48">
+        <img src={home.image} alt="" referrerPolicy="no-referrer" className="h-full w-full object-cover" />
+        <button
+          type="button"
+          onClick={onClose}
+          aria-label="ปิดรายละเอียด"
+          className="absolute right-2 top-2 grid h-8 w-8 place-items-center rounded-full border border-white/30 bg-ink/50 text-white backdrop-blur transition-colors hover:bg-ink/80"
+        >
+          <X className="h-4 w-4" />
+        </button>
+        <span className="absolute left-2 top-2 rounded-md bg-surface/95 px-1.5 py-0.5 text-[10px] font-semibold uppercase tracking-label text-ink">
+          {home.type}
+        </span>
+      </div>
+      <div className="p-3.5">
+        <p className="line-clamp-2 text-[13.5px] font-semibold leading-snug text-ink">{home.title}</p>
+        <p className="mt-1 truncate text-[11.5px] text-muted">
+          {home.subdistrict && `${home.subdistrict} · `}
+          {home.district} · {home.province}
+        </p>
+        <div className="mt-2 flex flex-wrap items-baseline gap-x-3">
+          <p className="num font-display text-[20px] font-semibold text-accent">฿{home.price.toLocaleString("en-US")}</p>
+          {home.area && (
+            <p className="num text-[11.5px] text-faint">฿{Math.round(home.price / home.area).toLocaleString("en-US")}/ตร.ม.</p>
+          )}
+        </div>
+        <div className="mt-2 flex flex-wrap items-center gap-x-4 gap-y-1 text-[12px] text-muted">
+          {size && <ListingStat icon={Maximize} value={size} />}
+          {home.bedrooms != null && <ListingStat icon={BedDouble} value={`${home.bedrooms} นอน`} />}
+          {home.bathrooms != null && <ListingStat icon={Bath} value={`${home.bathrooms} น้ำ`} />}
+          <ListingStat icon={Clock3} value={formatPosted(home.postedAt)} muted />
+          <a
+            href={home.url}
+            target="_blank"
+            rel="noreferrer"
+            className="ml-auto inline-flex items-center gap-1 text-[12px] font-medium text-ink underline-offset-2 hover:underline"
+          >
+            ดูประกาศต้นทาง <ExternalLink className="h-3 w-3" />
+          </a>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function EmptyResults({ title, hint, onReset }: { title: string; hint: string; onReset?: () => void }) {
   return (
     <div className="flex min-h-[360px] flex-col items-center justify-center rounded-2xl border border-dashed border-line bg-surface/60 p-8 text-center">
       <span className="grid h-11 w-11 place-items-center rounded-xl bg-raised text-faint">
         <Search className="h-5 w-5" strokeWidth={1.75} />
       </span>
-      <h3 className="mt-4 font-display text-[15px] font-semibold text-ink">ไม่มีรายการตรงเงื่อนไข</h3>
-      <p className="mt-1.5 max-w-xs text-[13px] text-muted">ลองขยายช่วงราคา หรือเลือกทำเลอื่น</p>
-      <button onClick={onReset} className="btn-ghost mt-4">
-        ล้างตัวกรองทั้งหมด
-      </button>
+      <h3 className="mt-4 font-display text-[15px] font-semibold text-ink">{title}</h3>
+      <p className="mt-1.5 max-w-sm text-[13px] text-muted">{hint}</p>
+      {onReset && (
+        <button onClick={onReset} className="btn-ghost mt-4">
+          ล้างตัวกรองทั้งหมด
+        </button>
+      )}
     </div>
   );
 }

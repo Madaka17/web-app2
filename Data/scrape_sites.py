@@ -70,7 +70,7 @@ def row(**kw):
         "listing_id", "url", "title", "project_name", "property_type", "type_slug",
         "bedrooms", "bathrooms", "area_sqm", "land_sqwa", "price_thb", "price_per_sqm",
         "sub_district", "district", "province", "latitude", "longitude", "date_posted",
-        "description", "source", "source_page")}
+        "description", "image_url", "source", "source_page")}
     base.update(kw)
     return base
 
@@ -333,6 +333,7 @@ def ba_parse(html, job, page):
             latitude=(s.get("location") or {}).get("lat"),
             longitude=(s.get("location") or {}).get("lon"),
             date_posted=f.get("created"),
+            image_url=(v.get("image") or {}).get("url"),
             source="baania", source_page=f"{job}&page={page}",
         )
         if r["price_thb"] and r["area_sqm"]:
