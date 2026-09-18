@@ -1,10 +1,10 @@
 """
 Train CatBoost, LightGBM and XGBoost on the scraped listings and blend them.
 
-Protocol, chosen so the reported numbers mean something:
-  fit    years 2559-2567
-  weight years 2568          (validation - picks the ensemble weights)
-  score  years 2569          (test - touched only once, at the end)
+Protocol, chosen so the reported numbers mean something (prepare_data.assign_folds):
+  fit    every year before 2569 plus 70% of 2569
+  weight 10% of 2569          (validation - picks the ensemble weights)
+  score  20% of 2569          (test - touched only once, at the end)
 
 The target is log price per sqm (see prepare_data.log_ppsqm) and the loss is
 absolute error, not squared. Squared error fits the conditional mean, which the
@@ -27,14 +27,14 @@ from lightgbm import LGBMRegressor
 from xgboost import XGBRegressor
 
 from prepare_data import (
-    CATEGORICAL, FEATURES, TARGET, add_features, build_reference,
+    CATEGORICAL, FEATURES, FOLD_FRACTIONS, FOLD_SEED, TARGET, TEST_YEARS,
+    add_features, build_reference,
     build_training_frame, clean, load_raw, log_ppsqm, split, to_price,
 )
 
 OUT = Path(__file__).parent / "models"
 OUT.mkdir(exist_ok=True)
 
-VAL_YEAR = 2568
 SEED = 42
 
 
@@ -114,9 +114,10 @@ def main() -> None:
     # Comparables for a fit row come from the years before it; for validation
     # and test they come from every year the model was allowed to see. That is
     # what serving does, so it is what the score has to be measured under.
-    fit_frame = build_training_frame(train_all[train_all.year < VAL_YEAR])
-    fit_ref = build_reference(train_all[train_all.year < VAL_YEAR])
-    val_frame = add_features(train_all[train_all.year == VAL_YEAR], fit_ref)
+    fit_rows = train_all[train_all.fold == "fit"]
+    fit_frame = build_training_frame(fit_rows)
+    fit_ref = build_reference(fit_rows)
+    val_frame = add_features(train_all[train_all.fold == "val"], fit_ref)
     test_frame = add_features(test, fit_ref)
 
     print(f"fit {len(fit_frame):,} | val {len(val_frame):,} | test {len(test_frame):,}")
@@ -191,7 +192,7 @@ def main() -> None:
     print("=" * 78)
 
     # --- refit on every training year for the artifact we actually serve ---
-    print("\nrefitting on all training years (2561-2567) for serving...", flush=True)
+    print("\nrefitting on fit + validation rows for serving...", flush=True)
     serve_frame = build_training_frame(train_all)
     serve_ref = build_reference(train_all)
     y_all = log_ppsqm(serve_frame)
@@ -218,7 +219,8 @@ def main() -> None:
     (OUT / "metrics.json").write_text(json.dumps({
         "protocol": {
             "fit_years": sorted(int(y) for y in fit_frame.year.unique()),
-            "validation_year": VAL_YEAR,
+            "validation": f"{FOLD_FRACTIONS['val']:.0%} of {TEST_YEARS} rows, seed {FOLD_SEED}",
+            "test": f"{FOLD_FRACTIONS['test']:.0%} of {TEST_YEARS} rows, seed {FOLD_SEED}",
             "test_years": sorted(int(y) for y in test.year.unique()),
             "served_model_fit_years": sorted(int(y) for y in train_all.year.unique()),
         },

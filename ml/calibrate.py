@@ -1,8 +1,8 @@
 """
 Derive prediction intervals from the model's real out-of-sample error.
 
-The served ensemble has never seen the held-out test years (prepare_data.
-TEST_YEARS), so the ratio actual/predicted there is an honest picture of how
+The served ensemble has never seen the held-out test fold (prepare_data.
+assign_folds), so the ratio actual/predicted there is an honest picture of how
 wrong it is.
 We store the 10th/90th percentile of that ratio per property type and use them
 as the low/high bounds instead of an invented +/-6% band.

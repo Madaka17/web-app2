@@ -1,11 +1,18 @@
 """
-Load and clean the scraped dotproperty listings (Data/dotproperty_listings.csv).
+Load and clean the scraped asking-price listings in Data/*_listings.csv.
 
 The appraisal parquet this pipeline was written for is not on this machine, so
 load_raw() reshapes the listings into the same 7-column frame instead. The
 target is the asking price (price_thb), not a recorded appraisal. Six columns
 are usable as features: collateral_type, district, province, area_sqm, n_units
 (always 1 - listings have no unit count), year (from date_posted).
+
+Sources (all Bangkok + metropolitan area, scraped 2026-09-18):
+  dotproperty, ddproperty, hipflat, baania - used.
+  livinginsider - NOT used: its list pages carry a marketing "zone" but no
+  district, and the location map the API serves is keyed by district.
+Hipflat list pages carry no posting date; those rows are dated at the scrape,
+which is when they were live.
 
 It carries NO bedroom, bathroom, floor, building-age, parking or transit-distance
 column, so the models cannot learn from those even though the web form collects
@@ -26,10 +33,14 @@ from pathlib import Path
 import numpy as np
 import pandas as pd
 
-DATA_PATH = Path(__file__).parent.parent / "Data/dotproperty_listings.csv"
+DATA_DIR = Path(__file__).parent.parent / "Data"
+SOURCES = ("dotproperty", "ddproperty", "hipflat", "baania")
+SCRAPE_DATE = "2026-09-18"
 
 # Listing types the app prices. Shops, warehouses, hotels etc. are dropped.
 PROPERTY_TYPES = ("คอนโด", "บ้านเดี่ยว", "ทาวน์เฮ้าส์", "ที่ดิน")
+# Each site labels the same four types differently.
+TYPE_ALIASES = {"บ้าน": "บ้านเดี่ยว", "ทาวน์โฮม": "ทาวน์เฮ้าส์"}
 
 CATEGORICAL = ["collateral_type", "province", "district"]
 # Everything below is derived in add_features(); none of it is a raw column.
@@ -67,9 +78,13 @@ MAX_VALUE = 200_000_000
 MIN_AREA = 10.0
 MAX_AREA = 20_000.0
 
-# Held out for testing: the most recent year the model has never seen.
-# Listings are concentrated in 2568-2569, so only one year can be spared.
+# Held out for testing: a fixed random 20% of the most recent year. Nearly every
+# listing is a 2569 snapshot of the same market, so holding out the whole year
+# would leave almost nothing to fit on; a 2569 fit row is still described only
+# by earlier years (build_training_frame), so it cannot look itself up.
 TEST_YEARS = (2569,)
+FOLD_FRACTIONS = {"test": 0.20, "val": 0.10}  # of TEST_YEARS rows; the rest fit
+FOLD_SEED = 42
 
 # Comparable lookups, narrowest first. Each is shrunk toward the next one out.
 CELL = ["province", "district", "collateral_type"]
@@ -85,23 +100,36 @@ SHRINK = {"prov_type": 20.0, "district": 20.0, "dt": 20.0, "band": 5.0, "exact":
 
 
 def load_raw() -> pd.DataFrame:
-    df = pd.read_csv(DATA_PATH, usecols=[
-        "project_name", "property_type", "bedrooms", "area_sqm", "price_thb",
-        "district", "province", "date_posted",
-    ])
+    cols = ["project_name", "property_type", "bedrooms", "area_sqm", "price_thb",
+            "district", "province", "date_posted"]
+    parts = []
+    for src in SOURCES:
+        df = pd.read_csv(DATA_DIR / f"{src}_listings.csv",
+                         usecols=lambda c: c in cols or c == "land_sqwa")
+        df["property_type"] = df["property_type"].replace(TYPE_ALIASES)
+        if "land_sqwa" in df:
+            # Land listings on baania give plot size in wa only (1 wa = 4 sqm).
+            land = (df["property_type"] == "ที่ดิน") & df["area_sqm"].isna()
+            df.loc[land, "area_sqm"] = df.loc[land, "land_sqwa"] * 4
+        if src == "hipflat":
+            df["date_posted"] = df["date_posted"].fillna(SCRAPE_DATE)
+        parts.append(df.reindex(columns=cols))
+    df = pd.concat(parts, ignore_index=True)
     df = df[df["property_type"].isin(PROPERTY_TYPES)].dropna(subset=["date_posted"])
-    # The same unit is often re-posted; keep one copy so it cannot sit in both
-    # train and test.
+    # The same unit is often re-posted, on one site or across sites; keep one
+    # copy so it cannot sit in both train and test.
     df = df.drop_duplicates(
-        ["project_name", "property_type", "area_sqm", "price_thb", "bedrooms", "district"],
+        ["property_type", "area_sqm", "price_thb", "bedrooms", "district"],
         keep="last")
+    date = pd.to_datetime(df["date_posted"], utc=True, format="ISO8601", errors="coerce")
+    df = df[date.notna()]
     return pd.DataFrame({
         "collateral_type": df["property_type"],
         "province": df["province"],
         "district": df["district"],
         "area_sqm": df["area_sqm"],
         "n_units": 1,
-        "year": (pd.to_datetime(df["date_posted"], utc=True).dt.year + 543).astype(int),
+        "year": (date[date.notna()].dt.year + 543).astype(int),
         TARGET: df["price_thb"],
     })
 
@@ -139,14 +167,30 @@ def clean(df: pd.DataFrame) -> tuple[pd.DataFrame, dict]:
     return df.reset_index(drop=True), report
 
 
-def split(df: pd.DataFrame) -> tuple[pd.DataFrame, pd.DataFrame]:
-    """Time-based split: train on older years, test on the newest.
+def assign_folds(df: pd.DataFrame) -> pd.Series:
+    """'fit' / 'val' / 'test' per row. Older years are all 'fit'; TEST_YEARS
+    rows are dealt out at random with a fixed seed so every script sees the
+    same held-out set."""
+    fold = pd.Series("fit", index=df.index)
+    recent = df.index[df["year"].isin(TEST_YEARS)]
+    u = pd.Series(np.random.default_rng(FOLD_SEED).random(len(recent)), index=recent)
+    fold[u.index[u < FOLD_FRACTIONS["test"]]] = "test"
+    fold[u.index[(u >= FOLD_FRACTIONS["test"])
+                 & (u < FOLD_FRACTIONS["test"] + FOLD_FRACTIONS["val"])]] = "val"
+    return fold
 
-    A random split would let the model see 2569 comparables while predicting
-    2569, which flatters the score and is not how the app is used.
+
+def split(df: pd.DataFrame) -> tuple[pd.DataFrame, pd.DataFrame]:
+    """Hold out a fixed random slice of the newest year for testing.
+
+    The test rows and the train rows are different listings of the same 2569
+    market. A training row is still only ever described by earlier years, so
+    the score measures how well comparables from the past price a listing the
+    model has never seen - which is how the app is used.
     """
-    test = df[df["year"].isin(TEST_YEARS)]
-    train = df[~df["year"].isin(TEST_YEARS)]
+    fold = assign_folds(df)
+    test = df[fold == "test"]
+    train = df[fold != "test"].assign(fold=fold[fold != "test"])
     return train.reset_index(drop=True), test.reset_index(drop=True)
 
 

@@ -71,7 +71,7 @@ class TestSplit:
         out, _ = clean(sample)
         train, test = split(out)
         assert set(test.year).issubset(set(TEST_YEARS))
-        assert not set(train.year) & set(TEST_YEARS)
+        assert (train.fold != "test").all()
 
     def test_no_row_is_in_both_halves(self, sample):
         out, _ = clean(sample)
@@ -170,7 +170,7 @@ class TestMetricsFile:
     def test_reports_the_honest_test_years(self):
         m = json.loads((HERE / "models/metrics.json").read_text(encoding="utf-8"))
         assert m["protocol"]["test_years"] == list(TEST_YEARS)
-        assert m["protocol"]["validation_year"] not in m["protocol"]["test_years"]
+        assert m["protocol"]["validation"] != m["protocol"]["test"]
 
     def test_feature_importance_sums_to_one(self):
         m = json.loads((HERE / "models/metrics.json").read_text(encoding="utf-8"))

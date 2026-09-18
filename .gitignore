@@ -32,3 +32,7 @@ Data/*.csv
 Data/*.json
 Data/*.zip
 Data/*.xlsx
+Data/*_raw.jsonl
+Data/*_done.txt
+Data/scrape*.log
+ml/train.log

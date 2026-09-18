@@ -4,17 +4,13 @@ CatBoost + LightGBM + XGBoost ensemble that prices a property for the web app.
 
 ## What it is trained on
 
-`/Users/vexila/Desktop/Data real/appraisal_2561-2569.parquet` — 302,702 recorded
-appraisals, 2561–2569. This is the only file on this machine carrying **real**
-prices.
-
-It was chosen over `real_estate_platform/sample_data/real_estate_enriched.csv`,
-whose `price_thb` is produced by a hedonic formula in `data_generator.py`. A
-model trained on that column re-learns the formula (hence its R² of 0.995) and
-tells you nothing about the market. That is stated in the header of
-`real_estate_platform/enrich_real_data.py` too.
-
-`project/data.xlsx` has no price column at all, so it cannot train anything.
+Asking prices scraped from four listing sites (`Data/*_listings.csv`, Bangkok +
+ปริมณฑล, scraped 2026-09-18; see `Data/scrape_dotproperty.py` and
+`Data/scrape_sites.py`): dotproperty, ddproperty, hipflat and baania. After
+type filtering and cross-site de-duplication that is 141,200 listings, 76
+districts. Livinginsider was scraped too but its list pages carry no district,
+so it cannot feed a district-keyed model. The target is the **asking price**,
+not a recorded appraisal.
 
 ## What the model can and cannot see
 
@@ -63,80 +59,34 @@ squared-error fit upward.
 
 ## Accuracy, measured honestly
 
-Fit on 2561–2566, ensemble weights picked on 2567, scored once on 2568–2569
-(years the model never saw). A random split would leak same-year comparables.
+Almost every listing is a 2569 snapshot of one market, so the newest year is
+dealt out at random with a fixed seed (`prepare_data.assign_folds`): 70% of
+2569 plus all older years to fit, 10% to pick ensemble weights, 20% scored once
+at the end. A fit row is still described only by earlier years, so it can never
+look itself up.
 
 | model | MAPE | MdAPE | R² | within ±20% |
 |---|---|---|---|---|
-| CatBoost | 49.5% | 24.5% | 0.595 | 43.5% |
-| LightGBM | 50.6% | 24.8% | 0.601 | 43.3% |
-| XGBoost | 50.4% | 25.2% | 0.600 | 42.7% |
-| **Ensemble** | **49.4%** | **24.3%** | **0.599** | **43.7%** |
+| CatBoost | 53.2% | 27.4% | 0.581 | 37.3% |
+| LightGBM | 59.2% | 23.8% | 0.739 | 43.0% |
+| XGBoost | 51.7% | 25.0% | 0.637 | 40.8% |
+| **Ensemble** | **52.8%** | **25.7%** | **0.625** | **39.4%** |
 
-Against the previous version of this model, which had neither the comparables
-nor the price-per-sqm target:
+Against the previous model, fit on dotproperty alone (15k fit rows, scored on
+the whole of 2569): MAPE 63.2% → 52.8%, R² 0.587 → 0.625, MdAPE 26.3% → 25.7%.
 
-| | before | after |
-|---|---|---|
-| MAPE | 56.6% | 49.4% |
-| MdAPE | 31.6% | 24.3% |
-| R² | 0.502 | 0.599 |
-| within ±10% | 17.5% | 25.8% |
-| within ±20% | 33.6% | 43.7% |
+By property type (held-out fold, served model):
 
-By property type — the split that matters. These are the **served** model, fit
-on 2561–2567 and scored on 2568–2569, so they run a little ahead of the table
-above:
+| segment | n | MdAPE | within ±20% |
+|---|---|---|---|
+| คอนโด | 13,498 | 24.5% | 41.8% |
+| ทาวน์เฮ้าส์ | 1,734 | 22.6% | 45.5% |
+| บ้านเดี่ยว | 2,497 | 28.5% | 36.9% |
+| ที่ดิน | 421 | 41.0% | 25.9% |
 
-| segment | n | MdAPE | within ±20% | R² |
-|---|---|---|---|---|
-| ห้องชุด (คอนโด) | 7,903 | **12.8%** | 66.6% | 0.780 |
-| ที่ดิน/สิ่งปลูกสร้าง | 31,469 | 25.8% | 42.5% | 0.628 |
+Asking prices are noisier than appraisals: the same unit is listed at very
+different prices by different agents, which caps how well any model can do.
 
-Condos still predict about twice as well as land: a 45 sqm unit in a tower has
-hundreds of near-identical comparables, a 3-rai plot has none.
-
-Where the gain actually comes from, on the same held-out years:
-
-| | n | MdAPE | within ±20% | R² |
-|---|---|---|---|---|
-| an exact comparable exists | 24,750 | **16.2%** | 56.9% | 0.830 |
-| none, but a near-identical size does | 13,747 | 34.5% | 31.6% | 0.453 |
-| nothing near this size in the district | 875 | 41.2% | 24.9% | 0.519 |
-
-This is the honest shape of the improvement. Properties get re-appraised, and a
-row whose exact size has been valued in that district before is now priced very
-well. A genuinely novel property — an unusual size in a thin district — is
-predicted about as well as the old model managed, which is to say not very. Two
-thirds of real traffic falls in the first row; the model reports which case it
-is in through `comp_n` and `nn_dist`.
-
-MAPE stays far above MdAPE because it is an average over a long tail — the
-cheapest rows (under 2M THB) carry a MAPE of 116% and drag it up on their own.
-Half of all predictions land within 24.3%.
-
-Prediction intervals are the 10th–90th percentile of `actual / predicted` on the
-held-out years, per property type — not an invented ±6% band.
-
-## Ensemble weights
-
-CatBoost 80% · LightGBM 10% · XGBoost 10%, chosen on the validation year.
-
-Unconstrained, the search drops LightGBM (0.8 / 0 / 0.2). A minimum weight of
-10% is enforced so all three models genuinely contribute; the cost is +0.03 pp
-MAPE on validation.
-
-## Running it
-
-```bash
-cd ml
-.venv/bin/python api.py          # http://127.0.0.1:8000
-```
-
-The web app reads `VITE_API_URL`, defaulting to `http://127.0.0.1:8000`.
-
-| endpoint | |
-|---|---|
 | `GET /api/health` | what is loaded, weights, row counts |
 | `GET /api/metrics` | the full metrics.json |
 | `POST /api/predict` | `{subdistrictId, area, propertyType, nUnits?, year?}` |
@@ -154,7 +104,7 @@ The web app reads `VITE_API_URL`, defaulting to `http://127.0.0.1:8000`.
 
 | | |
 |---|---|
-| `prepare_data.py` | load, clean, time-based split, comparable features |
+| `prepare_data.py` | load four sources, clean, fold split, comparable features |
 | `train_models.py` | trains the three models, picks weights, scores on test |
 | `calibrate.py` | prediction intervals from out-of-sample error |
 | `build_location_map.py` | TIS-1099 subdistrict id → district/province |
@@ -166,9 +116,8 @@ The web app reads `VITE_API_URL`, defaulting to `http://127.0.0.1:8000`.
 
 - Predictions are a starting figure, not an official appraisal.
 - Appraisal value is not market price.
-- 2569 has only 10,998 rows (partial year).
+- Listings from before 2568 are thin; 2569 dominates.
 - A property with no comparable on record — an unusual size in a thin district —
   falls back to district and province statistics and is predicted worse. The
   `comp_n` and `nn_dist` features tell the model when it is in that position.
-- บางเสาธง (สมุทรปราการ) is the one district in `locations.ts` absent from the
-  training data; it falls back to province-level statistics.
+- Hipflat listings carry no posting date and are dated at the scrape.
