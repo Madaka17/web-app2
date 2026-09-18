@@ -40,22 +40,24 @@
     ]
   },
   "rows": {
-    "fit": 113887,
-    "validation": 9161,
-    "test": 18150
+    "fit": 111484,
+    "validation": 9019,
+    "test": 17867
   },
   "cleaning": {
     "rows_in": 164291,
     "dropped_null": 17867,
     "dropped_value_range": 2080,
     "dropped_area_range": 3144,
+    "dropped_ppsqm_tails": 2828,
     "folded_rare_categories": 0,
-    "rows_out": 141200
+    "rows_out": 138372
   },
   "features": [
     "collateral_type",
     "province",
     "district",
+    "sub_district",
     "area_sqm",
     "log_area",
     "n_units",
@@ -68,6 +70,8 @@
     "dt_ppsqm",
     "dt_n",
     "dt_iqr",
+    "sd_ppsqm",
+    "sd_n",
     "band_ppsqm",
     "band_n",
     "comp_ppsqm",
@@ -80,126 +84,86 @@
     "nn_dist"
   ],
   "feature_importance": {
-    "nn_ppsqm": 0.0958,
-    "area_sqm": 0.0756,
-    "district_ppsqm": 0.0735,
-    "dt_iqr": 0.07,
-    "dt_ppsqm": 0.0671,
-    "district": 0.0601,
-    "nn_dist": 0.0556,
-    "log_area": 0.0486,
-    "area_per_unit": 0.0441,
-    "comp_gap": 0.0437,
-    "band_ppsqm": 0.0433,
-    "dt_n": 0.0404,
-    "year": 0.0398,
-    "collateral_type": 0.0363,
-    "comp_ppsqm": 0.0349,
-    "comp2_ppsqm": 0.0326,
-    "province_ppsqm": 0.029,
-    "band_n": 0.028,
-    "province": 0.0247,
-    "prov_type_ppsqm": 0.0213,
+    "sd_ppsqm": 0.0898,
+    "nn_ppsqm": 0.0818,
+    "area_sqm": 0.0703,
+    "sub_district": 0.0572,
+    "band_ppsqm": 0.0565,
+    "district": 0.0547,
+    "comp_gap": 0.052,
+    "dt_iqr": 0.0491,
+    "area_per_unit": 0.0473,
+    "district_ppsqm": 0.0438,
+    "sd_n": 0.0416,
+    "nn_dist": 0.0391,
+    "dt_ppsqm": 0.032,
+    "log_area": 0.0317,
+    "collateral_type": 0.0295,
+    "comp_ppsqm": 0.0293,
+    "band_n": 0.0283,
+    "comp2_ppsqm": 0.027,
+    "province": 0.0267,
+    "dt_n": 0.0242,
+    "province_ppsqm": 0.0212,
+    "year": 0.0203,
     "type_ppsqm": 0.0176,
-    "comp_age": 0.007,
-    "comp_n": 0.0064,
-    "comp2_n": 0.0048,
+    "prov_type_ppsqm": 0.0112,
+    "comp_n": 0.0083,
+    "comp_age": 0.006,
+    "comp2_n": 0.0036,
     "n_units": 0.0
   },
   "results": {
     "CatBoost": {
       "test": {
-        "RMSE": 13997154.13990143,
-        "MAE": 5415207.443945827,
-        "R2": 0.5810414491205378,
-        "MAPE": 53.22720830279563,
-        "MdAPE": 27.40321342296413,
-        "Within_10Pct": 18.71625344352617,
-        "Within_20Pct": 37.28374655647383
+        "RMSE": 9571236.83329149,
+        "MAE": 3962758.028288208,
+        "R2": 0.7451130666927768,
+        "MAPE": 33.32402445730906,
+        "MdAPE": 23.319155118000992,
+        "Within_10Pct": 21.962276823193598,
+        "Within_20Pct": 43.80701852577377
       },
-      "weight": 0.65,
-      "train_seconds": 282.1
+      "weight": 0.1,
+      "train_seconds": 382.1
     },
     "LightGBM": {
       "test": {
-        "RMSE": 11058988.291752478,
-        "MAE": 4385210.673496405,
-        "R2": 0.7384694874676085,
-        "MAPE": 59.16907690232129,
-        "MdAPE": 23.805597425308118,
-        "Within_10Pct": 22.462809917355372,
-        "Within_20Pct": 42.98622589531681
+        "RMSE": 9025665.736422697,
+        "MAE": 3762958.1689733467,
+        "R2": 0.7733425816976749,
+        "MAPE": 34.47310915696169,
+        "MdAPE": 22.6037823836016,
+        "Within_10Pct": 24.089102815245983,
+        "Within_20Pct": 45.32378127273745
       },
-      "weight": 0.1,
-      "train_seconds": 19.7
+      "weight": 0.8,
+      "train_seconds": 22.8
     },
     "XGBoost": {
       "test": {
-        "RMSE": 13022916.308104267,
-        "MAE": 4922632.007786371,
-        "R2": 0.6373329768688774,
-        "MAPE": 51.7359847164403,
-        "MdAPE": 25.043582916666665,
-        "Within_10Pct": 21.140495867768593,
-        "Within_20Pct": 40.80440771349863
+        "RMSE": 9949552.94664367,
+        "MAE": 3981196.2132222285,
+        "R2": 0.7245653452003702,
+        "MAPE": 34.0793323904841,
+        "MdAPE": 23.327734967948714,
+        "Within_10Pct": 22.96412380366038,
+        "Within_20Pct": 43.89656909386019
       },
-      "weight": 0.25,
-      "train_seconds": 33.5
+      "weight": 0.1,
+      "train_seconds": 51.1
     },
     "Ensemble": {
       "test": {
-        "RMSE": 13245221.889399791,
-        "MAE": 5089840.05737162,
-        "R2": 0.6248455997606708,
-        "MAPE": 52.77823666954485,
-        "MdAPE": 25.726637730036025,
-        "Within_10Pct": 19.8732782369146,
-        "Within_20Pct": 39.44903581267218
+        "RMSE": 9064862.758637466,
+        "MAE": 3763113.2655853946,
+        "R2": 0.7713696330735886,
+        "MAPE": 34.01429328132374,
+        "MdAPE": 22.463859432698666,
+        "Within_10Pct": 23.97156769463256,
+        "Within_20Pct": 45.357362735769854
       },
       "weight": 1.0
     }
-  },
-  "calibration": {
-    "คอนโด": {
-      "n": 13498,
-      "q10": 0.6301649960443413,
-      "q90": 1.718473516100949,
-      "median_ratio": 1.075676176710696,
-      "MdAPE": 24.512434150171085,
-      "within_20pct": 41.78396799525856
-    },
-    "บ้านเดี่ยว": {
-      "n": 2497,
-      "q10": 0.5495079169064983,
-      "q90": 1.8890238381793916,
-      "median_ratio": 1.0510508956232372,
-      "MdAPE": 28.5496474492355,
-      "within_20pct": 36.884261113336
-    },
-    "ทาวน์เฮ้าส์": {
-      "n": 1734,
-      "q10": 0.65690632320868,
-      "q90": 1.682663008944671,
-      "median_ratio": 1.027667622061025,
-      "MdAPE": 22.575581523202402,
-      "within_20pct": 45.501730103806224
-    },
-    "ที่ดิน": {
-      "n": 421,
-      "q10": 0.45306253781346406,
-      "q90": 2.9794710282413845,
-      "median_ratio": 1.1113347301712948,
-      "MdAPE": 40.99328489195662,
-      "within_20pct": 25.890736342042754
-    },
-    "__default__": {
-      "n": 18150,
-      "q10": 0.6165845695277857,
-      "q90": 1.7597063477134625,
-      "median_ratio": 1.067896554397449,
-      "MdAPE": 25.019219435066745,
-      "within_20pct": 41.09641873278237
-    }
-  },
-  "calibration_note": "Intervals are the 10th-90th percentile of actual/predicted on the held-out test years, per property type."
+  }
 }

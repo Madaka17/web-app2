@@ -202,6 +202,14 @@ function explain(c: Comparables, r: ApiPrediction, input: PredictionInput): stri
     );
   }
 
+  if (c.subdistrict_n > 0) {
+    const gap = (c.subdistrict_ppsqm / c.district_ppsqm - 1) * 100;
+    const dir = Math.abs(gap) < 3 ? "ใกล้เคียงทั้งเขต" : gap > 0 ? `แพงกว่าทั้งเขต ${gap.toFixed(0)}%` : `ถูกกว่าทั้งเขต ${(-gap).toFixed(0)}%`;
+    lines.push(
+      `เฉพาะแขวง${r.meta.subdistrict} มี ${c.subdistrict_n.toLocaleString("en-US")} รายการ ราคา ${perSqm(c.subdistrict_ppsqm)} — ${dir}`,
+    );
+  }
+
   if (c.size_band_n > 0) {
     const gap = (c.size_band_ppsqm / c.district_ppsqm - 1) * 100;
     const dir = Math.abs(gap) < 3 ? "ใกล้เคียงค่ากลางของเขต" : gap > 0 ? `แพงกว่าค่ากลางของเขต ${gap.toFixed(0)}%` : `ถูกกว่าค่ากลางของเขต ${(-gap).toFixed(0)}%`;

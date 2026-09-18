@@ -36,3 +36,8 @@ Data/*_raw.jsonl
 Data/*_done.txt
 Data/scrape*.log
 ml/train.log
+
+# tailscale certs + python cache
+*.crt
+*.key
+__pycache__/

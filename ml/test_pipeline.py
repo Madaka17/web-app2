@@ -41,6 +41,7 @@ def sample():
         "collateral_type": ["ห้องชุด (คอนโดมิเนียม)"] * 4 + ["ที่ดิน/สิ่งปลูกสร้าง/ที่ดินพร้อมสิ่งปลูกสร้าง"] * 4,
         "province": ["กรุงเทพมหานคร"] * 8,
         "district": ["คลองเตย"] * 4 + ["สวนหลวง"] * 4,
+        "sub_district": ["คลองเตย"] * 4 + ["สวนหลวง"] * 2 + ["อ่อนนุช"] * 2,
         "appraisal_value": [3e6, 5e6, 0.01, 9e9, 8e6, 12e6, 4e6, 6e6],
         "area_sqm": [45.0, 70.0, 60.0, 80.0, 200.0, 300.0, 1.0, 250.0],
         "n_units": [1, 1, 1, 1, 1, 2, 1, 1],
@@ -146,7 +147,7 @@ class TestServedBundle:
     def test_predicts_a_positive_price_for_a_normal_condo(self, bundle):
         frame = pd.DataFrame([{
             "collateral_type": "ห้องชุด (คอนโดมิเนียม)",
-            "province": "กรุงเทพมหานคร", "district": "คลองเตย",
+            "province": "กรุงเทพมหานคร", "district": "คลองเตย", "sub_district": "คลองเตย",
             "area_sqm": 65.0, "n_units": 1, "year": 2567,
         }])
         preds = _ensemble_members(bundle, frame)
@@ -158,7 +159,7 @@ class TestServedBundle:
         def price(area: float) -> float:
             frame = pd.DataFrame([{
                 "collateral_type": "ห้องชุด (คอนโดมิเนียม)",
-                "province": "กรุงเทพมหานคร", "district": "คลองเตย",
+                "province": "กรุงเทพมหานคร", "district": "คลองเตย", "sub_district": "คลองเตย",
                 "area_sqm": area, "n_units": 1, "year": 2567,
             }])
             preds = _ensemble_members(bundle, frame)

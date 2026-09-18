@@ -42,7 +42,9 @@ PROPERTY_TYPES = ("คอนโด", "บ้านเดี่ยว", "ทา�
 # Each site labels the same four types differently.
 TYPE_ALIASES = {"บ้าน": "บ้านเดี่ยว", "ทาวน์โฮม": "ทาวน์เฮ้าส์"}
 
-CATEGORICAL = ["collateral_type", "province", "district"]
+CATEGORICAL = ["collateral_type", "province", "district", "sub_district"]
+# Hipflat list pages carry no sub-district; its rows fall back to the district.
+NO_SUBDISTRICT = "ไม่ระบุ"
 # Everything below is derived in add_features(); none of it is a raw column.
 NUMERIC = [
     "area_sqm",
@@ -57,6 +59,8 @@ NUMERIC = [
     "dt_ppsqm",
     "dt_n",
     "dt_iqr",
+    "sd_ppsqm",
+    "sd_n",
     "band_ppsqm",
     "band_n",
     "comp_ppsqm",
@@ -77,6 +81,10 @@ MIN_VALUE = 50_000
 MAX_VALUE = 200_000_000
 MIN_AREA = 10.0
 MAX_AREA = 20_000.0
+# Price per sqm outside these quantiles of its property type is a data-entry
+# slip (price typed in thousands, land priced per wa, area typed in rai):
+# a condo at 1,200 THB/sqm is not a cheap condo.
+PPSQM_TRIM = (0.01, 0.99)
 
 # Held out for testing: a fixed random 20% of the most recent year. Nearly every
 # listing is a 2569 snapshot of the same market, so holding out the whole year
@@ -88,6 +96,7 @@ FOLD_SEED = 42
 
 # Comparable lookups, narrowest first. Each is shrunk toward the next one out.
 CELL = ["province", "district", "collateral_type"]
+SD_KEY = ["province", "district", "sub_district", "collateral_type"]
 EXACT_KEY = CELL + ["n_units", "area_sqm"]
 AREA_KEY = CELL + ["area_sqm"]
 BAND_KEY = CELL + ["area_bin"]
@@ -96,12 +105,12 @@ BAND_KEY = CELL + ["area_bin"]
 BAND_WIDTH = 0.25
 # Rows needed before a cell's own median outweighs its parent's, per level.
 # The narrower the cell the fewer rows it has, so it is trusted sooner.
-SHRINK = {"prov_type": 20.0, "district": 20.0, "dt": 20.0, "band": 5.0, "exact": 2.0}
+SHRINK = {"prov_type": 20.0, "district": 20.0, "dt": 20.0, "sd": 10.0, "band": 5.0, "exact": 2.0}
 
 
 def load_raw() -> pd.DataFrame:
     cols = ["project_name", "property_type", "bedrooms", "area_sqm", "price_thb",
-            "district", "province", "date_posted"]
+            "sub_district", "district", "province", "date_posted"]
     parts = []
     for src in SOURCES:
         df = pd.read_csv(DATA_DIR / f"{src}_listings.csv",
@@ -113,6 +122,7 @@ def load_raw() -> pd.DataFrame:
             df.loc[land, "area_sqm"] = df.loc[land, "land_sqwa"] * 4
         if src == "hipflat":
             df["date_posted"] = df["date_posted"].fillna(SCRAPE_DATE)
+        df["sub_district"] = df["sub_district"].fillna(NO_SUBDISTRICT)
         parts.append(df.reindex(columns=cols))
     df = pd.concat(parts, ignore_index=True)
     df = df[df["property_type"].isin(PROPERTY_TYPES)].dropna(subset=["date_posted"])
@@ -127,6 +137,7 @@ def load_raw() -> pd.DataFrame:
         "collateral_type": df["property_type"],
         "province": df["province"],
         "district": df["district"],
+        "sub_district": df["sub_district"],
         "area_sqm": df["area_sqm"],
         "n_units": 1,
         "year": (date[date.notna()].dt.year + 543).astype(int),
@@ -149,6 +160,13 @@ def clean(df: pd.DataFrame) -> tuple[pd.DataFrame, dict]:
     n = len(df)
     df = df[(df["area_sqm"] >= MIN_AREA) & (df["area_sqm"] <= MAX_AREA)]
     report["dropped_area_range"] = n - len(df)
+
+    n = len(df)
+    ppsqm = df[TARGET] / df["area_sqm"]
+    lo = ppsqm.groupby(df["collateral_type"]).transform(lambda s: s.quantile(PPSQM_TRIM[0]))
+    hi = ppsqm.groupby(df["collateral_type"]).transform(lambda s: s.quantile(PPSQM_TRIM[1]))
+    df = df[(ppsqm >= lo) & (ppsqm <= hi)]
+    report["dropped_ppsqm_tails"] = n - len(df)
 
     # Rare categories can't be learned and break one-hot/target encoding at
     # serve time; fold anything under 50 rows into an explicit bucket.
@@ -249,6 +267,7 @@ def build_reference(hist: pd.DataFrame) -> dict:
         "prov_type": table(["province", "collateral_type"]),
         "district": table(["province", "district"]),
         "dt": table(CELL, extra=True),
+        "sd": table(SD_KEY),
         "band": table(BAND_KEY),
         "exact": table(EXACT_KEY),
         # Sorted once here so add_features can merge_asof against it directly.
@@ -293,8 +312,12 @@ def add_features(df: pd.DataFrame, ref: dict) -> pd.DataFrame:
                    prov, SHRINK["district"])
     dt_n = lookup(ref["dt"], CELL, "n")
     dt = _shrink(lookup(ref["dt"], CELL, "med"), dt_n, pt, SHRINK["dt"])
+    # Sub-district (แขวง): a district's condos can differ two-fold between its
+    # ends, and the web form asks for exactly this.
+    sd_n = lookup(ref["sd"], SD_KEY, "n")
+    sd = _shrink(lookup(ref["sd"], SD_KEY, "med"), sd_n, dt, SHRINK["sd"])
     band_n = lookup(ref["band"], BAND_KEY, "n")
-    band = _shrink(lookup(ref["band"], BAND_KEY, "med"), band_n, dt, SHRINK["band"])
+    band = _shrink(lookup(ref["band"], BAND_KEY, "med"), band_n, sd, SHRINK["band"])
     exact_n = lookup(ref["exact"], EXACT_KEY, "n")
     exact = _shrink(lookup(ref["exact"], EXACT_KEY, "med"), exact_n, band, SHRINK["exact"])
     exact_last = lookup(ref["exact"], EXACT_KEY, "last")
@@ -327,6 +350,8 @@ def add_features(df: pd.DataFrame, ref: dict) -> pd.DataFrame:
     out["dt_ppsqm"] = dt
     out["dt_n"] = np.nan_to_num(dt_n)
     out["dt_iqr"] = np.nan_to_num(lookup(ref["dt"], CELL, "iqr"))
+    out["sd_ppsqm"] = sd
+    out["sd_n"] = np.nan_to_num(sd_n)
     out["band_ppsqm"] = band
     out["band_n"] = np.nan_to_num(band_n)
     out["comp_ppsqm"] = exact

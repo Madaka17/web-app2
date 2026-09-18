@@ -158,7 +158,9 @@ def main() -> None:
                 continue
             wx = max(wx, 0.0)
             blend = wc * val_pred["CatBoost"] + wl * val_pred["LightGBM"] + wx * val_pred["XGBoost"]
-            mape = np.mean(np.abs(blend - y_val) / y_val * 100)
+            # Median, not mean: the mean is set by a few wild asking prices and
+            # the app reports the median error to the user.
+            mape = np.median(np.abs(blend - y_val) / y_val * 100)
             if mape < unconstrained_mape:
                 unconstrained_mape, unconstrained = mape, (wc, wl, wx)
             if min(wc, wl, wx) < MIN_WEIGHT - 1e-9:
@@ -167,8 +169,8 @@ def main() -> None:
                 best_mape, best = mape, (round(wc, 2), round(wl, 2), round(wx, 2))
     weights = {"CatBoost": best[0], "LightGBM": best[1], "XGBoost": best[2]}
     print(f"\nensemble weights (from validation, min {MIN_WEIGHT:.0%} each): {weights}")
-    print(f"  val MAPE constrained   {best_mape:.3f}%")
-    print(f"  val MAPE unconstrained {unconstrained_mape:.3f}%  "
+    print(f"  val MdAPE constrained   {best_mape:.3f}%")
+    print(f"  val MdAPE unconstrained {unconstrained_mape:.3f}%  "
           f"(weights {tuple(round(w, 2) for w in unconstrained)})")
     print(f"  cost of keeping all three: {best_mape - unconstrained_mape:+.3f} pp")
 
