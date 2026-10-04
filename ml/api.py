@@ -7,6 +7,7 @@ the real appraisal data (Data real/appraisal_2561-2569.parquet).
     GET  /api/health   liveness + what is loaded
     GET  /api/metrics  honest accuracy figures from the held-out years
     POST /api/predict  {subdistrictId, area, propertyType, nUnits?, year?}
+                       -> prediction, interval, comparables and market price
 
 Those five are the whole input: they are exactly the columns the training data
 has. The form asks for nothing else, so no value a user types is silently
@@ -23,6 +24,7 @@ import pandas as pd
 from flask import Flask, jsonify, request
 from flask_cors import CORS
 
+from market import market_price
 from prepare_data import CATEGORICAL, FEATURES, add_features, to_price
 
 HERE = Path(__file__).parent
@@ -178,6 +180,11 @@ def predict():
         "vs_district_pct": round((price / area / district_ppsqm - 1) * 100, 1),
     }
 
+    # What similar listings nearby are asking - the "market price" the UI
+    # sets the prediction and a user's own asking price against.
+    market = market_price(f, area)
+    market["predicted_vs_market_pct"] = round((price / market["price"] - 1) * 100, 1)
+
     calib = BUNDLE["calibration"].get(collateral_type, BUNDLE["calibration"]["__default__"])
     lower, upper = price * calib["q10"], price * calib["q90"]
 
@@ -203,6 +210,7 @@ def predict():
         ],
         "features": features,
         "comparables": comparables,
+        "market": market,
         "meta": {
             "province": location["province"],
             "district": location["district"],

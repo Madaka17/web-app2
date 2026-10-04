@@ -7,17 +7,11 @@ import { ResultPanel } from "./ResultPanel";
 import { LocationSelector } from "./LocationSelector";
 import { StatusPanel } from "./StatusPanel";
 import { ModelStatus } from "./ModelStatus";
-
-const PROPERTY_TYPES: { id: PropertyType; label: string }[] = [
-  { id: "condo", label: "คอนโด" },
-  { id: "house", label: "บ้านเดี่ยว" },
-  { id: "townhome", label: "ทาวน์โฮม" },
-  { id: "land", label: "ที่ดิน" },
-];
+import { AREA_SPECS, BUILDING_LABELS, PROPERTY_GROUPS, groupOf } from "@/lib/market";
 
 const DEFAULT_INPUT: PredictionInput = {
   propertyType: "condo",
-  area: 65,
+  area: AREA_SPECS.condo.initial * AREA_SPECS.condo.sqmPerUnit,
   nUnits: 1,
   year: DEFAULT_YEAR,
   subdistrictId: DEFAULT_SUBDISTRICT_ID,
@@ -28,16 +22,24 @@ interface FieldConfig {
   label: string;
   unit: string;
   hint: string;
+  /** min/max are in display units */
   min: number;
   max: number;
   step: number;
+  /** input value (stored) per display unit - 4 for land in ตร.ว., else 1 */
+  scale: number;
 }
 
-const GENERAL_FIELDS: FieldConfig[] = [
-  { key: "area", label: "พื้นที่ใช้สอย", unit: "ตร.ม.", hint: "20–500", min: 20, max: 500, step: 1 },
-  { key: "nUnits", label: "จำนวนหน่วย", unit: "หน่วย", hint: "1–4", min: 1, max: 4, step: 1 },
-  { key: "year", label: "ปีที่ประเมิน", unit: "พ.ศ.", hint: `${YEAR_MIN}–${YEAR_MAX}`, min: YEAR_MIN, max: YEAR_MAX, step: 1 },
-];
+/** The form's fields for a property type. Area is always sent to the API in
+ * sqm; land is typed in ตร.ว. and converted. */
+function fieldsFor(type: PropertyType): FieldConfig[] {
+  const a = AREA_SPECS[type];
+  return [
+    { key: "area", label: a.label, unit: a.unit, hint: `${a.min.toLocaleString("en-US")}–${a.max.toLocaleString("en-US")}`, min: a.min, max: a.max, step: 1, scale: a.sqmPerUnit },
+    { key: "nUnits", label: "จำนวนหน่วย", unit: "หน่วย", hint: "1–4", min: 1, max: 4, step: 1, scale: 1 },
+    { key: "year", label: "ปีที่ประกาศขาย", unit: "พ.ศ.", hint: `${YEAR_MIN}–${YEAR_MAX}`, min: YEAR_MIN, max: YEAR_MAX, step: 1, scale: 1 },
+  ];
+}
 
 function clamp(value: number, min: number, max: number): number {
   return Math.min(max, Math.max(min, value));
@@ -47,10 +49,14 @@ function clamp(value: number, min: number, max: number): number {
 const AUTO_PREDICT_DELAY_MS = 450;
 
 function clampAll(input: PredictionInput): PredictionInput {
-  return GENERAL_FIELDS.reduce<PredictionInput>(
-    (acc, f) => ({ ...acc, [f.key]: clamp(acc[f.key] as number, f.min, f.max) }),
+  return fieldsFor(input.propertyType).reduce<PredictionInput>(
+    (acc, f) => ({ ...acc, [f.key]: clamp(acc[f.key] as number, f.min * f.scale, f.max * f.scale) }),
     input,
   );
+}
+
+function displayValue(value: number, scale: number): string {
+  return String(Math.round((value / scale) * 100) / 100);
 }
 
 export function PredictorDashboard() {
@@ -62,6 +68,21 @@ export function PredictorDashboard() {
   const [isRunning, setIsRunning] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const abortRef = useRef<AbortController>();
+  // The seller's asking price, in baht. Never sent to the model: it is what
+  // the prediction and the market price are judged against.
+  const [askingPrice, setAskingPrice] = useState<number | null>(null);
+  const [askingDraft, setAskingDraft] = useState("");
+  const fields = fieldsFor(input.propertyType);
+  const group = groupOf(input.propertyType);
+
+  const selectType = (type: PropertyType) => {
+    if (type === input.propertyType) return;
+    const a = AREA_SPECS[type];
+    // A 35 sqm "land plot" or a 100 ตร.ว. condo is meaningless: each type
+    // starts from its own typical size.
+    setDrafts({});
+    setInput((prev) => ({ ...prev, propertyType: type, area: a.initial * a.sqmPerUnit }));
+  };
 
   useEffect(() => () => abortRef.current?.abort(), []);
 
@@ -74,7 +95,7 @@ export function PredictorDashboard() {
     setDrafts((prev) => ({ ...prev, [field.key]: raw }));
     const parsed = parseFloat(raw);
     if (Number.isFinite(parsed)) {
-      setInput((prev) => ({ ...prev, [field.key]: parsed }));
+      setInput((prev) => ({ ...prev, [field.key]: parsed * field.scale }));
     }
   };
 
@@ -88,8 +109,8 @@ export function PredictorDashboard() {
       const current = prev[field.key];
       const value =
         typeof current === "number" && Number.isFinite(current)
-          ? clamp(current, field.min, field.max)
-          : field.min;
+          ? clamp(current, field.min * field.scale, field.max * field.scale)
+          : field.min * field.scale;
       return { ...prev, [field.key]: value };
     });
   };
@@ -122,7 +143,7 @@ export function PredictorDashboard() {
   // Every change to the form re-prices it after a short pause - no button
   // press needed. The button remains for an explicit re-run.
   useEffect(() => {
-    if (!GENERAL_FIELDS.every((f) => Number.isFinite(input[f.key] as number))) return;
+    if (!fieldsFor(input.propertyType).every((f) => Number.isFinite(input[f.key] as number))) return;
     const payload = clampAll(input);
     const timer = window.setTimeout(() => void runPredict(payload), AUTO_PREDICT_DELAY_MS);
     return () => window.clearTimeout(timer);
@@ -143,12 +164,13 @@ export function PredictorDashboard() {
       <div className="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
         <div className="max-w-xl">
           <h2 className="font-display text-[28px] font-semibold leading-[1.15] tracking-tight text-ink sm:text-[32px]">
-            บอกทำเลกับขนาด
+            ที่ดิน บ้าน หรือคอนโด
             <br />
-            แล้วดูว่าตลาดตั้งราคาไว้เท่าไหร่
+            ราคานี้ถูกหรือแพงกว่าตลาด
           </h2>
           <p className="mt-3 text-[14px] leading-relaxed text-muted">
-            สามโมเดลอ่านประกาศขายย้อนหลังในเขตเดียวกัน ขนาดใกล้เคียงกัน แล้วให้ช่วงราคาพร้อมบอกว่าปกติแม่นแค่ไหน
+            CatBoost, LightGBM และ XGBoost ทำนายราคาประกาศขายที่ควรเป็น แล้ววางเทียบกับราคาที่ประกาศเทียบเคียงในพื้นที่ตั้งไว้จริง
+            ใส่ราคาที่ผู้ขายตั้งไว้ เพื่อดูว่าถูก สมเหตุสมผล หรือแพงเกินตลาด
           </p>
         </div>
         <ModelStatus />
@@ -169,30 +191,51 @@ export function PredictorDashboard() {
           <div className="card p-5 sm:p-6">
             <fieldset>
               <legend className="label">ประเภททรัพย์</legend>
-              <div className="mt-2.5 grid grid-cols-4 gap-1 rounded-xl bg-raised p-1">
-                {PROPERTY_TYPES.map((t) => {
-                  const active = input.propertyType === t.id;
+              <div className="mt-2.5 grid grid-cols-[1fr_1.6fr_1fr] gap-1 rounded-xl bg-raised p-1">
+                {PROPERTY_GROUPS.map((g) => {
+                  const active = group === g.id;
                   return (
                     <button
-                      key={t.id}
+                      key={g.id}
                       type="button"
-                      onClick={() => setInput((prev) => ({ ...prev, propertyType: t.id }))}
+                      onClick={() => selectType(g.types[0])}
                       aria-pressed={active}
-                      className={`rounded-lg px-2 py-2 text-[13px] font-medium transition-all duration-200 active:scale-[0.97] ${
-                        active
-                          ? "bg-surface text-ink shadow-card"
-                          : "text-muted hover:text-ink"
+                      className={`rounded-lg px-2 py-2 text-[13px] font-medium leading-tight transition-all duration-200 active:scale-[0.97] ${
+                        active ? "bg-surface text-ink shadow-card" : "text-muted hover:text-ink"
                       }`}
                     >
-                      {t.label}
+                      {g.label}
                     </button>
                   );
                 })}
               </div>
+              {group === "land-building" && (
+                <div className="mt-3 flex items-center gap-2 animate-fade-in">
+                  <span className="text-[12px] text-muted">สิ่งปลูกสร้าง</span>
+                  {PROPERTY_GROUPS.find((g) => g.id === "land-building")!.types.map((t) => {
+                    const active = input.propertyType === t;
+                    return (
+                      <button
+                        key={t}
+                        type="button"
+                        onClick={() => selectType(t)}
+                        aria-pressed={active}
+                        className={`rounded-full border px-3 py-1 text-[12px] font-medium transition-colors ${
+                          active
+                            ? "border-ink bg-ink text-canvas"
+                            : "border-line text-muted hover:border-faint hover:text-ink"
+                        }`}
+                      >
+                        {BUILDING_LABELS[t]}
+                      </button>
+                    );
+                  })}
+                </div>
+              )}
             </fieldset>
 
             <div className="mt-6 grid grid-cols-2 gap-x-4 gap-y-5">
-              {GENERAL_FIELDS.map((field) => (
+              {fields.map((field) => (
                 <div key={field.key} className={field.key === "area" ? "col-span-2" : ""}>
                   <label htmlFor={`field-${field.key}`} className="label block">
                     {field.label}
@@ -202,7 +245,7 @@ export function PredictorDashboard() {
                       id={`field-${field.key}`}
                       type="number"
                       inputMode="numeric"
-                      value={drafts[field.key] ?? String(input[field.key])}
+                      value={drafts[field.key] ?? displayValue(input[field.key] as number, field.scale)}
                       min={field.min}
                       max={field.max}
                       step={field.step}
@@ -222,6 +265,35 @@ export function PredictorDashboard() {
 
           <div className="card p-5 sm:p-6">
             <LocationSelector subdistrictId={input.subdistrictId} onChange={updateSubdistrict} />
+          </div>
+
+          <div className="card p-5 sm:p-6">
+            <label htmlFor="asking-price" className="label block">
+              ราคาประกาศขาย <span className="font-normal normal-case text-faint">(ไม่บังคับ)</span>
+            </label>
+            <div className="relative mt-2">
+              <input
+                id="asking-price"
+                type="number"
+                inputMode="decimal"
+                placeholder="เช่น 3.2"
+                value={askingDraft}
+                min={0}
+                step={0.01}
+                onChange={(e) => {
+                  setAskingDraft(e.target.value);
+                  const m = parseFloat(e.target.value);
+                  setAskingPrice(Number.isFinite(m) && m > 0 ? m * 1_000_000 : null);
+                }}
+                className="field num pr-16 text-[15px]"
+              />
+              <span className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-xs text-faint">
+                ล้านบาท
+              </span>
+            </div>
+            <p className="mt-1.5 text-[11px] leading-relaxed text-faint">
+              ใส่ราคาที่ผู้ขายตั้งไว้ เพื่อดูว่าถูกหรือแพงกว่าตลาด — ไม่ถูกส่งเข้าโมเดล
+            </p>
           </div>
 
           <button type="submit" disabled={isRunning} className="btn-primary group w-full py-3.5 text-[15px]">
@@ -264,7 +336,7 @@ export function PredictorDashboard() {
             />
           ) : result ? (
             <div className={`transition-opacity duration-300 ${isRunning ? "opacity-60" : "opacity-100"}`}>
-              <ResultPanel result={result} input={resultInput} />
+              <ResultPanel result={result} input={resultInput} askingPrice={askingPrice} />
             </div>
           ) : (
             <StatusPanel
