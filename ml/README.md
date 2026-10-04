@@ -91,6 +91,24 @@ different prices by different agents, which caps how well any model can do.
 | `GET /api/metrics` | the full metrics.json |
 | `POST /api/predict` | `{subdistrictId, area, propertyType, nUnits?, year?}` |
 
+## Market price
+
+Every prediction comes back with a `market` block (`market.py`): what similar
+listings nearby are **asking**, so the app can set the model's figure and the
+seller's own asking price side by side.
+
+- **Level**: the most specific comparable group with enough listings — same
+  size in the district (≥3) → size band (≥5) → subdistrict (≥5) → district →
+  province for the type. These are the same lookups the models were fed.
+- **Price**: that group's median price per sqm × area.
+- **Range**: ± half the district's interquartile range in log space (P25–P75),
+  shown only when the district has ≥8 listings.
+
+The web app then makes a Three-Way Decision on an asking price the user types:
+below the model's P10 interval edge → ถูกกว่าตลาด, above the P90 edge →
+แพงเกินตลาด, in between → สมเหตุสมผล. The asking price is never sent to the
+model. Land is entered and shown in ตร.ว. (×4 to sqm before the API call).
+
 ## Retraining
 
 ```bash
@@ -110,7 +128,9 @@ different prices by different agents, which caps how well any model can do.
 | `build_location_map.py` | TIS-1099 subdistrict id → district/province |
 | `eval_breakdown.py` | accuracy by type, province, area, value band |
 | `api.py` | Flask serving layer |
+| `market.py` | market price from the comparables, served in `/api/predict` |
 | `test_pipeline.py` | 18 tests over cleaning, splitting, features, bundle |
+| `test_market.py` | market-price level choice and range |
 
 ## Limits worth repeating
 

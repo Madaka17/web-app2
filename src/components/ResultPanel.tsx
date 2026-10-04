@@ -26,6 +26,7 @@ import {
   compound,
 } from "@/lib/growth";
 import { downloadFile, reportToJSON, reportToCSV, reportToText } from "@/lib/download";
+import { AREA_SPECS, BUILDING_LABELS, formatPerUnit, perUnit, verdict, VerdictKind } from "@/lib/market";
 
 const ICON_MAP: Record<string, typeof Train> = {
   Train,
@@ -42,10 +43,17 @@ interface ResultPanelProps {
   input: PredictionInput;
 }
 
-export function ResultPanel({ result, input }: ResultPanelProps) {
+/** "100 ตร.ว." for land, "35 ตร.ม." otherwise. */
+function areaText(input: PredictionInput): string {
+  const a = AREA_SPECS[input.propertyType];
+  return `${(Math.round((input.area / a.sqmPerUnit) * 100) / 100).toLocaleString("en-US")} ${a.unit}`;
+}
+
+export function ResultPanel({ result, input, askingPrice }: ResultPanelProps & { askingPrice?: number | null }) {
   const maxFeatureValue = Math.max(...result.features.map((f) => f.value));
   const barTotal = result.contributions.reduce((sum, c) => sum + c.weight, 0);
-  const perSqm = result.predictedPrice / input.area;
+  const unitPrice = perUnit(result.predictedPrice, input.propertyType, input.area);
+  const unit = AREA_SPECS[input.propertyType].unit;
   // Where the point estimate sits inside its own interval, for the range rule.
   const span = result.upperBound - result.lowerBound || 1;
   const pointPct = ((result.predictedPrice - result.lowerBound) / span) * 100;
@@ -58,12 +66,17 @@ export function ResultPanel({ result, input }: ResultPanelProps) {
         <div className="relative">
           <div className="flex flex-wrap items-start justify-between gap-3">
             <div>
-              <p className="label">ราคาคาดการณ์ · {result.meta.collateral_type}</p>
+              <p className="label">
+                ราคาประกาศขายที่โมเดลคาด ·{" "}
+                {input.propertyType === "house" || input.propertyType === "townhome"
+                  ? `ที่ดินพร้อม${BUILDING_LABELS[input.propertyType]}`
+                  : BUILDING_LABELS[input.propertyType]}
+              </p>
               <p className="mt-2 font-display text-[40px] font-semibold leading-none tracking-tight text-accent sm:text-[48px]">
                 <Baht value={result.predictedPrice} />
               </p>
               <p className="mt-2 text-[13px] text-muted">
-                ≈ <span className="num text-ink">฿<Num value={perSqm} /></span> ต่อ ตร.ม. ·{" "}
+                ≈ <span className="num text-ink">฿<Num value={unitPrice} /></span> ต่อ {unit} · {areaText(input)} ·{" "}
                 {result.meta.subdistrict}, {result.meta.district}
               </p>
             </div>
@@ -93,6 +106,8 @@ export function ResultPanel({ result, input }: ResultPanelProps) {
           </div>
         </div>
       </section>
+
+      <MarketPanel result={result} input={input} askingPrice={askingPrice ?? null} />
 
       {/* Accuracy + ensemble, side by side with different weights */}
       <div className="grid grid-cols-1 gap-4 md:grid-cols-5">
@@ -184,10 +199,10 @@ export function ResultPanel({ result, input }: ResultPanelProps) {
   );
 }
 
-const perSqm = (v: number) => `฿${Math.round(v).toLocaleString("en-US")}/ตร.ม.`;
-
 /** Turn the comparables the models were handed into plain sentences. */
 function explain(c: Comparables, r: ApiPrediction, input: PredictionInput): string[] {
+  const perSqm = (v: number) => formatPerUnit(v, input.propertyType);
+  const size = areaText(input);
   const type = r.meta.collateral_type;
   const dist = r.meta.district;
   const lines: string[] = [];
@@ -214,23 +229,23 @@ function explain(c: Comparables, r: ApiPrediction, input: PredictionInput): stri
     const gap = (c.size_band_ppsqm / c.district_ppsqm - 1) * 100;
     const dir = Math.abs(gap) < 3 ? "ใกล้เคียงค่ากลางของเขต" : gap > 0 ? `แพงกว่าค่ากลางของเขต ${gap.toFixed(0)}%` : `ถูกกว่าค่ากลางของเขต ${(-gap).toFixed(0)}%`;
     lines.push(
-      `ขนาดใกล้เคียง ${input.area} ตร.ม. (±28%) มี ${c.size_band_n.toLocaleString("en-US")} รายการ ราคา ${perSqm(c.size_band_ppsqm)} — ${dir}`,
+      `ขนาดใกล้เคียง ${size} (±28%) มี ${c.size_band_n.toLocaleString("en-US")} รายการ ราคา ${perSqm(c.size_band_ppsqm)} — ${dir}`,
     );
   }
 
   if (c.exact_size_n > 0) {
     lines.push(
-      `ขนาด ${input.area} ตร.ม. พอดี มี ${c.exact_size_n.toLocaleString("en-US")} รายการ ราคา ${perSqm(c.exact_size_ppsqm)}`,
+      `ขนาด ${size} พอดี มี ${c.exact_size_n.toLocaleString("en-US")} รายการ ราคา ${perSqm(c.exact_size_ppsqm)}`,
     );
   } else {
     lines.push(
-      `ไม่มีประกาศขนาด ${input.area} ตร.ม. พอดีในเขตนี้ ขนาดที่ใกล้ที่สุดอยู่ที่ ${perSqm(c.nearest_size_ppsqm)}`,
+      `ไม่มีประกาศขนาด ${size} พอดีในเขตนี้ ขนาดที่ใกล้ที่สุดอยู่ที่ ${perSqm(c.nearest_size_ppsqm)}`,
     );
   }
 
   const vs = c.vs_district_pct;
   const rel = Math.abs(vs) < 3 ? "เท่ากับค่ากลางของเขต" : vs > 0 ? `สูงกว่าค่ากลางของเขต ${vs.toFixed(0)}%` : `ต่ำกว่าค่ากลางของเขต ${(-vs).toFixed(0)}%`;
-  lines.push(`โมเดลจึงตั้งราคาที่ ${perSqm(c.predicted_ppsqm)} ${rel} × ${input.area} ตร.ม. = ${formatBaht(r.predictedPrice)}`);
+  lines.push(`โมเดลจึงตั้งราคาที่ ${perSqm(c.predicted_ppsqm)} ${rel} × ${size} = ${formatBaht(r.predictedPrice)}`);
 
   return lines;
 }
@@ -324,6 +339,164 @@ function FutureValue({ result, input }: ResultPanelProps) {
         จึงบอกแนวโน้มตลาดไม่ได้
       </p>
     </section>
+  );
+}
+
+const VERDICT_STYLE: Record<VerdictKind, { box: string; text: string; hint: string }> = {
+  below: {
+    box: "border-ok/30 bg-ok-soft",
+    text: "text-ok",
+    hint: "ต่ำกว่าขอบล่างของช่วงที่โมเดลคาด น่าสนใจ แต่ควรเช็กสภาพทรัพย์และเอกสารสิทธิ์ว่าทำไมถึงถูก",
+  },
+  fair: {
+    box: "border-line bg-raised",
+    text: "text-ink",
+    hint: "อยู่ในช่วงที่โมเดลคาด ราคาไม่ต่างจากประกาศเทียบเคียงจนแยกออกได้",
+  },
+  above: {
+    box: "border-bad/30 bg-bad-soft",
+    text: "text-bad",
+    hint: "สูงกว่าขอบบนของช่วงที่โมเดลคาด มีช่องให้ต่อรอง หรือทรัพย์ต้องมีจุดเด่นที่โมเดลมองไม่เห็น",
+  },
+};
+
+/**
+ * Market price beside the model's price, and - when the user typed one - the
+ * seller's asking price judged against both. All three sit on one scale so
+ * the gap is seen, not just read.
+ */
+function MarketPanel({ result, input, askingPrice }: ResultPanelProps & { askingPrice?: number | null }) {
+  const m = result.market;
+  if (!m) return null;
+  const type = input.propertyType;
+  const v = askingPrice ? verdict(askingPrice, result.predictedPrice, result.lowerBound, result.upperBound) : null;
+
+  // One shared axis for every price on the card.
+  const points = [result.lowerBound, result.upperBound, m.price, m.low, m.high, askingPrice].filter(
+    (x): x is number => typeof x === "number" && x > 0,
+  );
+  const lo = Math.min(...points) * 0.92;
+  const hi = Math.max(...points) * 1.08;
+  const pos = (x: number) => `${((x - lo) / (hi - lo)) * 100}%`;
+  const vs = m.predicted_vs_market_pct;
+
+  return (
+    <section className="card p-5 sm:p-6">
+      <div className="flex items-baseline justify-between gap-3">
+        <h3 className="label">เทียบกับราคาตลาด</h3>
+        <span className="text-[11px] text-faint">ราคาประกาศขายของทรัพย์เทียบเคียง</span>
+      </div>
+
+      <div className="mt-4 grid grid-cols-2 gap-4">
+        <div>
+          <p className="text-[12px] text-muted">ราคาตลาด</p>
+          <p className="num mt-1 text-[22px] font-semibold leading-tight text-ink">
+            <Baht value={m.price} />
+          </p>
+          <p className="mt-1 text-[11.5px] text-faint">
+            {formatPerUnit(m.ppsqm, type)} · {m.basis}
+            {m.n > 0 && ` · ${m.n.toLocaleString("en-US")} ประกาศ`}
+          </p>
+        </div>
+        <div>
+          <p className="text-[12px] text-muted">โมเดลคาด</p>
+          <p className="num mt-1 text-[22px] font-semibold leading-tight text-accent">
+            <Baht value={result.predictedPrice} />
+          </p>
+          <p className="mt-1 text-[11.5px] text-faint">
+            {Math.abs(vs) < 3
+              ? "ใกล้เคียงราคาตลาด"
+              : vs > 0
+                ? `สูงกว่าราคาตลาด ${vs.toFixed(0)}%`
+                : `ต่ำกว่าราคาตลาด ${(-vs).toFixed(0)}%`}
+          </p>
+        </div>
+      </div>
+
+      {/* Scale: market P25–P75 band, model interval, and the asking price */}
+      <div className="relative mt-6 h-12" aria-hidden="true">
+        <div className="absolute inset-x-0 top-6 h-px bg-line" />
+        {m.low && m.high && (
+          <div
+            className="absolute top-[18px] h-[14px] rounded-sm bg-faint/25"
+            style={{ left: pos(m.low), width: `calc(${pos(m.high)} - ${pos(m.low)})` }}
+          />
+        )}
+        <div
+          className="absolute top-[22px] h-[6px] rounded-full bg-accent/35"
+          style={{ left: pos(result.lowerBound), width: `calc(${pos(result.upperBound)} - ${pos(result.lowerBound)})` }}
+        />
+        <Tick at={pos(m.price)} className="bg-muted" />
+        <Tick at={pos(result.predictedPrice)} className="bg-accent" />
+        {askingPrice && v && <Tick at={pos(askingPrice)} className={askingColor(v.kind)} tall />}
+      </div>
+      <div className="mt-1 flex flex-wrap gap-x-4 gap-y-1.5 text-[11px] text-faint">
+        <span className="inline-flex items-center gap-1.5">
+          <span className="h-3 w-[3px] rounded-full bg-muted" />
+          ราคาตลาด
+        </span>
+        <span className="inline-flex items-center gap-1.5">
+          <span className="h-3 w-[3px] rounded-full bg-accent" />
+          โมเดลคาด
+        </span>
+        {askingPrice && v && (
+          <span className="inline-flex items-center gap-1.5">
+            <span className={`h-3 w-[3px] rounded-full ${askingColor(v.kind)}`} />
+            ราคาประกาศ
+          </span>
+        )}
+        {m.low && m.high && (
+          <span className="inline-flex items-center gap-1.5">
+            <span className="h-2 w-3 rounded-sm bg-faint/25" />
+            ช่วงราคาตลาด <span className="num"><Baht value={m.low} /> – <Baht value={m.high} /></span>
+          </span>
+        )}
+        <span className="inline-flex items-center gap-1.5">
+          <span className="h-1.5 w-3 rounded-full bg-accent/35" />
+          ช่วงที่โมเดลคาด (P10–P90)
+        </span>
+      </div>
+
+      {v && askingPrice ? (
+        <div className={`mt-5 rounded-xl border p-4 ${VERDICT_STYLE[v.kind].box}`}>
+          <div className="flex flex-wrap items-baseline justify-between gap-2">
+            <p className={`text-[17px] font-semibold ${VERDICT_STYLE[v.kind].text}`}>{v.label}</p>
+            <p className="num text-[13px] text-muted">
+              ประกาศ <span className="text-ink">{formatBaht(askingPrice)}</span> ·{" "}
+              {v.gapPct >= 0 ? "+" : ""}
+              {v.gapPct.toFixed(1)}% จากที่โมเดลคาด ·{" "}
+              {askingPrice >= m.price ? "+" : ""}
+              {((askingPrice / m.price - 1) * 100).toFixed(1)}% จากราคาตลาด
+            </p>
+          </div>
+          <p className="mt-1.5 text-[12px] leading-relaxed text-muted">{VERDICT_STYLE[v.kind].hint}</p>
+        </div>
+      ) : (
+        <p className="mt-5 rounded-xl border border-dashed border-line p-3.5 text-[12px] text-muted">
+          ใส่ราคาประกาศขายในฟอร์ม เพื่อให้ระบบตัดสินว่าถูกกว่าตลาด สมเหตุสมผล หรือแพงเกินตลาด
+        </p>
+      )}
+
+      <p className="mt-4 border-t border-line/80 pt-3 text-[11.5px] leading-relaxed text-faint">
+        ราคาตลาดคือค่ากลางราคาประกาศขายต่อ{AREA_SPECS[type].unit}ของกลุ่มเทียบเคียงที่เจาะจงที่สุดซึ่งมีข้อมูลพอ
+        (ขนาดเดียวกัน → ขนาดใกล้เคียง → แขวง → เขต) คูณพื้นที่ ช่วงราคาตลาดใช้การกระจาย P25–P75 ของเขต
+        เกณฑ์ตัดสินเป็น Three-Way Decisions: นอกช่วงที่โมเดลคาดจึงเรียกว่าถูกหรือแพง ในช่วงถือว่าสมเหตุสมผล
+        ทั้งหมดเป็นราคาประกาศขาย ไม่ใช่ราคาซื้อขายจริง
+      </p>
+    </section>
+  );
+}
+
+const askingColor = (k: VerdictKind) => (k === "fair" ? "bg-ink" : k === "below" ? "bg-ok" : "bg-bad");
+
+function Tick({ at, className, tall }: { at: string; className: string; tall?: boolean }) {
+  return (
+    <div
+      className={`absolute w-[3px] -translate-x-1/2 rounded-full transition-[left] duration-500 ease-out ${className} ${
+        tall ? "top-[8px] h-[34px]" : "top-[13px] h-[24px]"
+      }`}
+      style={{ left: at }}
+    />
   );
 }
 

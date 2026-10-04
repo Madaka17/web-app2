@@ -1,4 +1,5 @@
 import { PredictionInput, PredictionResult } from "./types";
+import { MarketPrice } from "./market";
 
 // Same origin by default: the Vite dev server proxies /api to Flask (vite.config.ts).
 const BASE = import.meta.env.VITE_API_URL ?? "";
@@ -34,6 +35,8 @@ export interface Comparables {
 
 export interface ApiPrediction extends PredictionResult {
   comparables: Comparables;
+  /** What similar listings nearby ask. Absent from an API older than this field. */
+  market?: MarketPrice;
   meta: PredictionMeta;
 }
 

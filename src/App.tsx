@@ -38,12 +38,12 @@ function AppContent() {
           <footer className="mx-auto mt-6 w-full max-w-6xl px-4 pb-8 sm:px-6 lg:px-8">
             <div className="flex flex-col gap-1.5 border-t border-line/70 pt-5 text-[11.5px] leading-relaxed text-faint sm:flex-row sm:items-start sm:justify-between">
               <p>
-                CatBoost · LightGBM · XGBoost — เทรนจากประกาศขายบน dotproperty
-                ทดสอบกับปีที่โมเดลไม่เคยเห็น
+                CatBoost · LightGBM · XGBoost — เทรนจากราคาประกาศขายบน dotproperty, ddproperty,
+                hipflat และ baania ทดสอบกับประกาศที่โมเดลไม่เคยเห็น
               </p>
               <p className="sm:max-w-sm sm:text-right">
-                โมเดลเห็นแค่ ประเภท · พื้นที่ · เขต · จังหวัด · ปี — ใช้เป็นตัวเลขตั้งต้น
-                ไม่ใช่ราคาประเมินทางการ
+                โมเดลเห็นแค่ ประเภท · พื้นที่ · แขวง · เขต · จังหวัด · ปี — ราคาทั้งหมดเป็นราคาประกาศขาย
+                ไม่ใช่ราคาซื้อขายจริงหรือราคาประเมินทางการ
               </p>
             </div>
           </footer>
