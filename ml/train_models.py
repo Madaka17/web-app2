@@ -26,9 +26,11 @@ from catboost import CatBoostRegressor
 from lightgbm import LGBMRegressor
 from xgboost import XGBRegressor
 
+from sklearn.neighbors import BallTree
+
 from prepare_data import (
-    CATEGORICAL, FEATURES, FOLD_FRACTIONS, FOLD_SEED, TARGET, TEST_YEARS,
-    add_features, build_reference,
+    CATEGORICAL, FEATURES, FOLD_FRACTIONS, FOLD_SEED, TARGET, TEST_YEARS, UNKNOWN,
+    add_features, build_reference, form_view,
     build_training_frame, clean, load_raw, log_ppsqm, split, to_price,
 )
 
@@ -107,6 +109,68 @@ def predict_prices(models: dict, X_raw: pd.DataFrame, X_cat: pd.DataFrame,
             for n, m in models.items()}
 
 
+# Building-age buckets (years) for the depreciation curve.
+AGE_BUCKETS = [(0, 2), (3, 5), (6, 10), (11, 15), (16, 20), (21, 30), (31, 80)]
+
+
+def depreciation_curve(frame: pd.DataFrame) -> list[dict]:
+    """How much a building's age takes off its price, measured, not assumed.
+
+    Each listing with a known completion year is compared with its own
+    sub-district's going rate (sd_ppsqm, built from other rows), so location is
+    held fixed; the median gap per age bucket, relative to a new building, is
+    the depreciation factor.
+    """
+    known = frame[frame["building_age"] != UNKNOWN]
+    gap = log_ppsqm(known) - known["sd_ppsqm"].to_numpy(dtype=float)
+    age = known["building_age"].to_numpy(dtype=float)
+    rows = []
+    for lo, hi in AGE_BUCKETS:
+        mask = (age >= lo) & (age <= hi)
+        if mask.sum() >= 30:
+            rows.append({"age_lo": lo, "age_hi": hi, "n": int(mask.sum()),
+                         "gap": float(np.median(gap[mask]))})
+    base = rows[0]["gap"] if rows else 0.0
+    for r in rows:
+        r["factor"] = round(float(np.exp(r.pop("gap") - base)), 4)
+    return rows
+
+
+def map_points(df: pd.DataFrame) -> pd.DataFrame:
+    """Every pinned listing, for the map's radius summaries."""
+    pinned = df.dropna(subset=["latitude", "longitude"])
+    return pd.DataFrame({
+        "lat": pinned["latitude"].to_numpy(dtype=float),
+        "lng": pinned["longitude"].to_numpy(dtype=float),
+        "type": pinned["collateral_type"].to_numpy(),
+        "price": pinned[TARGET].to_numpy(dtype=float),
+        "area": pinned["area_sqm"].to_numpy(dtype=float),
+        "age": pinned["building_age"].to_numpy(dtype=float),
+        "province": pinned["province"].to_numpy(),
+        "district": pinned["district"].to_numpy(),
+        "sub_district": pinned["sub_district"].to_numpy(),
+    })
+
+
+def app_views(rows: pd.DataFrame, ref: dict) -> dict[str, pd.DataFrame]:
+    """The same held-out rows described three ways:
+      click     what the app sends after a map click: pin, type, size, place -
+                no project, rooms or age (the project is snapped from the pin)
+      dropdown  sub-district from the list, no pin
+      listing   every fact the listing itself states
+    "click" is scored only on rows that really have a pin; a click always has one."""
+    pinned = rows["latitude"].notna()
+    return {
+        "click": add_features(form_view(rows[pinned]), ref),
+        "dropdown": add_features(form_view(rows).assign(latitude=np.nan, longitude=np.nan), ref),
+        "listing": add_features(rows, ref),
+    }
+
+
+# Weights are picked, and the headline "test" figures reported, on this view.
+PRIMARY_VIEW = "click"
+
+
 def main() -> None:
     df, report = clean(load_raw())
     train_all, test = split(df)
@@ -117,8 +181,9 @@ def main() -> None:
     fit_rows = train_all[train_all.fold == "fit"]
     fit_frame = build_training_frame(fit_rows)
     fit_ref = build_reference(fit_rows)
-    val_frame = add_features(train_all[train_all.fold == "val"], fit_ref)
-    test_frame = add_features(test, fit_ref)
+    val_frame = app_views(train_all[train_all.fold == "val"], fit_ref)[PRIMARY_VIEW]
+    test_views = app_views(test, fit_ref)
+    test_frame = test_views[PRIMARY_VIEW]
 
     print(f"fit {len(fit_frame):,} | val {len(val_frame):,} | test {len(test_frame):,}")
     print(f"exact comparable present: fit {(fit_frame.comp_n > 0).mean():.1%}  "
@@ -148,8 +213,8 @@ def main() -> None:
     # switched off is not a three-model ensemble, and the accuracy it buys is
     # within noise (printed below as the cost).
     MIN_WEIGHT = 0.10
-    best, best_mape = None, np.inf
-    unconstrained, unconstrained_mape = None, np.inf
+    best, best_r2 = None, -np.inf
+    unconstrained, unconstrained_r2 = None, -np.inf
     grid = np.arange(0, 1.01, 0.05)
     for wc in grid:
         for wl in grid:
@@ -158,21 +223,20 @@ def main() -> None:
                 continue
             wx = max(wx, 0.0)
             blend = wc * val_pred["CatBoost"] + wl * val_pred["LightGBM"] + wx * val_pred["XGBoost"]
-            # Median, not mean: the mean is set by a few wild asking prices and
-            # the app reports the median error to the user.
-            mape = np.median(np.abs(blend - y_val) / y_val * 100)
-            if mape < unconstrained_mape:
-                unconstrained_mape, unconstrained = mape, (wc, wl, wx)
+            # R2 on baht is the accuracy target this project is held to.
+            r2 = metrics(y_val, blend)["R2"]
+            if r2 > unconstrained_r2:
+                unconstrained_r2, unconstrained = r2, (wc, wl, wx)
             if min(wc, wl, wx) < MIN_WEIGHT - 1e-9:
                 continue
-            if mape < best_mape:
-                best_mape, best = mape, (round(wc, 2), round(wl, 2), round(wx, 2))
+            if r2 > best_r2:
+                best_r2, best = r2, (float(round(wc, 2)), float(round(wl, 2)), float(round(wx, 2)))
     weights = {"CatBoost": best[0], "LightGBM": best[1], "XGBoost": best[2]}
     print(f"\nensemble weights (from validation, min {MIN_WEIGHT:.0%} each): {weights}")
-    print(f"  val MdAPE constrained   {best_mape:.3f}%")
-    print(f"  val MdAPE unconstrained {unconstrained_mape:.3f}%  "
-          f"(weights {tuple(round(w, 2) for w in unconstrained)})")
-    print(f"  cost of keeping all three: {best_mape - unconstrained_mape:+.3f} pp")
+    print(f"  val R2 constrained   {best_r2:.4f}")
+    print(f"  val R2 unconstrained {unconstrained_r2:.4f}  "
+          f"(weights {tuple(round(float(w), 2) for w in unconstrained)})")
+    print(f"  cost of keeping all three: {unconstrained_r2 - best_r2:+.4f}")
 
     # --- final scoring on the untouched test years -------------------------
     y_test = test_frame[TARGET].to_numpy(dtype=float)
@@ -183,6 +247,16 @@ def main() -> None:
     results = {n: {"test": metrics(y_test, p), "weight": weights[n],
                    "train_seconds": round(timings[n], 1)} for n, p in test_pred.items()}
     results["Ensemble"] = {"test": metrics(y_test, ens_test), "weight": 1.0}
+
+    view_scores = {}
+    for vname, vf in test_views.items():
+        vx = vf[FEATURES]
+        vp = predict_prices(models, vx, as_categorical(vx, categories), vf["area_sqm"].to_numpy(dtype=float))
+        ens = sum(weights[n] * p for n, p in vp.items())
+        view_scores[vname] = {"rows": len(vf), **metrics(vf[TARGET].to_numpy(dtype=float), ens)}
+    print(f"\ntest R2 by input view (ensemble; headline = {PRIMARY_VIEW}):")
+    for vname, m in view_scores.items():
+        print(f"  {vname:<9} n={m['rows']:>6,}  R2 {m['R2']:.4f}  MdAPE {m['MdAPE']:.2f}%  ±20% {m['Within_20Pct']:.1f}%")
 
     print("\n" + "=" * 78)
     print(f"{'model':<12}{'MAPE':>9}{'MdAPE':>9}{'R2':>9}{'MAE':>14}{'±10%':>9}{'±20%':>9}")
@@ -208,8 +282,20 @@ def main() -> None:
     importance = {k: round(v / total, 4) for k, v in sorted(
         importance.items(), key=lambda kv: -kv[1])}
 
+    depreciation = depreciation_curve(serve_frame)
+    print("\ndepreciation (price vs a new building, same sub-district):")
+    for r in depreciation:
+        print(f"  {r['age_lo']:>2}-{r['age_hi']:<2} yrs  x{r['factor']:.3f}  (n={r['n']:,})")
+    points = map_points(df)
+
     joblib.dump({
         "models": serve_models,
+        "depreciation": depreciation,
+        "points": points,
+        "locator": BallTree(np.radians(points[["lat", "lng"]].to_numpy()), metric="haversine"),
+        # Display name per project key, for telling the user which building a click snapped to.
+        "project_names": df.dropna(subset=["project_key", "project_name"])
+                           .groupby("project_key")["project_name"].first().to_dict(),
         "weights": weights,
         "features": FEATURES,
         "categorical": CATEGORICAL,
@@ -227,6 +313,8 @@ def main() -> None:
             "served_model_fit_years": sorted(int(y) for y in train_all.year.unique()),
         },
         "rows": {"fit": len(fit_frame), "validation": len(val_frame), "test": len(test_frame)},
+        "views": view_scores,
+        "primary_view": PRIMARY_VIEW,
         "cleaning": report,
         "features": FEATURES,
         "feature_importance": importance,

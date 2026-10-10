@@ -7,6 +7,7 @@ import { ResultPanel } from "./ResultPanel";
 import { LocationSelector } from "./LocationSelector";
 import { StatusPanel } from "./StatusPanel";
 import { ModelStatus } from "./ModelStatus";
+import { NearbyMap } from "./NearbyMap";
 
 const PROPERTY_TYPES: { id: PropertyType; label: string }[] = [
   { id: "condo", label: "คอนโด" },
@@ -37,6 +38,16 @@ const GENERAL_FIELDS: FieldConfig[] = [
   { key: "area", label: "พื้นที่ใช้สอย", unit: "ตร.ม.", hint: "20–500", min: 20, max: 500, step: 1 },
   { key: "nUnits", label: "จำนวนหน่วย", unit: "หน่วย", hint: "1–4", min: 1, max: 4, step: 1 },
   { key: "year", label: "ปีที่ประเมิน", unit: "พ.ศ.", hint: `${YEAR_MIN}–${YEAR_MAX}`, min: YEAR_MIN, max: YEAR_MAX, step: 1 },
+];
+
+type OptionalKey = "bedrooms" | "bathrooms" | "buildingAge";
+
+// Left blank, the model treats these as unknown - as it did for listings that
+// did not state them.
+const OPTIONAL_FIELDS: { key: OptionalKey; label: string; unit: string; max: number }[] = [
+  { key: "bedrooms", label: "ห้องนอน", unit: "ห้อง", max: 20 },
+  { key: "bathrooms", label: "ห้องน้ำ", unit: "ห้อง", max: 20 },
+  { key: "buildingAge", label: "อายุอาคาร (ค่าเสื่อม)", unit: "ปี", max: 100 },
 ];
 
 function clamp(value: number, min: number, max: number): number {
@@ -94,9 +105,25 @@ export function PredictorDashboard() {
     });
   };
 
+  // Picking a sub-district from the list drops a map click, and vice versa
+  // the click wins (the API locates from lat/lng when it has them).
   const updateSubdistrict = (subdistrictId: string) => {
-    setInput((prev) => ({ ...prev, subdistrictId }));
+    setInput((prev) => ({ ...prev, subdistrictId, lat: undefined, lng: undefined }));
   };
+
+  const pickPoint = useCallback((lat: number, lng: number) => {
+    setInput((prev) => ({ ...prev, lat, lng }));
+  }, []);
+
+  const handleOptionalChange = (key: OptionalKey, raw: string, max: number) => {
+    const parsed = parseFloat(raw);
+    setInput((prev) => ({
+      ...prev,
+      [key]: raw.trim() === "" || !Number.isFinite(parsed) ? undefined : clamp(parsed, 0, max),
+    }));
+  };
+
+  const point = input.lat !== undefined && input.lng !== undefined ? { lat: input.lat, lng: input.lng } : null;
 
   // The previous result stays on screen while the next one loads, so the
   // numbers glide from old to new instead of flashing through a spinner.
@@ -221,8 +248,61 @@ export function PredictorDashboard() {
           </div>
 
           <div className="card p-5 sm:p-6">
-            <LocationSelector subdistrictId={input.subdistrictId} onChange={updateSubdistrict} />
+            <p className="label">ข้อมูลเพิ่มเติม (ไม่บังคับ)</p>
+            <div className="mt-3 grid grid-cols-3 gap-3">
+              {OPTIONAL_FIELDS.map((f) => (
+                <div key={f.key}>
+                  <label htmlFor={`field-${f.key}`} className="block text-[11.5px] text-muted">
+                    {f.label}
+                  </label>
+                  <div className="relative mt-1.5">
+                    <input
+                      id={`field-${f.key}`}
+                      type="number"
+                      inputMode="numeric"
+                      min={0}
+                      max={f.max}
+                      placeholder="ไม่ระบุ"
+                      value={input[f.key] ?? ""}
+                      onChange={(e) => handleOptionalChange(f.key, e.target.value, f.max)}
+                      className="field num pr-10 text-[14px]"
+                    />
+                    <span className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-xs text-faint">
+                      {f.unit}
+                    </span>
+                  </div>
+                </div>
+              ))}
+            </div>
           </div>
+
+          <div className="card p-5 sm:p-6">
+            <LocationSelector subdistrictId={input.subdistrictId} onChange={updateSubdistrict} />
+            {point && (
+              <p className="mt-2 text-[11.5px] text-accent">
+                ใช้ตำแหน่งที่คลิกบนแผนที่ ({point.lat.toFixed(4)}, {point.lng.toFixed(4)}) — เลือกแขวงใหม่เพื่อยกเลิก
+              </p>
+            )}
+            {point && result?.meta.location_from === "map" && (
+              <p className="mt-1 text-[11.5px] text-muted">
+                {result.meta.project
+                  ? `โครงการตรงจุดที่คลิก: ${result.meta.project}`
+                  : "ไม่พบโครงการในระยะ 75 ม. — ใช้ราคาประกาศรอบ ๆ แทน"}
+              </p>
+            )}
+            {!point && (
+              <p className="mt-2 text-[11.5px] text-faint">
+                คลิกตำแหน่งบนแผนที่ด้านล่างจะแม่นกว่าเลือกแขวงอย่างเดียวมาก
+              </p>
+            )}
+          </div>
+
+          <NearbyMap
+            point={point}
+            onPick={pickPoint}
+            propertyType={input.propertyType}
+            buildingAge={input.buildingAge}
+          />
 
           <button type="submit" disabled={isRunning} className="btn-primary group w-full py-3.5 text-[15px]">
             {isRunning ? (

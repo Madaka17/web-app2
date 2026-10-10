@@ -67,6 +67,44 @@ class TestClean:
         assert report["rows_in"] == len(sample)
 
 
+class TestRentFilter:
+    def test_drops_rentals_posted_as_sales(self):
+        frame = pd.DataFrame({
+            "collateral_type": ["คอนโด"] * 3, "province": ["กรุงเทพมหานคร"] * 3,
+            "district": ["คลองเตย"] * 3, "sub_district": ["คลองเตย"] * 3,
+            "area_sqm": [34.0, 34.0, 34.0], "n_units": [1] * 3, "year": [2569] * 3,
+            # monthly rent in the title; rent typed into the price box; a real sale
+            "appraisal_value": [13_000.0 * 300, 25_000.0 * 10, 5_200_000.0],
+            "rent_like": [True, False, False],
+        })
+        out, report = clean(frame)
+        assert len(out) == 1 and out[TARGET].iloc[0] == 5_200_000.0
+        # 250k for 34 sqm is 7,353 baht/sqm - under the condo floor, so rent too.
+        assert report["dropped_rent"] == 2
+
+    def test_rent_title_detection(self):
+        from prepare_data import _rent_like
+        titles = pd.Series(["Diamond สุขุมวิท ราคา 13,000 บาทต่อเดือน", "1 bed condo for rent BTS",
+                            "ขาย - ให้เช่า คอนโด Aspire", "ขายคอนโด Noble Ploenchit"])
+        assert _rent_like(titles).tolist() == [True, True, False, False]
+
+
+class TestProjectSnap:
+    def test_a_click_on_a_tower_takes_its_project(self):
+        from prepare_data import snap_to_project
+        hist = pd.DataFrame({
+            "collateral_type": ["คอนโด"] * 2, "province": ["กรุงเทพมหานคร"] * 2,
+            "district": ["คลองเตย"] * 2, "sub_district": ["คลองเตย"] * 2,
+            "area_sqm": [40.0, 40.0], "n_units": [1, 1], "year": [2569, 2569],
+            "appraisal_value": [6e6, 6.2e6], "project_key": ["tower", "tower"],
+            "latitude": [13.7300, 13.7300], "longitude": [100.5600, 100.5600],
+        })
+        ref = build_reference(hist)
+        clicks = pd.DataFrame({"latitude": [13.7303, 13.7400], "longitude": [100.5600, 100.5600],
+                               "project_key": [np.nan, np.nan]})
+        assert snap_to_project(clicks, ref).tolist() == ["tower", None]  # ~33 m vs ~1.1 km
+
+
 class TestSplit:
     def test_test_set_holds_only_the_held_out_years(self, sample):
         out, _ = clean(sample)
@@ -112,21 +150,43 @@ class TestDerivedFeatures:
 
 
 class TestTrainingFrame:
-    def test_drops_the_earliest_year_which_has_no_history(self, sample):
+    def test_keeps_every_training_row(self, sample):
         out, _ = clean(sample)
+        train, _ = split(out)
+        assert len(build_training_frame(train)) == len(train)
+
+    def test_a_fit_row_never_sees_itself(self, sample):
+        """Out-of-fold: a row's comparables come from the other folds, so a
+        row alone in its project finds no project comparable at all."""
+        out, _ = clean(sample)
+        out["project_key"] = [f"p{i}" for i in range(len(out))]
         train, _ = split(out)
         frame = build_training_frame(train)
-        assert frame.year.min() > train.year.min()
+        assert (frame["proj_n"] == 0).all()
 
-    def test_a_fit_row_never_sees_its_own_year(self, sample):
-        """The whole point of the backward window: a row must not be able to
-        look itself up, or the model learns to copy an answer serving lacks."""
+
+class TestGeoFeatures:
+    def test_counts_listings_within_each_radius(self):
+        # Three condos ~0.5 km apart on a line, one 30 km away.
+        hist = pd.DataFrame({
+            "collateral_type": ["คอนโด"] * 4, "province": ["กรุงเทพมหานคร"] * 4,
+            "district": ["คลองเตย"] * 4, "sub_district": ["คลองเตย"] * 4,
+            "area_sqm": [40.0] * 4, "n_units": [1] * 4, "year": [2569] * 4,
+            "appraisal_value": [4e6, 4.4e6, 4.8e6, 2e6],
+            "latitude": [13.720, 13.7245, 13.729, 14.0], "longitude": [100.56] * 4,
+        })
+        ref = build_reference(hist)
+        probe = hist.head(1).drop(columns="appraisal_value")
+        f = add_features(probe, ref)
+        assert f["geo1_n"].iloc[0] == 2  # itself + 0.5 km; 1.0 km is just outside
+        assert f["geo2_n"].iloc[0] == 3
+        assert f[FEATURES].notna().all().all()
+
+    def test_a_row_without_a_pin_falls_back(self, sample):
         out, _ = clean(sample)
-        train, _ = split(out)
-        row = train[train.year == train.year.max()]
-        hist = train[train.year < train.year.max()]
-        featured = add_features(row, build_reference(hist))
-        assert (featured["comp_age"] >= 0).all()
+        f = add_features(out, build_reference(out))
+        assert (f["geo1_n"] == 0).all()
+        assert (f["latitude"] == -1).all()
 
 
 class TestServedBundle:
@@ -146,9 +206,9 @@ class TestServedBundle:
 
     def test_predicts_a_positive_price_for_a_normal_condo(self, bundle):
         frame = pd.DataFrame([{
-            "collateral_type": "ห้องชุด (คอนโดมิเนียม)",
+            "collateral_type": "คอนโด",
             "province": "กรุงเทพมหานคร", "district": "คลองเตย", "sub_district": "คลองเตย",
-            "area_sqm": 65.0, "n_units": 1, "year": 2567,
+            "area_sqm": 65.0, "n_units": 1, "year": 2569,
         }])
         preds = _ensemble_members(bundle, frame)
         assert all(p > 0 for p in preds.values())
@@ -158,14 +218,45 @@ class TestServedBundle:
     def test_price_rises_with_area(self, bundle):
         def price(area: float) -> float:
             frame = pd.DataFrame([{
-                "collateral_type": "ห้องชุด (คอนโดมิเนียม)",
+                "collateral_type": "คอนโด",
                 "province": "กรุงเทพมหานคร", "district": "คลองเตย", "sub_district": "คลองเตย",
-                "area_sqm": area, "n_units": 1, "year": 2567,
+                "area_sqm": area, "n_units": 1, "year": 2569,
             }])
             preds = _ensemble_members(bundle, frame)
             return sum(bundle["weights"][n] * p for n, p in preds.items())
         assert price(120) > price(40)
 
+    def test_depreciation_starts_at_one_for_a_new_building(self, bundle):
+        curve = bundle["depreciation"]
+        assert curve and curve[0]["age_lo"] == 0
+        assert curve[0]["factor"] == pytest.approx(1.0)
+
+
+@pytest.fixture(scope="module")
+def client():
+    from api import app
+    return app.test_client()
+
+
+class TestApi:
+    def test_nearby_reports_listings_in_the_radius(self, client):
+        r = client.get("/api/nearby?lat=13.7245&lng=100.5600&radius=1000&type=condo&buildingAge=10")
+        assert r.status_code == 200
+        body = r.get_json()
+        assert body["total"] > 0
+        g = body["groups"][0]
+        assert g["p25_ppsqm"] <= g["median_ppsqm"] <= g["p75_ppsqm"]
+        assert "adjusted_ppsqm" in g
+
+    def test_nearby_rejects_an_odd_radius(self, client):
+        assert client.get("/api/nearby?lat=13.7&lng=100.5&radius=1500").status_code == 400
+
+    def test_predict_from_a_map_click(self, client):
+        r = client.post("/api/predict", json={
+            "lat": 13.7245, "lng": 100.56, "area": 40, "propertyType": "condo",
+            "bedrooms": 1, "buildingAge": 5})
+        assert r.status_code == 200
+        assert r.get_json()["predictedPrice"] > 0
 
 class TestMetricsFile:
     def test_reports_the_honest_test_years(self):

@@ -11,6 +11,13 @@ export interface PredictionInput {
   nUnits: number;
   year: number;
   subdistrictId: string;
+  /** A map click; when set the API locates the property from it, not subdistrictId. */
+  lat?: number;
+  lng?: number;
+  bedrooms?: number;
+  bathrooms?: number;
+  /** Years since completion; drives the ค่าเสื่อม (depreciation) adjustment. */
+  buildingAge?: number;
 }
 
 export interface ModelContribution {

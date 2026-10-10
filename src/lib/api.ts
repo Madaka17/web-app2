@@ -4,6 +4,9 @@ import { PredictionInput, PredictionResult } from "./types";
 const BASE = import.meta.env.VITE_API_URL ?? "";
 
 export interface PredictionMeta {
+  /** Project the map click snapped to (within 75 m), if any. */
+  project: string | null;
+  location_from: "map" | "subdistrict";
   province: string;
   district: string;
   subdistrict: string;
@@ -108,4 +111,52 @@ export function predict(
     body: JSON.stringify(input),
     signal,
   });
+}
+
+export interface DepreciationStep {
+  age_lo: number;
+  age_hi: number;
+  n: number;
+  factor: number;
+}
+
+export interface NearbyGroup {
+  type: string;
+  label: string;
+  n: number;
+  median_ppsqm: number;
+  p25_ppsqm: number;
+  p75_ppsqm: number;
+  median_price: number;
+  median_area: number;
+  n_with_age: number;
+  median_age: number | null;
+  adjusted_ppsqm?: number;
+  age_factor?: number;
+}
+
+/** Shape of GET /api/nearby: listings within a radius of a map click. */
+export interface NearbyResult {
+  lat: number;
+  lng: number;
+  radius_m: number;
+  buildingAge: number | null;
+  total: number;
+  groups: NearbyGroup[];
+  location: { province: string; district: string; subdistrict: string } | null;
+  depreciation: DepreciationStep[];
+}
+
+export function getNearby(
+  params: { lat: number; lng: number; radius: number; type?: string; buildingAge?: number },
+  signal?: AbortSignal,
+): Promise<NearbyResult> {
+  const q = new URLSearchParams({
+    lat: String(params.lat),
+    lng: String(params.lng),
+    radius: String(params.radius),
+  });
+  if (params.type) q.set("type", params.type);
+  if (params.buildingAge !== undefined) q.set("buildingAge", String(params.buildingAge));
+  return request<NearbyResult>(`/api/nearby?${q}`, { signal });
 }

@@ -29,9 +29,13 @@ BEFORE the row being described - see build_training_frame.
 
 from __future__ import annotations
 
+import re
 from pathlib import Path
+
+import ahocorasick
 import numpy as np
 import pandas as pd
+from sklearn.neighbors import BallTree
 
 DATA_DIR = Path(__file__).parent.parent / "Data"
 SOURCES = ("dotproperty", "ddproperty", "hipflat", "baania")
@@ -71,6 +75,22 @@ NUMERIC = [
     "comp2_n",
     "nn_ppsqm",
     "nn_dist",
+    # Unit and building facts, -1 where the listing does not say.
+    "bedrooms",
+    "bathrooms",
+    "building_age",
+    "transit_m",
+    "latitude",
+    "longitude",
+    # Same project, and same type within walking / short-drive distance.
+    "proj_ppsqm",
+    "proj_n",
+    "geo1_ppsqm",
+    "geo1_n",
+    "geo2_ppsqm",
+    "geo2_n",
+    "knn_ppsqm",
+    "knn_dist_m",
 ]
 FEATURES = CATEGORICAL + NUMERIC
 TARGET = "appraisal_value"
@@ -85,6 +105,7 @@ MAX_AREA = 20_000.0
 # slip (price typed in thousands, land priced per wa, area typed in rai):
 # a condo at 1,200 THB/sqm is not a cheap condo.
 PPSQM_TRIM = (0.01, 0.99)
+PPSQM_FLOOR = {"คอนโด": 10_000.0, "บ้านเดี่ยว": 4_000.0, "ทาวน์เฮ้าส์": 4_000.0, "ที่ดิน": 300.0}
 
 # Held out for testing: a fixed random 20% of the most recent year. Nearly every
 # listing is a 2569 snapshot of the same market, so holding out the whole year
@@ -105,12 +126,96 @@ BAND_KEY = CELL + ["area_bin"]
 BAND_WIDTH = 0.25
 # Rows needed before a cell's own median outweighs its parent's, per level.
 # The narrower the cell the fewer rows it has, so it is trusted sooner.
-SHRINK = {"prov_type": 20.0, "district": 20.0, "dt": 20.0, "sd": 10.0, "band": 5.0, "exact": 2.0}
+SHRINK = {"prov_type": 20.0, "district": 20.0, "dt": 20.0, "sd": 10.0, "band": 5.0, "exact": 2.0,
+          "proj": 3.0, "geo": 5.0}
+
+# Bangkok + ปริมณฑล bounding box; a pin outside it is a mistake.
+LAT_RANGE = (13.3, 14.4)
+LON_RANGE = (99.8, 101.1)
+EARTH_M = 6_371_000.0
+# Radii the map page reports on, and the neighbour count for the nearest-k median.
+GEO_RADII_M = (1000.0, 2000.0)
+# A map click within this distance of a project's pin is taken to be that project.
+PROJECT_SNAP_M = 75.0
+KNN_K = 15
+# Out-of-fold comparables for fit rows: each row is described by the other folds.
+OOF_FOLDS = 5
+# Stand-in for a fact the listing does not state; trees split it off cleanly.
+UNKNOWN = -1.0
+# Columns load_raw provides that a serve-time row may not have.
+OPTIONAL = ["bedrooms", "bathrooms", "latitude", "longitude", "project_key",
+            "building_age", "transit_m"]
+
+
+def _squash(text: str) -> str:
+    return re.sub(r"[\s\-–_.,()'\"@&/:]+", "", text).lower()
+
+
+def project_key(name) -> str | None:
+    """One spelling per project across sites. ddproperty titles read
+    "MUNIQ Sukhumvit 23 : มิวนีค สุขุมวิท 23", dotproperty gives the Thai half only,
+    so both are reduced to the Thai half with spacing and punctuation removed."""
+    if not isinstance(name, str):
+        return None
+    if " : " in name:
+        name = name.split(" : ", 1)[1]
+    key = _squash(name)
+    return key or None
+
+
+# Shorter names ("ไอดีโอ", "ideo") are brands, not one building.
+MIN_PROJECT_KEY = 8
+
+
+def _match_projects(df: pd.DataFrame) -> pd.Series:
+    """Find a known project's name in the title/description of listings that
+    carry none (hipflat, baania). Both the Thai and the English spelling from
+    ddproperty titles are searched; the longest match whose project sits in
+    the listing's own district wins, so "ลุมพินีวิลล์ รามอินทรา" beats a
+    same-brand building across town."""
+    known = df[df["project_key"].notna()]
+    districts = known.groupby("project_key")["district"].agg(set).to_dict()
+    aliases = {k: k for k in districts}
+    for name, key in zip(known["project_name"], known["project_key"]):
+        if isinstance(name, str) and " : " in name:
+            aliases.setdefault(_squash(name.split(" : ", 1)[0]), key)
+    auto = ahocorasick.Automaton()
+    for alias, key in aliases.items():
+        if len(alias) >= MIN_PROJECT_KEY:
+            auto.add_word(alias, (len(alias), key))
+    auto.make_automaton()
+
+    found = df["project_key"].copy()
+    missing = found.isna().to_numpy()
+    text = (df["title"].fillna("") + " " + df["description"].fillna("")).to_numpy()
+    district = df["district"].to_numpy()
+    for i in np.flatnonzero(missing):
+        best = None
+        for _, (n, key) in auto.iter(_squash(text[i])):
+            if (best is None or n > best[0]) and (
+                    not isinstance(district[i], str) or district[i] in districts[key]):
+                best = (n, key)
+        if best:
+            found.iat[i] = best[1]
+    return found
+
+
+def _spread_by_project(df: pd.DataFrame) -> pd.DataFrame:
+    """Copy facts about a building (completion year, rail distance, coordinates)
+    from the listings that state them to every listing in the same project.
+    These describe the building, not the price, so sharing them leaks nothing."""
+    has_key = df["project_key"].notna()
+    for col in ("built_year", "transit_m", "latitude", "longitude"):
+        per_project = df[has_key].groupby("project_key")[col].median()
+        fill = df["project_key"].map(per_project)
+        df[col] = df[col].fillna(fill)
+    return df
 
 
 def load_raw() -> pd.DataFrame:
-    cols = ["project_name", "property_type", "bedrooms", "area_sqm", "price_thb",
-            "sub_district", "district", "province", "date_posted"]
+    cols = ["project_name", "property_type", "bedrooms", "bathrooms", "area_sqm", "price_thb",
+            "sub_district", "district", "province", "date_posted", "latitude", "longitude",
+            "built_year", "transit_m", "title", "description"]
     parts = []
     for src in SOURCES:
         df = pd.read_csv(DATA_DIR / f"{src}_listings.csv",
@@ -126,6 +231,12 @@ def load_raw() -> pd.DataFrame:
         parts.append(df.reindex(columns=cols))
     df = pd.concat(parts, ignore_index=True)
     df = df[df["property_type"].isin(PROPERTY_TYPES)].dropna(subset=["date_posted"])
+    # Coordinates outside Bangkok + ปริมณฑล are a mis-pinned map marker.
+    off_map = ~(df["latitude"].between(*LAT_RANGE) & df["longitude"].between(*LON_RANGE))
+    df.loc[off_map, ["latitude", "longitude"]] = np.nan
+    df["project_key"] = df["project_name"].map(project_key)
+    df["project_key"] = _match_projects(df)
+    df = _spread_by_project(df)
     # The same unit is often re-posted, on one site or across sites; keep one
     # copy so it cannot sit in both train and test.
     df = df.drop_duplicates(
@@ -133,6 +244,7 @@ def load_raw() -> pd.DataFrame:
         keep="last")
     date = pd.to_datetime(df["date_posted"], utc=True, format="ISO8601", errors="coerce")
     df = df[date.notna()]
+    year = (date[date.notna()].dt.year + 543).astype(int)
     return pd.DataFrame({
         "collateral_type": df["property_type"],
         "province": df["province"],
@@ -140,9 +252,33 @@ def load_raw() -> pd.DataFrame:
         "sub_district": df["sub_district"],
         "area_sqm": df["area_sqm"],
         "n_units": 1,
-        "year": (date[date.notna()].dt.year + 543).astype(int),
+        "year": year,
+        "bedrooms": df["bedrooms"],
+        "bathrooms": df["bathrooms"],
+        "latitude": df["latitude"],
+        "longitude": df["longitude"],
+        "project_key": df["project_key"],
+        "project_name": df["project_name"],
+        # Completion year is CE on ddproperty; age is counted at the listing year.
+        "building_age": (year - 543 - df["built_year"]).clip(lower=0),
+        "transit_m": df["transit_m"],
+        "rent_like": _rent_like(df["title"]),
         TARGET: df["price_thb"],
     })
+
+
+# A monthly price in the title ("13,000 บาทต่อเดือน") or a rent-only title is a
+# rental posted into the sale feed; its price is rent, not market value.
+RENT_PRICED_RE = r"ต่อเดือน|/\s*เดือน|per month|/\s*month|/\s*mo\b"
+RENT_WORD_RE = r"เช่า|for rent|\brent\b"
+SALE_WORD_RE = r"ขาย|sale|sell"
+
+
+def _rent_like(title: pd.Series) -> pd.Series:
+    t = title.fillna("").str.lower()
+    priced_per_month = t.str.contains(RENT_PRICED_RE, regex=True)
+    rent_only = t.str.contains(RENT_WORD_RE, regex=True) & ~t.str.contains(SALE_WORD_RE, regex=True)
+    return priced_per_month | rent_only
 
 
 def clean(df: pd.DataFrame) -> tuple[pd.DataFrame, dict]:
@@ -160,6 +296,15 @@ def clean(df: pd.DataFrame) -> tuple[pd.DataFrame, dict]:
     n = len(df)
     df = df[(df["area_sqm"] >= MIN_AREA) & (df["area_sqm"] <= MAX_AREA)]
     report["dropped_area_range"] = n - len(df)
+
+    n = len(df)
+    if "rent_like" in df:
+        df = df[~df["rent_like"].astype(bool)]
+    # Below these baht/sqm no sale in Bangkok + ปริมณฑล exists; a monthly rent
+    # typed into the price box lands here even when the title does not say so.
+    floor = df["collateral_type"].map(PPSQM_FLOOR).fillna(0.0)
+    df = df[df[TARGET] / df["area_sqm"] >= floor]
+    report["dropped_rent"] = n - len(df)
 
     n = len(df)
     ppsqm = df[TARGET] / df["area_sqm"]
@@ -234,6 +379,10 @@ def to_price(pred_log_ppsqm: np.ndarray, area: np.ndarray) -> np.ndarray:
 # --------------------------------------------------------------------------
 def _with_helpers(df: pd.DataFrame) -> pd.DataFrame:
     out = df.copy()
+    # A caller (the API, a test) may know none of these; absent means unknown.
+    for col in OPTIONAL:
+        if col not in out:
+            out[col] = np.nan
     # merge_asof refuses to join an int column against a float one, and a
     # caller passing area as a whole number is entirely reasonable.
     out["area_sqm"] = out["area_sqm"].astype(float)
@@ -261,6 +410,9 @@ def build_reference(hist: pd.DataFrame) -> dict:
         return pd.DataFrame(cols)
 
     return {
+        "proj": table(["collateral_type", "project_key"]),
+        "proj_pins": _project_pins(h),
+        "geo": _geo_index(h),
         "global": float(h["lppsqm"].median()),
         "type": h.groupby("collateral_type")["lppsqm"].median(),
         "province": h.groupby("province")["lppsqm"].median(),
@@ -275,6 +427,90 @@ def build_reference(hist: pd.DataFrame) -> dict:
                     .rename(columns={"lppsqm": "nn_ppsqm", "area_sqm": "nn_area"})
                     .sort_values("nn_area")),
     }
+
+
+def _project_pins(h: pd.DataFrame) -> dict | None:
+    """One pin per project (median of its listings' pins), for snapping a map click."""
+    pins = (h.dropna(subset=["project_key", "latitude", "longitude"])
+            .groupby("project_key")[["latitude", "longitude"]].median())
+    if pins.empty:
+        return None
+    return {"tree": BallTree(np.radians(pins.to_numpy(dtype=float)), metric="haversine"),
+            "keys": pins.index.to_numpy()}
+
+
+def snap_to_project(df: pd.DataFrame, ref: dict, max_m: float = PROJECT_SNAP_M) -> pd.Series:
+    """Project of each pinned row with none stated: the nearest project pin
+    within max_m. A click on a condo tower lands on its own project."""
+    # object dtype: an all-blank column arrives as float64 and refuses strings.
+    keys = (df["project_key"] if "project_key" in df else pd.Series(None, index=df.index)).astype(object)
+    pins = ref.get("proj_pins")
+    if pins is None or "latitude" not in df:
+        return keys
+    need = (keys.isna() & df["latitude"].notna() & df["longitude"].notna()).to_numpy()
+    if not need.any():
+        return keys
+    coords = np.radians(df.loc[need, ["latitude", "longitude"]].to_numpy(dtype=float))
+    dist, ix = pins["tree"].query(coords, k=1)
+    hit = dist[:, 0] * EARTH_M <= max_m
+    snapped = np.where(hit, pins["keys"][ix[:, 0]], None)
+    keys.loc[need] = snapped
+    return keys
+
+
+def _geo_index(h: pd.DataFrame) -> dict:
+    """Per property type: a haversine BallTree over every listing with a map pin."""
+    out = {}
+    pinned = h.dropna(subset=["latitude", "longitude"])
+    for ptype, g in pinned.groupby("collateral_type"):
+        out[ptype] = {
+            "tree": BallTree(np.radians(g[["latitude", "longitude"]].to_numpy(dtype=float)),
+                             metric="haversine"),
+            "lppsqm": g["lppsqm"].to_numpy(dtype=float),
+        }
+    return out
+
+
+def radius_medians(index: dict, coords_deg: np.ndarray, radius_m: float,
+                   chunk: int = 4000) -> tuple[np.ndarray, np.ndarray]:
+    """Median log price per sqm and count of listings within radius_m of each point."""
+    med = np.full(len(coords_deg), np.nan)
+    cnt = np.zeros(len(coords_deg))
+    X = np.radians(coords_deg)
+    for start in range(0, len(X), chunk):
+        idx = index["tree"].query_radius(X[start:start + chunk], r=radius_m / EARTH_M)
+        for j, ix in enumerate(idx):
+            if len(ix):
+                med[start + j] = np.median(index["lppsqm"][ix])
+                cnt[start + j] = len(ix)
+    return med, cnt
+
+
+def _geo_features(out: pd.DataFrame, ref: dict, fallback: np.ndarray) -> dict:
+    """Neighbourhood prices for rows with a map pin; the sub-district for the rest."""
+    n = len(out)
+    res = {
+        "geo1_ppsqm": fallback.copy(), "geo1_n": np.zeros(n),
+        "geo2_ppsqm": fallback.copy(), "geo2_n": np.zeros(n),
+        # 9.0 in log space and 50 km stand for "nothing nearby on record".
+        "knn_ppsqm": fallback.copy(), "knn_dist_m": np.full(n, 50_000.0),
+    }
+    coords = out[["latitude", "longitude"]].to_numpy(dtype=float)
+    pinned = ~np.isnan(coords).any(axis=1)
+    types = out["collateral_type"].to_numpy()
+    for ptype, index in ref["geo"].items():
+        rows = np.flatnonzero(pinned & (types == ptype))
+        if not len(rows):
+            continue
+        for name, radius in zip(("geo1", "geo2"), GEO_RADII_M):
+            med, cnt = radius_medians(index, coords[rows], radius)
+            res[f"{name}_ppsqm"][rows] = _shrink(med, cnt, fallback[rows], SHRINK["geo"])
+            res[f"{name}_n"][rows] = cnt
+        k = min(KNN_K, len(index["lppsqm"]))
+        dist, ix = index["tree"].query(np.radians(coords[rows]), k=k)
+        res["knn_ppsqm"][rows] = np.median(index["lppsqm"][ix], axis=1)
+        res["knn_dist_m"][rows] = dist[:, -1] * EARTH_M
+    return res
 
 
 def _shrink(med: np.ndarray, n: np.ndarray, parent: np.ndarray, k: float) -> np.ndarray:
@@ -293,6 +529,9 @@ def add_features(df: pd.DataFrame, ref: dict) -> pd.DataFrame:
     """Attach every column in NUMERIC. Never returns NaN: each lookup that
     misses falls back to the next width out, and the widest is a constant."""
     out = _with_helpers(df)
+    # A pin with no project named (a map click, an unlabelled listing) takes
+    # the project it sits on - the same rule at fit, test and serve time.
+    out["project_key"] = snap_to_project(out, ref)
     g = ref["global"]
 
     def lookup(table: pd.DataFrame, keys: list[str], col: str) -> np.ndarray:
@@ -361,21 +600,59 @@ def add_features(df: pd.DataFrame, ref: dict) -> pd.DataFrame:
     # How far this exact size sits from the district's going rate. Positive
     # means the size itself carries a premium the district median misses.
     out["comp_gap"] = exact - dt
+
+    proj_key = ["collateral_type", "project_key"]
+    proj_n = lookup(ref["proj"], proj_key, "n")
+    out["proj_ppsqm"] = _shrink(lookup(ref["proj"], proj_key, "med"), proj_n, sd, SHRINK["proj"])
+    out["proj_n"] = np.nan_to_num(proj_n)
+    out = out.assign(**_geo_features(out, ref, sd))
+    for col in ("bedrooms", "bathrooms", "building_age", "transit_m", "latitude", "longitude"):
+        out[col] = out[col].astype(float).fillna(UNKNOWN)
     return out
 
 
 def build_training_frame(train: pd.DataFrame) -> pd.DataFrame:
-    """Feature rows for fitting, each described only by earlier years.
+    """Feature rows for fitting, each described only by OTHER rows.
 
     Building the comparable tables from the whole training set would let a row
     look itself up and the models would learn to copy an answer they will not
-    have at serve time. Each year is described by the years before it instead,
-    which costs the earliest year - it has no history and is dropped.
+    have at serve time. Rows are dealt into OOF_FOLDS folds and each fold is
+    described by the other folds - the same position a new listing is in when
+    it is priced against everything on record.
+
+    The rows being described also have their optional facts blanked at random
+    (mask_optional): the web form rarely knows the project and often not the
+    rooms or a map pin, and without this the models read "unknown" as "the
+    kind of listing that never states it" instead of "not told".
     """
-    years = sorted(train["year"].unique())
-    parts = [add_features(train[train["year"] == y], build_reference(train[train["year"] < y]))
-             for y in years[1:]]
+    rng = np.random.default_rng(FOLD_SEED)
+    fold = rng.integers(0, OOF_FOLDS, len(train))
+    parts = [add_features(mask_optional(train[fold == k], rng), build_reference(train[fold != k]))
+             for k in range(OOF_FOLDS)]
     return pd.concat(parts, ignore_index=True)
+
+
+# Facts a listing may state but a user of the form may not know, blanked
+# together per group, each group independently with probability MASK_P.
+MASK_GROUPS = [["project_key"], ["bedrooms", "bathrooms"], ["latitude", "longitude"],
+               ["building_age", "transit_m"]]
+MASK_P = 0.4
+# What an empty form sends: no project, rooms or building facts. A map pin may
+# still be there (the user clicked), so it is kept.
+FORM_HIDDEN = ["project_key", "bedrooms", "bathrooms", "building_age", "transit_m"]
+
+
+def mask_optional(df: pd.DataFrame, rng: np.random.Generator) -> pd.DataFrame:
+    out = df.copy()
+    for group in MASK_GROUPS:
+        hide = rng.random(len(out)) < MASK_P
+        out.loc[hide, [c for c in group if c in out]] = np.nan
+    return out
+
+
+def form_view(df: pd.DataFrame) -> pd.DataFrame:
+    """The rows as the web form would describe them, for an honest app score."""
+    return df.assign(**{c: np.nan for c in FORM_HIDDEN})
 
 
 if __name__ == "__main__":

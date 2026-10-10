@@ -70,7 +70,8 @@ def row(**kw):
         "listing_id", "url", "title", "project_name", "property_type", "type_slug",
         "bedrooms", "bathrooms", "area_sqm", "land_sqwa", "price_thb", "price_per_sqm",
         "sub_district", "district", "province", "latitude", "longitude", "date_posted",
-        "description", "image_url", "source", "source_page")}
+        "description", "image_url", "source", "source_page",
+        "project_id", "built_year", "transit_m", "transit_station")}
     base.update(kw)
     return base
 
@@ -79,6 +80,32 @@ def row(**kw):
 DD_BASE = "https://www.ddproperty.com/รวมประกาศขาย/ใน"
 DD_PROVINCES = ["กรุงเทพ-th10", "นนทบุรี-th12", "ปทุมธานี-th13", "สมุทรปราการ-th11",
                 "สมุทรสาคร-th74", "นครปฐม-th73"]
+
+
+# Badge text carries the completion year in CE: "ปีที่สร้างเสร็จ: 2021" or "โครงการใหม่: 2026".
+DD_BUILT_RE = re.compile(r"(?:ปีที่สร้างเสร็จ|โครงการใหม่):\s*(\d{4})")
+# "400 ม. (5 นาที) ถึง BL22 สุขุมวิท" or "1.83 กม. (22 นาที) ถึง OR13 ..."
+DD_TRANSIT_RE = re.compile(r"([\d.,]+)\s*(กม|ม)\.\s*\([^)]*\)\s*ถึง\s*(.+)")
+
+
+def dd_extras(x):
+    """Project id/name, completion year and walking distance to rail, when the card has them."""
+    out = {}
+    pid = (x.get("property") or {}).get("id")
+    if pid:
+        out["project_id"] = str(pid)
+        out["project_name"] = (x.get("localizedTitle") or "").rsplit(",", 1)[0].strip() or None
+    for b in x.get("badges") or []:
+        m = DD_BUILT_RE.search(b.get("text") or "") if isinstance(b, dict) else None
+        if m:
+            out["built_year"] = int(m.group(1))
+    mrt = x.get("mrt")
+    m = DD_TRANSIT_RE.search(mrt.get("nearbyText") or "") if isinstance(mrt, dict) else None
+    if m:
+        dist = float(m.group(1).replace(",", ""))
+        out["transit_m"] = dist * 1000 if m.group(2) == "กม" else dist
+        out["transit_station"] = m.group(3).strip()
+    return out
 
 
 def dd_jobs():
@@ -116,6 +143,7 @@ def dd_parse(html, job, page):
             date_posted=datetime.fromtimestamp(posted, TZ).isoformat() if posted else None,
             source="ddproperty",
             source_page=f"{job}?page={page}",
+            **dd_extras(x),
         ))
     return rows
 
