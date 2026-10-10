@@ -26,6 +26,7 @@ dist-ssr
 ml/.venv/
 ml/models/*.joblib
 ml/__pycache__/
+ml/catboost_info/
 ml/.pytest_cache/
 
 Data/*.csv
