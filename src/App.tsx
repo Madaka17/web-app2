@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { Suspense, lazy, useState } from "react";
 import { ThemeProvider } from "@/context/ThemeContext";
 import { ErrorBoundary } from "@/components/ErrorBoundary";
 import { Header } from "@/components/Header";
@@ -8,8 +8,10 @@ import { PipelineBoard } from "@/components/PipelineBoard";
 import { ModelMetrics } from "@/components/ModelMetrics";
 import { ImageValuation } from "@/components/ImageValuation";
 import { UsedHomes } from "@/components/UsedHomes";
-import { MapPage } from "@/components/MapPage";
 import { useHashRoute } from "@/lib/useHashRoute";
+
+// MapLibre is ~1 MB; only the map page pays for it.
+const MapPage = lazy(() => import("@/components/MapPage").then((m) => ({ default: m.MapPage })));
 
 function AppContent() {
   const [activePage, navigate] = useHashRoute();
@@ -19,7 +21,12 @@ function AppContent() {
   const [mapPoint, setMapPoint] = useState<{ lat: number; lng: number } | null>(null);
 
   return (
-    <div className="min-h-dvh bg-canvas text-ink">
+    <div className="min-h-dvh text-ink">
+      <div className="starfield" aria-hidden="true">
+        <span />
+        <span />
+        <span />
+      </div>
       <div className="flex">
         <Sidebar
           activePage={activePage}
@@ -36,11 +43,13 @@ function AppContent() {
               <PredictorDashboard point={mapPoint} onClearPoint={() => setMapPoint(null)} />
             )}
             {activePage === "map" && (
-              <MapPage
-                point={mapPoint}
-                onPick={(lat, lng) => setMapPoint({ lat, lng })}
-                onPrice={() => navigate("predictor")}
-              />
+              <Suspense fallback={<div className="card h-[640px] animate-pulse" />}>
+                <MapPage
+                  point={mapPoint}
+                  onPick={(lat, lng) => setMapPoint({ lat, lng })}
+                  onPrice={() => navigate("predictor")}
+                />
+              </Suspense>
             )}
             {activePage === "used-homes" && <UsedHomes />}
             {activePage === "image-valuation" && <ImageValuation />}

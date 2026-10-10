@@ -21,7 +21,7 @@ export function Header({ activePage, onMenuClick }: HeaderProps) {
   const title = TITLES[activePage];
 
   return (
-    <header className="sticky top-0 z-40 border-b border-line/70 bg-canvas/85 backdrop-blur-md">
+    <header className="sticky top-0 z-40 border-b border-line/60 bg-canvas/55 backdrop-blur-xl">
       <div className="flex h-14 items-center justify-between px-4 sm:px-6 lg:px-8">
         <div className="flex items-center gap-3">
           <button
@@ -43,7 +43,7 @@ export function Header({ activePage, onMenuClick }: HeaderProps) {
           </span>
           <button
             onClick={toggle}
-            className="rounded-lg border border-line bg-surface p-2 text-muted transition-all duration-200 hover:border-faint/60 hover:text-ink active:scale-95"
+            className="rounded-lg border border-line bg-surface/60 p-2 text-muted transition-all duration-200 hover:border-faint/60 hover:text-ink active:scale-95"
             aria-label={mode === "dark" ? "สลับเป็นโหมดสว่าง" : "สลับเป็นโหมดมืด"}
           >
             {mode === "dark" ? <Sun className="h-4 w-4" /> : <Moon className="h-4 w-4" />}

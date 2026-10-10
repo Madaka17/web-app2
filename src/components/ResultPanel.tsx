@@ -46,20 +46,18 @@ export function ResultPanel({ result, input }: ResultPanelProps) {
   const maxFeatureValue = Math.max(...result.features.map((f) => f.value));
   const barTotal = result.contributions.reduce((sum, c) => sum + c.weight, 0);
   const perSqm = result.predictedPrice / input.area;
-  // Where the point estimate sits inside its own interval, for the range rule.
-  const span = result.upperBound - result.lowerBound || 1;
-  const pointPct = ((result.predictedPrice - result.lowerBound) / span) * 100;
 
   return (
     <div className="space-y-4 animate-slide-up">
       {/* Price */}
       <section className="card relative overflow-hidden p-6 sm:p-7">
         <div className="bg-grid pointer-events-none absolute inset-0 opacity-60 [mask-image:linear-gradient(to_bottom_left,black,transparent_60%)]" />
+        <div className="orbit pointer-events-none absolute -right-16 -top-16 h-56 w-56" aria-hidden="true" />
         <div className="relative">
           <div className="flex flex-wrap items-start justify-between gap-3">
             <div>
               <p className="label">ราคาคาดการณ์ · {result.meta.collateral_type}</p>
-              <p className="mt-2 font-display text-[40px] font-semibold leading-none tracking-tight text-accent sm:text-[48px]">
+              <p className="mt-2 font-display text-[40px] font-semibold leading-none tracking-tight text-accent text-glow sm:text-[48px]">
                 <Baht value={result.predictedPrice} />
               </p>
               <p className="mt-2 text-[13px] text-muted">
@@ -68,28 +66,6 @@ export function ResultPanel({ result, input }: ResultPanelProps) {
               </p>
             </div>
             <DownloadMenu input={input} result={result} />
-          </div>
-
-          {/* Interval rule */}
-          <div className="mt-7">
-            <div className="relative h-1.5 rounded-full bg-line">
-              <div
-                className="absolute top-1/2 h-3.5 w-0.5 -translate-y-1/2 rounded-full bg-ink transition-[left] duration-500 ease-out"
-                style={{ left: `${pointPct}%` }}
-                aria-hidden="true"
-              />
-            </div>
-            <div className="mt-2 flex justify-between text-[12px]">
-              <span className="text-muted">
-                ต่ำ <span className="num font-medium text-ink"><Baht value={result.lowerBound} /></span>
-              </span>
-              <span className="text-muted">
-                สูง <span className="num font-medium text-ink"><Baht value={result.upperBound} /></span>
-              </span>
-            </div>
-            <p className="mt-2 text-[11.5px] leading-relaxed text-faint">
-              ช่วงนี้คือเปอร์เซ็นไทล์ที่ 10–90 ของ ราคาจริง ÷ ราคาที่ทำนาย บนชุดทดสอบของ{result.meta.collateral_type}
-            </p>
           </div>
         </div>
       </section>
@@ -167,7 +143,7 @@ export function ResultPanel({ result, input }: ResultPanelProps) {
                   </div>
                   <div className="mt-1.5 h-1.5 overflow-hidden rounded-full bg-raised">
                     <div
-                      className="h-full origin-left animate-grow-x rounded-full bg-ink/80 transition-[width] duration-500 ease-out"
+                      className="h-full origin-left animate-grow-x rounded-full bg-gradient-to-r from-accent-2 to-accent transition-[width] duration-500 ease-out"
                       style={{ width: `${widthPct}%`, animationDelay: `${i * 40}ms` }}
                     />
                   </div>

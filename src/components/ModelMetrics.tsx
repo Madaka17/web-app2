@@ -216,7 +216,7 @@ function Report({ report }: { report: ModelMetricsReport }) {
                   </div>
                   <div className="mt-1 h-1.5 overflow-hidden rounded-full bg-raised">
                     <div
-                      className="h-full origin-left animate-grow-x rounded-full bg-ink/80"
+                      className="h-full origin-left animate-grow-x rounded-full bg-gradient-to-r from-accent-2 to-accent"
                       style={{ width: `${(v / maxImportance) * 100}%` }}
                     />
                   </div>

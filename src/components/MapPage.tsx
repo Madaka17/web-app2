@@ -1,5 +1,6 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { ArrowRight } from "lucide-react";
+import { UsedHomeListing, loadUsedHomes } from "@/lib/usedHomes";
 import { NearbyMap } from "./NearbyMap";
 
 interface MapPageProps {
@@ -11,6 +12,14 @@ interface MapPageProps {
 
 export function MapPage({ point, onPick, onPrice }: MapPageProps) {
   const [buildingAge, setBuildingAge] = useState<number | undefined>();
+  const [homes, setHomes] = useState<UsedHomeListing[]>([]);
+
+  // The map works without them; a failed load just leaves the layer empty.
+  useEffect(() => {
+    const controller = new AbortController();
+    loadUsedHomes(controller.signal).then(setHomes).catch(() => {});
+    return () => controller.abort();
+  }, []);
 
   return (
     <div className="space-y-6">
@@ -70,7 +79,8 @@ export function MapPage({ point, onPick, onPrice }: MapPageProps) {
         point={point}
         onPick={onPick}
         buildingAge={buildingAge}
-        mapHeight="h-[460px] sm:h-[560px]"
+        homes={homes}
+        mapHeight="h-[520px] sm:h-[640px]"
       />
     </div>
   );

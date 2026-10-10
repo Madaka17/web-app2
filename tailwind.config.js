@@ -6,8 +6,8 @@ export default {
     extend: {
       fontFamily: {
         sans: ['"IBM Plex Sans Thai"', 'Inter', 'system-ui', 'sans-serif'],
-        display: ['"Bai Jamjuree"', '"IBM Plex Sans Thai"', 'system-ui', 'sans-serif'],
-        mono: ['"IBM Plex Mono"', 'ui-monospace', 'SFMono-Regular', 'monospace'],
+        display: ['"Chakra Petch"', '"IBM Plex Sans Thai"', 'system-ui', 'sans-serif'],
+        mono: ['"JetBrains Mono"', 'ui-monospace', 'SFMono-Regular', 'monospace'],
       },
       // Semantic tokens; the values live in index.css so light/dark swap in one place.
       colors: {
@@ -22,6 +22,7 @@ export default {
           DEFAULT: 'rgb(var(--c-accent) / <alpha-value>)',
           soft: 'rgb(var(--c-accent-soft) / <alpha-value>)',
           ink: 'rgb(var(--c-accent-ink) / <alpha-value>)',
+          2: 'rgb(var(--c-accent-2) / <alpha-value>)',
         },
         ok: {
           DEFAULT: 'rgb(var(--c-ok) / <alpha-value>)',

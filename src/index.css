@@ -1,4 +1,4 @@
-@import url('https://fonts.googleapis.com/css2?family=Bai+Jamjuree:wght@500;600;700&family=IBM+Plex+Sans+Thai:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Chakra+Petch:wght@500;600;700&family=IBM+Plex+Sans+Thai:wght@400;500;600&family=JetBrains+Mono:wght@400;500&display=swap');
 
 @tailwind base;
 @tailwind components;
@@ -6,42 +6,51 @@
 
 @layer base {
   :root {
-    /* Warm paper neutrals. Never pure white on pure black. */
-    --c-canvas: 246 244 240;
+    /* Light: high-altitude daylight - pale indigo, ink-dark text. */
+    --c-canvas: 236 240 252;
     --c-surface: 255 255 255;
-    --c-raised: 250 249 247;
-    --c-line: 230 226 219;
-    --c-ink: 28 25 23;
-    --c-muted: 120 113 108;
-    --c-faint: 168 162 158;
-    --c-accent: 180 83 31;
-    --c-accent-soft: 251 238 228;
-    --c-accent-ink: 122 52 14;
-    --c-ok: 22 101 52;
-    --c-ok-soft: 236 247 239;
+    --c-raised: 243 245 253;
+    --c-line: 212 218 240;
+    --c-ink: 14 17 43;
+    --c-muted: 84 92 135;
+    --c-faint: 138 146 184;
+    --c-accent: 79 70 229;
+    --c-accent-soft: 232 231 252;
+    --c-accent-ink: 49 46 129;
+    --c-accent-2: 8 145 178;
+    --c-ok: 21 128 61;
+    --c-ok-soft: 230 246 236;
     --c-warn: 161 98 7;
     --c-warn-soft: 253 246 228;
-    --c-bad: 185 28 28;
-    --c-bad-soft: 254 236 236;
+    --c-bad: 190 18 60;
+    --c-bad-soft: 254 233 238;
+    --c-glow: 79 70 229;
+    --star-opacity: 0;
+    --surface-alpha: 0.82;
   }
 
   .dark {
-    --c-canvas: 18 17 16;
-    --c-surface: 27 25 24;
-    --c-raised: 35 33 32;
-    --c-line: 48 45 42;
-    --c-ink: 245 243 239;
-    --c-muted: 161 155 147;
-    --c-faint: 110 104 98;
-    --c-accent: 228 145 96;
-    --c-accent-soft: 46 31 22;
-    --c-accent-ink: 250 208 180;
-    --c-ok: 110 201 140;
-    --c-ok-soft: 22 40 29;
-    --c-warn: 234 179 8;
-    --c-warn-soft: 45 36 16;
-    --c-bad: 248 113 113;
-    --c-bad-soft: 52 24 24;
+    /* Dark: deep space - near-black blue, cyan signal, violet nebula. */
+    --c-canvas: 4 6 18;
+    --c-surface: 11 15 36;
+    --c-raised: 19 25 54;
+    --c-line: 38 48 92;
+    --c-ink: 232 238 255;
+    --c-muted: 152 163 206;
+    --c-faint: 96 107 150;
+    --c-accent: 94 234 255;
+    --c-accent-soft: 10 42 62;
+    --c-accent-ink: 190 248 255;
+    --c-accent-2: 167 139 250;
+    --c-ok: 74 222 128;
+    --c-ok-soft: 12 44 30;
+    --c-warn: 250 204 21;
+    --c-warn-soft: 48 40 10;
+    --c-bad: 251 113 133;
+    --c-bad-soft: 54 16 28;
+    --c-glow: 94 234 255;
+    --star-opacity: 1;
+    --surface-alpha: 0.62;
   }
 
   * {
@@ -59,10 +68,16 @@
   body {
     @apply bg-canvas text-ink font-sans;
     font-feature-settings: 'ss01', 'cv11';
+    /* Nebula glow behind the starfield. */
+    background-image:
+      radial-gradient(ellipse 60% 45% at 12% 0%, rgb(var(--c-accent-2) / 0.16), transparent 70%),
+      radial-gradient(ellipse 50% 40% at 92% 18%, rgb(var(--c-accent) / 0.10), transparent 70%),
+      radial-gradient(ellipse 70% 50% at 50% 110%, rgb(var(--c-accent-2) / 0.14), transparent 70%);
+    background-attachment: fixed;
   }
 
   ::selection {
-    @apply bg-accent/20;
+    @apply bg-accent/25;
   }
 
   /* One focus style for the whole app. */
@@ -84,31 +99,50 @@
 }
 
 @layer components {
+  /* Glass panel: translucent over the starfield, lit along the top edge. */
   .card {
-    @apply rounded-2xl border border-line/80 bg-surface shadow-card;
+    @apply relative rounded-2xl border border-line/70;
+    background: rgb(var(--c-surface) / var(--surface-alpha));
+    backdrop-filter: blur(14px) saturate(140%);
+    box-shadow:
+      inset 0 1px 0 rgb(255 255 255 / 0.06),
+      0 18px 40px -24px rgb(var(--c-glow) / 0.35);
+  }
+  .card::before {
+    content: '';
+    position: absolute;
+    inset: 0 18% auto 18%;
+    height: 1px;
+    background: linear-gradient(90deg, transparent, rgb(var(--c-accent) / 0.55), transparent);
+    pointer-events: none;
   }
   .label {
-    @apply text-[11px] font-medium uppercase tracking-label text-muted;
+    @apply font-display text-[11px] font-semibold uppercase tracking-label text-muted;
   }
   .num {
     @apply font-mono tabular-nums;
   }
   .btn-primary {
-    @apply inline-flex items-center justify-center gap-2 rounded-xl bg-ink px-4 py-2.5 text-sm font-semibold text-canvas
-      transition-all duration-200 ease-out hover:bg-ink/90 active:scale-[0.98]
+    @apply inline-flex items-center justify-center gap-2 rounded-xl px-4 py-2.5 text-sm font-semibold text-white
+      transition-all duration-200 ease-out hover:brightness-110 active:scale-[0.98]
       disabled:cursor-not-allowed disabled:opacity-50 disabled:active:scale-100;
+    background: linear-gradient(110deg, rgb(var(--c-accent-2)), rgb(79 70 229) 45%, rgb(8 145 178));
+    box-shadow:
+      inset 0 0 0 1px rgb(255 255 255 / 0.10),
+      0 10px 28px -10px rgb(var(--c-glow) / 0.7);
+    text-shadow: 0 1px 1px rgb(0 0 0 / 0.25);
   }
   .btn-ghost {
-    @apply inline-flex items-center justify-center gap-2 rounded-xl border border-line bg-surface px-3.5 py-2 text-sm font-medium text-ink
-      transition-all duration-200 ease-out hover:border-faint/60 hover:bg-raised active:scale-[0.98];
+    @apply inline-flex items-center justify-center gap-2 rounded-xl border border-line bg-surface/60 px-3.5 py-2 text-sm font-medium text-ink
+      transition-all duration-200 ease-out hover:border-accent/50 hover:bg-raised active:scale-[0.98];
   }
   .chip {
     @apply inline-flex items-center gap-1.5 rounded-md border px-2 py-0.5 text-[11px] font-medium;
   }
   .field {
-    @apply w-full rounded-xl border border-line bg-raised px-3 py-2.5 text-sm font-medium text-ink
+    @apply w-full rounded-xl border border-line bg-raised/70 px-3 py-2.5 text-sm font-medium text-ink
       transition-all duration-200 placeholder:text-faint
-      hover:border-faint/60 focus:border-accent/50 focus:bg-surface focus:outline-none focus:ring-4 focus:ring-accent/10;
+      hover:border-faint/60 focus:border-accent/60 focus:bg-surface focus:outline-none focus:ring-4 focus:ring-accent/15;
   }
 }
 
@@ -127,11 +161,227 @@
   .scrollbar-thin::-webkit-scrollbar-thumb:hover {
     background: rgb(var(--c-faint) / 0.6);
   }
-  /* Faint ruled-paper texture for hero surfaces. */
+  /* HUD grid for hero surfaces. */
   .bg-grid {
     background-image:
-      linear-gradient(rgb(var(--c-line) / 0.55) 1px, transparent 1px),
-      linear-gradient(90deg, rgb(var(--c-line) / 0.55) 1px, transparent 1px);
+      linear-gradient(rgb(var(--c-accent) / 0.08) 1px, transparent 1px),
+      linear-gradient(90deg, rgb(var(--c-accent) / 0.08) 1px, transparent 1px);
     background-size: 28px 28px;
   }
+  .text-glow {
+    text-shadow: 0 0 24px rgb(var(--c-glow) / 0.45);
+  }
+  .brand-mark {
+    background: radial-gradient(circle at 30% 25%, rgb(var(--c-accent)), rgb(79 70 229) 55%, rgb(var(--c-accent-2)));
+    box-shadow: 0 0 18px -2px rgb(var(--c-glow) / 0.6);
+  }
+
+  /* Two tilted rings with a moon riding the outer one. */
+  .orbit {
+    border-radius: 9999px;
+    border: 1px solid rgb(var(--c-accent) / 0.22);
+    transform: rotate(-18deg) scaleY(0.55);
+  }
+  .orbit::before {
+    content: '';
+    position: absolute;
+    inset: 22%;
+    border-radius: 9999px;
+    border: 1px dashed rgb(var(--c-accent-2) / 0.30);
+  }
+  .orbit::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    border-radius: 9999px;
+    background: radial-gradient(circle at 50% 0, rgb(var(--c-accent)) 0 3px, transparent 4px);
+    filter: drop-shadow(0 0 6px rgb(var(--c-glow)));
+    animation: spin 14s linear infinite;
+  }
+
+  /* Fixed starfield behind everything: three tiled layers drifting at
+     different speeds, the middle one twinkling. Hidden in light mode. */
+  .starfield {
+    position: fixed;
+    inset: 0;
+    z-index: -1;
+    overflow: hidden;
+    pointer-events: none;
+    opacity: var(--star-opacity);
+    transition: opacity 0.6s ease;
+  }
+  .starfield > span {
+    position: absolute;
+    inset: -480px 0 0 0;
+  }
+  .starfield > span:nth-child(1) {
+    background-image:
+      radial-gradient(1px 1px at 23px 41px, rgb(255 255 255 / 0.7), transparent),
+      radial-gradient(1px 1px at 91px 133px, rgb(255 255 255 / 0.5), transparent),
+      radial-gradient(1px 1px at 157px 77px, rgb(190 220 255 / 0.6), transparent),
+      radial-gradient(1px 1px at 61px 181px, rgb(255 255 255 / 0.4), transparent),
+      radial-gradient(1px 1px at 189px 17px, rgb(255 255 255 / 0.5), transparent);
+    background-size: 200px 200px;
+    animation: drift-200 240s linear infinite;
+  }
+  .starfield > span:nth-child(2) {
+    background-image:
+      radial-gradient(1.5px 1.5px at 47px 211px, rgb(255 255 255 / 0.9), transparent),
+      radial-gradient(1.5px 1.5px at 233px 59px, rgb(170 240 255 / 0.9), transparent),
+      radial-gradient(1.5px 1.5px at 151px 283px, rgb(220 200 255 / 0.8), transparent),
+      radial-gradient(1.5px 1.5px at 271px 167px, rgb(255 255 255 / 0.8), transparent);
+    background-size: 320px 320px;
+    animation: drift-320 160s linear infinite, twinkle 5s ease-in-out infinite alternate;
+  }
+  .starfield > span:nth-child(3) {
+    background-image:
+      radial-gradient(2px 2px at 113px 97px, rgb(255 255 255), transparent),
+      radial-gradient(2px 2px at 389px 311px, rgb(160 235 255), transparent),
+      radial-gradient(2.5px 2.5px at 277px 431px, rgb(200 180 255), transparent);
+    background-size: 480px 480px;
+    animation: drift-480 100s linear infinite;
+  }
+  /* Each layer moves exactly one tile, so the loop has no visible jump. */
+  @keyframes drift-200 {
+    to { transform: translateY(200px); }
+  }
+  @keyframes drift-320 {
+    to { transform: translateY(320px); }
+  }
+  @keyframes drift-480 {
+    to { transform: translateY(480px); }
+  }
+  @keyframes twinkle {
+    from { opacity: 0.35; }
+    to { opacity: 1; }
+  }
+}
+
+/* Leaflet chrome to match the theme (its own CSS loads after this file). */
+.leaflet-container {
+  background: rgb(var(--c-raised)) !important;
+  font-family: inherit !important;
+}
+.leaflet-bar a {
+  background: rgb(var(--c-surface)) !important;
+  color: rgb(var(--c-ink)) !important;
+  border-color: rgb(var(--c-line)) !important;
+}
+.leaflet-bar {
+  border: 1px solid rgb(var(--c-line)) !important;
+  box-shadow: 0 0 16px -6px rgb(var(--c-glow) / 0.6) !important;
+}
+.leaflet-control-attribution {
+  background: rgb(var(--c-surface) / 0.75) !important;
+  color: rgb(var(--c-muted)) !important;
+}
+.leaflet-control-attribution a {
+  color: rgb(var(--c-accent)) !important;
+}
+.dark .map-tiles {
+  filter: invert(1) hue-rotate(190deg) brightness(0.85) contrast(0.9) saturate(0.55);
+}
+
+/* MapLibre: price callouts over satellite imagery (oneatlaz-style). */
+.price-callout {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 3px 7px;
+  border: 1.5px solid #facc15;
+  border-radius: 7px;
+  background: rgb(8 11 30 / 0.88);
+  color: #fff;
+  font: 600 11px/1.25 'JetBrains Mono', 'IBM Plex Sans Thai', ui-monospace, monospace;
+  white-space: nowrap;
+  cursor: pointer;
+  box-shadow: 0 0 14px -4px #facc15;
+  transition: transform 0.15s ease;
+}
+.price-callout:hover {
+  transform: scale(1.08);
+  z-index: 10;
+}
+.price-callout span {
+  font-weight: 500;
+  font-size: 10px;
+  color: #fde68a;
+}
+.price-callout::after {
+  content: '';
+  position: absolute;
+  bottom: -6px;
+  left: 50%;
+  transform: translateX(-50%);
+  border: 5px solid transparent;
+  border-bottom: 0;
+  border-top-color: #facc15;
+}
+
+.space-pop .maplibregl-popup-content {
+  padding: 0;
+  overflow: hidden;
+  border: 1px solid rgb(var(--c-line));
+  border-radius: 12px;
+  background: rgb(var(--c-surface) / 0.95);
+  box-shadow: 0 12px 32px -10px rgb(var(--c-glow) / 0.5);
+  backdrop-filter: blur(10px);
+}
+.space-pop .maplibregl-popup-tip {
+  border-top-color: rgb(var(--c-surface)) !important;
+  border-bottom-color: rgb(var(--c-surface)) !important;
+}
+.space-pop .maplibregl-popup-close-button {
+  color: #fff;
+  font-size: 18px;
+  padding: 0 6px;
+  text-shadow: 0 1px 3px rgb(0 0 0 / 0.6);
+}
+.home-pop {
+  display: block;
+  color: rgb(var(--c-ink));
+  text-decoration: none;
+  font-family: 'IBM Plex Sans Thai', sans-serif;
+}
+.home-pop img {
+  display: block;
+  width: 100%;
+  height: 120px;
+  object-fit: cover;
+}
+.home-pop div {
+  padding: 8px 10px 10px;
+}
+.home-pop strong {
+  font: 600 15px 'JetBrains Mono', monospace;
+  color: rgb(var(--c-accent));
+}
+.home-pop p {
+  margin: 2px 0;
+  font-size: 12px;
+  line-height: 1.35;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+.home-pop span {
+  font-size: 11px;
+  color: rgb(var(--c-muted));
+}
+.maplibregl-ctrl-group {
+  background: rgb(var(--c-surface) / 0.85) !important;
+  border: 1px solid rgb(var(--c-line));
+  box-shadow: 0 0 16px -6px rgb(var(--c-glow) / 0.6) !important;
+}
+.dark .maplibregl-ctrl-group button .maplibregl-ctrl-icon {
+  filter: invert(1);
+}
+.maplibregl-ctrl-attrib {
+  background: rgb(var(--c-surface) / 0.75) !important;
+  color: rgb(var(--c-muted));
+}
+.maplibregl-ctrl-attrib a {
+  color: rgb(var(--c-accent));
 }

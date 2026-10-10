@@ -25,14 +25,14 @@ export function Sidebar({ activePage, onNavigate, isOpen, onClose }: SidebarProp
     <>
       {isOpen && (
         <div
-          className="fixed inset-0 z-40 bg-ink/40 backdrop-blur-[2px] lg:hidden"
+          className="fixed inset-0 z-40 bg-canvas/70 backdrop-blur-[2px] lg:hidden"
           onClick={onClose}
           aria-hidden="true"
         />
       )}
       <aside
         className={`
-          fixed left-0 top-0 z-50 flex h-dvh w-[248px] flex-col border-r border-line/80 bg-surface
+          fixed left-0 top-0 z-50 flex h-dvh w-[248px] flex-col border-r border-line/70 bg-surface/70 backdrop-blur-xl
           transition-transform duration-300 ease-[cubic-bezier(0.22,1,0.36,1)]
           lg:sticky lg:z-30 lg:translate-x-0
           ${isOpen ? "translate-x-0" : "-translate-x-full"}
@@ -41,7 +41,7 @@ export function Sidebar({ activePage, onNavigate, isOpen, onClose }: SidebarProp
         {/* Brand */}
         <div className="flex h-16 items-center justify-between px-5">
           <a href="#/predictor" className="flex items-center gap-2.5" onClick={onClose}>
-            <span className="grid h-8 w-8 place-items-center rounded-lg bg-ink font-display text-sm font-bold text-canvas">
+            <span className="grid h-8 w-8 place-items-center brand-mark rounded-lg font-display text-sm font-bold text-white">
               ฿
             </span>
             <span className="leading-tight">
@@ -77,11 +77,11 @@ export function Sidebar({ activePage, onNavigate, isOpen, onClose }: SidebarProp
                     className={`
                       group relative flex w-full items-center gap-3 rounded-lg px-3 py-2.5 text-left
                       transition-colors duration-150
-                      ${isActive ? "bg-raised text-ink" : "text-muted hover:bg-raised/70 hover:text-ink"}
+                      ${isActive ? "bg-gradient-to-r from-accent/15 to-transparent text-ink" : "text-muted hover:bg-raised/70 hover:text-ink"}
                     `}
                   >
                     {isActive && (
-                      <span className="absolute left-0 top-1/2 h-5 w-[3px] -translate-y-1/2 rounded-r-full bg-accent" />
+                      <span className="absolute left-0 top-1/2 h-5 w-[3px] -translate-y-1/2 rounded-r-full bg-accent shadow-[0_0_12px_rgb(var(--c-glow))]" />
                     )}
                     <Icon
                       className={`h-[18px] w-[18px] flex-shrink-0 transition-colors ${

@@ -15,6 +15,7 @@ import {
 } from "lucide-react";
 import { CircleMarker, MapContainer, TileLayer, useMap } from "react-leaflet";
 import "leaflet/dist/leaflet.css";
+import { MAP_MARK, MAP_MARK_ACTIVE, MAP_TILES } from "@/lib/mapTiles";
 import { UsedHomeListing, formatPosted, loadUsedHomes } from "@/lib/usedHomes";
 
 const ALL = "ทั้งหมด";
@@ -412,11 +413,10 @@ function PropertyMap({
   onClose: () => void;
 }) {
   return (
-    <div className="relative h-[560px] overflow-hidden rounded-2xl border border-line/80 bg-raised shadow-card xl:h-[calc(100vh-7rem)]">
+    <div className="relative h-[560px] overflow-hidden rounded-2xl border border-line/80 bg-raised shadow-[0_18px_40px_-24px_rgb(var(--c-glow)/0.35)] xl:h-[calc(100vh-7rem)]">
       <MapContainer center={BANGKOK} zoom={11} preferCanvas className="h-full w-full" scrollWheelZoom>
         <TileLayer
-          attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>'
-          url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
+          {...MAP_TILES}
         />
         {listings.map((home) => {
           const active = home.id === selected?.id;
@@ -428,7 +428,7 @@ function PropertyMap({
               pathOptions={{
                 color: "#fff",
                 weight: active ? 2.5 : 1.5,
-                fillColor: active ? "#1c1917" : "#c2410c",
+                fillColor: active ? MAP_MARK_ACTIVE : MAP_MARK,
                 fillOpacity: active ? 1 : 0.7,
               }}
               eventHandlers={{ click: () => onSelect(home.id) }}

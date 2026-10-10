@@ -1,24 +1,31 @@
-import { useEffect, useState } from "react";
-import { Loader2, MapPin } from "lucide-react";
-import { Circle, CircleMarker, MapContainer, TileLayer, useMapEvents } from "react-leaflet";
-import "leaflet/dist/leaflet.css";
+import { useEffect, useMemo, useState } from "react";
+import { ExternalLink, Loader2, MapPin } from "lucide-react";
 import { NearbyResult, getNearby } from "@/lib/api";
 import { formatBaht } from "@/lib/prediction";
+import { UsedHomeListing } from "@/lib/usedHomes";
+import { Map3D } from "./Map3D";
 
-const BANGKOK: [number, number] = [13.7563, 100.5018];
 const RADII = [1000, 2000] as const;
 
 interface NearbyMapProps {
   point: { lat: number; lng: number } | null;
   onPick: (lat: number, lng: number) => void;
   buildingAge?: number;
+  /** Used-home listings drawn on the map and listed when inside the radius. */
+  homes?: UsedHomeListing[];
   /** Tailwind height class for the map itself. */
   mapHeight?: string;
 }
 
-function ClickToPick({ onPick }: { onPick: (lat: number, lng: number) => void }) {
-  useMapEvents({ click: (e) => onPick(e.latlng.lat, e.latlng.lng) });
-  return null;
+const NEARBY_HOMES_SHOWN = 6;
+const NO_HOMES: UsedHomeListing[] = [];
+
+function distanceM(a: { lat: number; lng: number }, b: { lat: number; lng: number }): number {
+  const rad = Math.PI / 180;
+  const dLat = (b.lat - a.lat) * rad;
+  const dLng = (b.lng - a.lng) * rad;
+  const h = Math.sin(dLat / 2) ** 2 + Math.cos(a.lat * rad) * Math.cos(b.lat * rad) * Math.sin(dLng / 2) ** 2;
+  return 2 * 6_371_000 * Math.asin(Math.sqrt(h));
 }
 
 function baht(n: number): string {
@@ -31,8 +38,16 @@ function baht(n: number): string {
  * (GET /api/nearby). With a building age set, the price per sqm is also given
  * after the measured ค่าเสื่อม adjustment.
  */
-export function NearbyMap({ point, onPick, buildingAge, mapHeight = "h-[300px]" }: NearbyMapProps) {
+export function NearbyMap({ point, onPick, buildingAge, homes = NO_HOMES, mapHeight = "h-[300px]" }: NearbyMapProps) {
   const [radius, setRadius] = useState<(typeof RADII)[number]>(1000);
+
+  const homesInRadius = useMemo(() => {
+    if (!point) return [];
+    return homes
+      .map((home) => ({ home, d: distanceM(point, home) }))
+      .filter((x) => x.d <= radius)
+      .sort((a, b) => a.d - b.d);
+  }, [homes, point, radius]);
   const [data, setData] = useState<NearbyResult | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
@@ -80,28 +95,8 @@ export function NearbyMap({ point, onPick, buildingAge, mapHeight = "h-[300px]" 
         </div>
       </div>
 
-      <div className={`mt-4 ${mapHeight} border-y border-line/80`}>
-        <MapContainer center={point ?? BANGKOK} zoom={12} className="h-full w-full" scrollWheelZoom>
-          <TileLayer
-            attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>'
-            url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
-          />
-          <ClickToPick onPick={onPick} />
-          {point && (
-            <>
-              <Circle
-                center={point}
-                radius={radius}
-                pathOptions={{ color: "#b4531f", weight: 1.5, fillOpacity: 0.08 }}
-              />
-              <CircleMarker
-                center={point}
-                radius={6}
-                pathOptions={{ color: "#fff", weight: 2, fillColor: "#b4531f", fillOpacity: 1 }}
-              />
-            </>
-          )}
-        </MapContainer>
+      <div className="mt-4 border-y border-line/80">
+        <Map3D point={point} radius={radius} homes={homes} onPick={onPick} height={mapHeight} />
       </div>
 
       <div className="space-y-3 p-5 sm:p-6">
@@ -154,6 +149,46 @@ export function NearbyMap({ point, onPick, buildingAge, mapHeight = "h-[300px]" 
             </p>
           </div>
         ) : null}
+
+        {point && homes.length > 0 && (
+          <div className="border-t border-line/60 pt-4">
+            <p className="label">บ้านมือสองในรัศมี ({homesInRadius.length.toLocaleString()})</p>
+            {homesInRadius.length === 0 ? (
+              <p className="mt-2 text-[13px] text-faint">ไม่มีบ้านมือสองในรัศมี {radius / 1000} กม.</p>
+            ) : (
+              <ul className="mt-3 grid grid-cols-1 gap-2 sm:grid-cols-2">
+                {homesInRadius.slice(0, NEARBY_HOMES_SHOWN).map(({ home, d }) => (
+                  <li key={home.id}>
+                    <a
+                      href={home.url}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="group flex gap-3 rounded-xl bg-raised p-2 transition-colors hover:bg-raised/60 hover:ring-1 hover:ring-accent/40"
+                    >
+                      {home.image && (
+                        <img
+                          src={home.image}
+                          alt=""
+                          referrerPolicy="no-referrer"
+                          loading="lazy"
+                          className="h-14 w-20 flex-shrink-0 rounded-lg object-cover"
+                        />
+                      )}
+                      <div className="min-w-0 flex-1">
+                        <p className="num text-[13px] font-semibold text-ink">{formatBaht(home.price)}</p>
+                        <p className="truncate text-[12px] text-muted">{home.title}</p>
+                        <p className="flex items-center gap-1 text-[11px] text-faint">
+                          {home.type} · ห่าง {Math.round(d).toLocaleString()} ม.
+                          <ExternalLink className="h-3 w-3 opacity-0 transition-opacity group-hover:opacity-100" />
+                        </p>
+                      </div>
+                    </a>
+                  </li>
+                ))}
+              </ul>
+            )}
+          </div>
+        )}
       </div>
     </div>
   );
