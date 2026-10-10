@@ -374,7 +374,8 @@ export function Map3D({ point, radius, homes, onPick, height }: Map3DProps) {
 
   return (
     <div className={`relative overflow-hidden ${height}`}>
-      <div ref={containerRef} className="absolute inset-0" />
+      {/* Sized by h-full, not inset: MapLibre sets position: relative on it. */}
+      <div ref={containerRef} className="h-full w-full" />
 
       <div className="absolute right-3 top-3 flex gap-1 rounded-xl border border-line/70 bg-surface/80 p-1 backdrop-blur-md">
         <button type="button" onClick={() => setSatellite(false)} aria-pressed={!satellite} className={toggleBtn(!satellite)}>
