@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { PageId } from "./types";
 
-const PAGES: PageId[] = ["predictor", "used-homes", "image-valuation", "pipeline", "metrics"];
+const PAGES: PageId[] = ["predictor", "map", "used-homes", "image-valuation", "pipeline", "metrics"];
 const DEFAULT_PAGE: PageId = "predictor";
 
 function readHash(): PageId {

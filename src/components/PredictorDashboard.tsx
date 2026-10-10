@@ -7,7 +7,6 @@ import { ResultPanel } from "./ResultPanel";
 import { LocationSelector } from "./LocationSelector";
 import { StatusPanel } from "./StatusPanel";
 import { ModelStatus } from "./ModelStatus";
-import { NearbyMap } from "./NearbyMap";
 
 const PROPERTY_TYPES: { id: PropertyType; label: string }[] = [
   { id: "condo", label: "คอนโด" },
@@ -64,8 +63,14 @@ function clampAll(input: PredictionInput): PredictionInput {
   );
 }
 
-export function PredictorDashboard() {
-  const [input, setInput] = useState<PredictionInput>(DEFAULT_INPUT);
+interface PredictorDashboardProps {
+  /** A point picked on the map page; prices from it instead of the sub-district. */
+  point: { lat: number; lng: number } | null;
+  onClearPoint: () => void;
+}
+
+export function PredictorDashboard({ point: mapPoint, onClearPoint }: PredictorDashboardProps) {
+  const [input, setInput] = useState<PredictionInput>(() => ({ ...DEFAULT_INPUT, ...mapPoint }));
   const [result, setResult] = useState<ApiPrediction | null>(null);
   // The form values the current result was priced from; `input` may already
   // have moved on while the next request is in flight.
@@ -105,15 +110,12 @@ export function PredictorDashboard() {
     });
   };
 
-  // Picking a sub-district from the list drops a map click, and vice versa
-  // the click wins (the API locates from lat/lng when it has them).
+  // Picking a sub-district from the list drops the map point; otherwise the
+  // point wins (the API locates from lat/lng when it has them).
   const updateSubdistrict = (subdistrictId: string) => {
     setInput((prev) => ({ ...prev, subdistrictId, lat: undefined, lng: undefined }));
+    onClearPoint();
   };
-
-  const pickPoint = useCallback((lat: number, lng: number) => {
-    setInput((prev) => ({ ...prev, lat, lng }));
-  }, []);
 
   const handleOptionalChange = (key: OptionalKey, raw: string, max: number) => {
     const parsed = parseFloat(raw);
@@ -292,17 +294,14 @@ export function PredictorDashboard() {
             )}
             {!point && (
               <p className="mt-2 text-[11.5px] text-faint">
-                คลิกตำแหน่งบนแผนที่ด้านล่างจะแม่นกว่าเลือกแขวงอย่างเดียวมาก
+                เลือกจุดในหน้า{" "}
+                <a href="#/map" className="text-accent underline-offset-2 hover:underline">
+                  แผนที่
+                </a>{" "}
+                จะแม่นกว่าเลือกแขวงอย่างเดียวมาก
               </p>
             )}
           </div>
-
-          <NearbyMap
-            point={point}
-            onPick={pickPoint}
-            propertyType={input.propertyType}
-            buildingAge={input.buildingAge}
-          />
 
           <button type="submit" disabled={isRunning} className="btn-primary group w-full py-3.5 text-[15px]">
             {isRunning ? (

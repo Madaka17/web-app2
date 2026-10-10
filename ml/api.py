@@ -108,6 +108,17 @@ def depreciation_factor(age: float) -> float:
     return BUNDLE["depreciation"][-1]["factor"] if age > 0 and BUNDLE["depreciation"] else 1.0
 
 
+# Share cut from each end before averaging nearby listings: one mansion or a
+# mistyped price would otherwise move a small sample's mean by millions.
+NEARBY_TRIM = 0.1
+
+
+def trimmed_mean(values: np.ndarray, trim: float = NEARBY_TRIM) -> float:
+    v = np.sort(values)
+    k = int(len(v) * trim)
+    return float(v[k:len(v) - k].mean())
+
+
 def nearest_location(lat: float, lng: float) -> dict:
     """The sub-district of the closest pinned listing - where a map click lands."""
     _, ix = BUNDLE["locator"].query(np.radians([[lat, lng]]), k=1)
@@ -331,6 +342,9 @@ def nearby():
             "p75_ppsqm": round(float(np.quantile(ppsqm, 0.75)), -2),
             "median_price": round(float(g["price"].median()), -3),
             "median_area": round(float(g["area"].median()), 1),
+            "mean_price": round(trimmed_mean(g["price"].to_numpy()), -3),
+            "mean_ppsqm": round(trimmed_mean(ppsqm), -2),
+            "mean_area": round(trimmed_mean(g["area"].to_numpy()), 1),
             "n_with_age": int(g["age"].notna().sum()),
             "median_age": float(g["age"].median()) if g["age"].notna().any() else None,
         }
@@ -340,6 +354,7 @@ def nearby():
             own = own.fillna(depreciation_factor(entry["median_age"]) if entry["median_age"] is not None else 1.0)
             adjusted = ppsqm / own.to_numpy() * depreciation_factor(age)
             entry["adjusted_ppsqm"] = round(float(np.median(adjusted)), -2)
+            entry["mean_adjusted_ppsqm"] = round(trimmed_mean(adjusted), -2)
             entry["age_factor"] = depreciation_factor(age)
         groups.append(entry)
     groups.sort(key=lambda e: -e["n"])
@@ -351,6 +366,7 @@ def nearby():
         "groups": groups,
         "location": location,
         "depreciation": BUNDLE["depreciation"],
+        "trim": NEARBY_TRIM,
     })
 
 

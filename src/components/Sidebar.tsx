@@ -1,4 +1,4 @@
-import { LayoutDashboard, GitBranch, BarChart3, ImagePlus, Home, X } from "lucide-react";
+import { LayoutDashboard, GitBranch, BarChart3, ImagePlus, Home, Map as MapIcon, X } from "lucide-react";
 import { PageId } from "@/lib/types";
 import { useModelHealth } from "@/lib/useApi";
 
@@ -11,6 +11,7 @@ interface SidebarProps {
 
 const NAV_ITEMS: { id: PageId; label: string; icon: typeof LayoutDashboard; hint: string }[] = [
   { id: "predictor", label: "ประเมินราคา", icon: LayoutDashboard, hint: "กรอกข้อมูล รับราคา" },
+  { id: "map", label: "แผนที่", icon: MapIcon, hint: "ราคาประกาศในรัศมี" },
   { id: "used-homes", label: "บ้านมือสอง", icon: Home, hint: "รายการในระบบ" },
   { id: "image-valuation", label: "ประเมินจากรูป", icon: ImagePlus, hint: "อัปโหลดรูปห้อง" },
   { id: "pipeline", label: "กระบวนการ", icon: GitBranch, hint: "จากข้อมูลดิบถึง API" },

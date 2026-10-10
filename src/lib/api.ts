@@ -129,10 +129,15 @@ export interface NearbyGroup {
   p75_ppsqm: number;
   median_price: number;
   median_area: number;
+  /** Means after dropping NearbyResult.trim of listings from each end. */
+  mean_price: number;
+  mean_ppsqm: number;
+  mean_area: number;
   n_with_age: number;
   median_age: number | null;
   adjusted_ppsqm?: number;
   age_factor?: number;
+  mean_adjusted_ppsqm?: number;
 }
 
 /** Shape of GET /api/nearby: listings within a radius of a map click. */
@@ -145,6 +150,7 @@ export interface NearbyResult {
   groups: NearbyGroup[];
   location: { province: string; district: string; subdistrict: string } | null;
   depreciation: DepreciationStep[];
+  trim: number;
 }
 
 export function getNearby(

@@ -9,6 +9,7 @@ interface HeaderProps {
 
 const TITLES: Record<PageId, { th: string; en: string }> = {
   predictor: { th: "ประเมินราคา", en: "Valuation" },
+  map: { th: "แผนที่", en: "Map" },
   "used-homes": { th: "บ้านมือสอง", en: "Listings" },
   "image-valuation": { th: "ประเมินจากรูป", en: "Photo valuation" },
   pipeline: { th: "กระบวนการ", en: "Pipeline" },

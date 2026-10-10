@@ -3,7 +3,7 @@ import { Loader2, MapPin } from "lucide-react";
 import { Circle, CircleMarker, MapContainer, TileLayer, useMapEvents } from "react-leaflet";
 import "leaflet/dist/leaflet.css";
 import { NearbyResult, getNearby } from "@/lib/api";
-import { PropertyType } from "@/lib/types";
+import { formatBaht } from "@/lib/prediction";
 
 const BANGKOK: [number, number] = [13.7563, 100.5018];
 const RADII = [1000, 2000] as const;
@@ -11,8 +11,9 @@ const RADII = [1000, 2000] as const;
 interface NearbyMapProps {
   point: { lat: number; lng: number } | null;
   onPick: (lat: number, lng: number) => void;
-  propertyType: PropertyType;
   buildingAge?: number;
+  /** Tailwind height class for the map itself. */
+  mapHeight?: string;
 }
 
 function ClickToPick({ onPick }: { onPick: (lat: number, lng: number) => void }) {
@@ -26,12 +27,12 @@ function baht(n: number): string {
 
 /**
  * Click anywhere: the circle shows the 1 or 2 km radius and the panel shows
- * what listings inside it ask per sqm (GET /api/nearby). With a building age
- * set, the figure is also given after the measured ค่าเสื่อม adjustment.
+ * the average asking price of listings inside it, one card per property type
+ * (GET /api/nearby). With a building age set, the price per sqm is also given
+ * after the measured ค่าเสื่อม adjustment.
  */
-export function NearbyMap({ point, onPick, propertyType, buildingAge }: NearbyMapProps) {
+export function NearbyMap({ point, onPick, buildingAge, mapHeight = "h-[300px]" }: NearbyMapProps) {
   const [radius, setRadius] = useState<(typeof RADII)[number]>(1000);
-  const [onlyType, setOnlyType] = useState(true);
   const [data, setData] = useState<NearbyResult | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
@@ -42,7 +43,7 @@ export function NearbyMap({ point, onPick, propertyType, buildingAge }: NearbyMa
     setLoading(true);
     setError(null);
     getNearby(
-      { ...point, radius, type: onlyType ? propertyType : undefined, buildingAge },
+      { ...point, radius, buildingAge },
       controller.signal,
     )
       .then(setData)
@@ -53,7 +54,7 @@ export function NearbyMap({ point, onPick, propertyType, buildingAge }: NearbyMa
         if (!controller.signal.aborted) setLoading(false);
       });
     return () => controller.abort();
-  }, [point, radius, onlyType, propertyType, buildingAge]);
+  }, [point, radius, buildingAge]);
 
   return (
     <div className="card overflow-hidden">
@@ -79,7 +80,7 @@ export function NearbyMap({ point, onPick, propertyType, buildingAge }: NearbyMa
         </div>
       </div>
 
-      <div className="mt-4 h-[300px] border-y border-line/80">
+      <div className={`mt-4 ${mapHeight} border-y border-line/80`}>
         <MapContainer center={point ?? BANGKOK} zoom={12} className="h-full w-full" scrollWheelZoom>
           <TileLayer
             attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>'
@@ -104,11 +105,6 @@ export function NearbyMap({ point, onPick, propertyType, buildingAge }: NearbyMa
       </div>
 
       <div className="space-y-3 p-5 sm:p-6">
-        <label className="flex items-center gap-2 text-[12.5px] text-muted">
-          <input type="checkbox" checked={onlyType} onChange={(e) => setOnlyType(e.target.checked)} />
-          เฉพาะประเภทที่เลือก
-        </label>
-
         {!point ? (
           <p className="flex items-center gap-2 text-[13px] text-faint">
             <MapPin className="h-4 w-4" /> ยังไม่ได้เลือกจุด
@@ -129,42 +125,33 @@ export function NearbyMap({ point, onPick, propertyType, buildingAge }: NearbyMa
             {data.total === 0 ? (
               <p className="mt-2 text-[13px] text-faint">ไม่มีประกาศที่มีพิกัดในรัศมี {data.radius_m / 1000} กม.</p>
             ) : (
-              <div className="mt-2 overflow-x-auto">
-                <table className="w-full text-[12.5px]">
-                  <thead className="text-left text-faint">
-                    <tr>
-                      <th className="py-1 pr-3 font-medium">ประเภท</th>
-                      <th className="py-1 pr-3 text-right font-medium">ประกาศ</th>
-                      <th className="py-1 pr-3 text-right font-medium">บาท/ตร.ม. (กลาง)</th>
-                      <th className="py-1 pr-3 text-right font-medium">ช่วง 25–75%</th>
-                      {data.buildingAge !== null && (
-                        <th className="py-1 text-right font-medium">หลังค่าเสื่อม {data.buildingAge} ปี</th>
-                      )}
-                    </tr>
-                  </thead>
-                  <tbody className="num text-ink">
-                    {data.groups.map((g) => (
-                      <tr key={g.label} className="border-t border-line/60">
-                        <td className="py-1.5 pr-3">{g.label}</td>
-                        <td className="py-1.5 pr-3 text-right">{g.n.toLocaleString()}</td>
-                        <td className="py-1.5 pr-3 text-right">{baht(g.median_ppsqm)}</td>
-                        <td className="py-1.5 pr-3 text-right text-muted">
-                          {baht(g.p25_ppsqm)}–{baht(g.p75_ppsqm)}
-                        </td>
-                        {data.buildingAge !== null && (
-                          <td className="py-1.5 text-right">
-                            {g.adjusted_ppsqm !== undefined ? baht(g.adjusted_ppsqm) : "–"}
-                          </td>
-                        )}
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
+              <div className="mt-3 grid grid-cols-1 gap-3 sm:grid-cols-2">
+                {data.groups.map((g) => (
+                  <div key={g.label} className="rounded-xl bg-raised p-4">
+                    <div className="flex items-baseline justify-between gap-2">
+                      <p className="text-[13px] font-semibold text-ink">{g.label}</p>
+                      <p className="num text-[11.5px] text-faint">{g.n.toLocaleString()} ประกาศ</p>
+                    </div>
+                    <p className="mt-2 text-[11px] text-faint">ราคาเฉลี่ย</p>
+                    <p className="num font-display text-[22px] font-semibold leading-tight text-ink">
+                      {formatBaht(g.mean_price)}
+                    </p>
+                    <p className="num mt-1.5 text-[12px] text-muted">
+                      {baht(g.mean_ppsqm)} บาท/ตร.ม. · พื้นที่ {g.mean_area.toLocaleString()} ตร.ม.
+                    </p>
+                    {g.mean_adjusted_ppsqm !== undefined && (
+                      <p className="num mt-1 text-[12px] text-accent">
+                        หลังค่าเสื่อม {data.buildingAge} ปี: {baht(g.mean_adjusted_ppsqm)} บาท/ตร.ม.
+                      </p>
+                    )}
+                  </div>
+                ))}
               </div>
             )}
-            {data.buildingAge === null && (
-              <p className="mt-2 text-[11.5px] text-faint">ใส่อายุอาคารในฟอร์มเพื่อดูราคาหลังหักค่าเสื่อม</p>
-            )}
+            <p className="mt-3 text-[11.5px] text-faint">
+              เฉลี่ยหลังตัดประกาศแพงสุดและถูกสุดออกฝั่งละ {Math.round(data.trim * 100)}%
+              {data.buildingAge === null && " · ใส่อายุอาคารเพื่อดูราคาหลังหักค่าเสื่อม"}
+            </p>
           </div>
         ) : null}
       </div>

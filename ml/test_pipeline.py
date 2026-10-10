@@ -248,6 +248,17 @@ class TestApi:
         assert g["p25_ppsqm"] <= g["median_ppsqm"] <= g["p75_ppsqm"]
         assert "adjusted_ppsqm" in g
 
+    def test_nearby_averages_every_type_in_the_radius(self, client):
+        r = client.get("/api/nearby?lat=13.7245&lng=100.5600&radius=1000")
+        groups = r.get_json()["groups"]
+        assert len({g["label"] for g in groups}) > 1
+        for g in groups:
+            assert g["mean_price"] > 0 and g["mean_ppsqm"] > 0 and g["mean_area"] > 0
+
+    def test_trimmed_mean_drops_the_tails(self):
+        from api import trimmed_mean
+        assert trimmed_mean(np.array([1.0] * 9 + [1000.0]), 0.1) == 1.0
+
     def test_nearby_rejects_an_odd_radius(self, client):
         assert client.get("/api/nearby?lat=13.7&lng=100.5&radius=1500").status_code == 400
 

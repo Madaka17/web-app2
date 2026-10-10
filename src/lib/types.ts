@@ -1,6 +1,6 @@
 export type ThemeMode = "dark" | "light";
 
-export type PageId = "predictor" | "pipeline" | "metrics" | "image-valuation" | "used-homes";
+export type PageId = "predictor" | "map" | "pipeline" | "metrics" | "image-valuation" | "used-homes";
 
 export type PropertyType = "condo" | "house" | "townhome" | "land";
 

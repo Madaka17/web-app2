@@ -8,11 +8,15 @@ import { PipelineBoard } from "@/components/PipelineBoard";
 import { ModelMetrics } from "@/components/ModelMetrics";
 import { ImageValuation } from "@/components/ImageValuation";
 import { UsedHomes } from "@/components/UsedHomes";
+import { MapPage } from "@/components/MapPage";
 import { useHashRoute } from "@/lib/useHashRoute";
 
 function AppContent() {
   const [activePage, navigate] = useHashRoute();
   const [sidebarOpen, setSidebarOpen] = useState(false);
+  // Lives here, not in a page, so a point picked on the map page carries over
+  // to the valuation form (and survives switching pages).
+  const [mapPoint, setMapPoint] = useState<{ lat: number; lng: number } | null>(null);
 
   return (
     <div className="min-h-dvh bg-canvas text-ink">
@@ -28,7 +32,16 @@ function AppContent() {
           <Header activePage={activePage} onMenuClick={() => setSidebarOpen(true)} />
 
           <main className="mx-auto w-full max-w-6xl px-4 py-6 sm:px-6 lg:px-8 lg:py-8">
-            {activePage === "predictor" && <PredictorDashboard />}
+            {activePage === "predictor" && (
+              <PredictorDashboard point={mapPoint} onClearPoint={() => setMapPoint(null)} />
+            )}
+            {activePage === "map" && (
+              <MapPage
+                point={mapPoint}
+                onPick={(lat, lng) => setMapPoint({ lat, lng })}
+                onPrice={() => navigate("predictor")}
+              />
+            )}
             {activePage === "used-homes" && <UsedHomes />}
             {activePage === "image-valuation" && <ImageValuation />}
             {activePage === "pipeline" && <PipelineBoard />}
