@@ -2,11 +2,12 @@ import { useState, useEffect, useRef, useCallback } from "react";
 import { ArrowRight, Loader2, RefreshCw, Search, TrendingUp } from "lucide-react";
 import { PredictionInput, PropertyType } from "@/lib/types";
 import { DEFAULT_SUBDISTRICT_ID, DEFAULT_YEAR, YEAR_MAX, YEAR_MIN } from "@/lib/defaults";
-import { ApiPrediction, predict } from "@/lib/api";
+import { ApiPrediction, EstateProject, predict } from "@/lib/api";
 import { ResultPanel } from "./ResultPanel";
 import { LocationSelector } from "./LocationSelector";
 import { StatusPanel } from "./StatusPanel";
 import { ModelStatus } from "./ModelStatus";
+import { EstatePicker } from "./EstatePicker";
 
 const PROPERTY_TYPES: { id: PropertyType; label: string }[] = [
   { id: "condo", label: "คอนโด" },
@@ -110,11 +111,28 @@ export function PredictorDashboard({ point: mapPoint, onClearPoint }: PredictorD
     });
   };
 
-  // Picking a sub-district from the list drops the map point; otherwise the
-  // point wins (the API locates from lat/lng when it has them).
+  // Picking a sub-district from the list drops the map point and any chosen
+  // village; otherwise the point wins (the API locates from lat/lng).
   const updateSubdistrict = (subdistrictId: string) => {
-    setInput((prev) => ({ ...prev, subdistrictId, lat: undefined, lng: undefined }));
+    setInput((prev) => ({ ...prev, subdistrictId, lat: undefined, lng: undefined, project: undefined }));
+    setVillage(null);
     onClearPoint();
+  };
+
+  // A chosen village prices from its own listings and stands at its pin.
+  const [village, setVillage] = useState<EstateProject | null>(null);
+  const pickVillage = (v: EstateProject | null) => {
+    setVillage(v);
+    setInput((prev) =>
+      v
+        ? { ...prev, estate: "in", project: v.key, lat: v.lat ?? undefined, lng: v.lng ?? undefined }
+        : { ...prev, project: undefined, lat: undefined, lng: undefined },
+    );
+    if (!v) onClearPoint();
+  };
+  const pickEstate = (estate: PredictionInput["estate"]) => {
+    if (estate !== "in" && village) pickVillage(null);
+    setInput((prev) => ({ ...prev, estate }));
   };
 
   const handleOptionalChange = (key: OptionalKey, raw: string, max: number) => {
@@ -183,10 +201,12 @@ export function PredictorDashboard({ point: mapPoint, onClearPoint }: PredictorD
         <ModelStatus />
       </div>
 
-      <div className="grid grid-cols-1 gap-6 lg:grid-cols-12 lg:gap-8">
+      {/* Two columns only from xl: at lg the sidebar takes 248px and a 5/12
+          form column is ~190px wide - too narrow for its fields. */}
+      <div className="grid grid-cols-1 gap-6 xl:grid-cols-12 xl:gap-8">
         {/* Form */}
         <form
-          className="space-y-5 lg:col-span-5"
+          className="space-y-5 xl:col-span-5"
           // Values are clamped in handlePredict; the browser's own step/range
           // popup would otherwise block any area that is not a multiple of 5.
           noValidate
@@ -198,7 +218,7 @@ export function PredictorDashboard({ point: mapPoint, onClearPoint }: PredictorD
           <div className="card p-5 sm:p-6">
             <fieldset>
               <legend className="label">ประเภททรัพย์</legend>
-              <div className="mt-2.5 grid grid-cols-4 gap-1 rounded-xl bg-raised p-1">
+              <div className="mt-2.5 grid grid-cols-2 gap-1 rounded-xl bg-raised p-1 min-[420px]:grid-cols-4">
                 {PROPERTY_TYPES.map((t) => {
                   const active = input.propertyType === t.id;
                   return (
@@ -251,7 +271,8 @@ export function PredictorDashboard({ point: mapPoint, onClearPoint }: PredictorD
 
           <div className="card p-5 sm:p-6">
             <p className="label">ข้อมูลเพิ่มเติม (ไม่บังคับ)</p>
-            <div className="mt-3 grid grid-cols-3 gap-3">
+            {/* items-end: a label that wraps must not push its input out of line. */}
+            <div className="mt-3 grid grid-cols-2 items-end gap-3 sm:grid-cols-3">
               {OPTIONAL_FIELDS.map((f) => (
                 <div key={f.key}>
                   <label htmlFor={`field-${f.key}`} className="block text-[11.5px] text-muted">
@@ -278,9 +299,22 @@ export function PredictorDashboard({ point: mapPoint, onClearPoint }: PredictorD
             </div>
           </div>
 
-          <div className="card p-5 sm:p-6">
+          <EstatePicker
+            propertyType={input.propertyType}
+            estate={input.estate}
+            village={village}
+            onEstate={pickEstate}
+            onVillage={pickVillage}
+          />
+
+          <div className="card z-10 p-5 sm:p-6">
             <LocationSelector subdistrictId={input.subdistrictId} onChange={updateSubdistrict} />
-            {point && (
+            {point && village && (
+              <p className="mt-2 text-[11.5px] text-accent">
+                ใช้ตำแหน่งของ{village.name} — เลือกแขวงใหม่เพื่อยกเลิก
+              </p>
+            )}
+            {point && !village && (
               <p className="mt-2 text-[11.5px] text-accent">
                 ใช้ตำแหน่งที่คลิกบนแผนที่ ({point.lat.toFixed(4)}, {point.lng.toFixed(4)}) — เลือกแขวงใหม่เพื่อยกเลิก
               </p>
@@ -320,7 +354,7 @@ export function PredictorDashboard({ point: mapPoint, onClearPoint }: PredictorD
         </form>
 
         {/* Result */}
-        <div className="relative lg:col-span-7">
+        <div className="relative xl:col-span-7">
           {isRunning && result && (
             <span className="absolute right-4 top-4 z-10 inline-flex items-center gap-1.5 rounded-full border border-line bg-surface/95 px-2.5 py-1 text-[11px] text-muted shadow-card backdrop-blur animate-fade-in">
               <RefreshCw className="h-3 w-3 animate-spin" />

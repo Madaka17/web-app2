@@ -6,7 +6,7 @@
 
 Price predictions come from a CatBoost + LightGBM + XGBoost ensemble trained on
 scraped asking prices (dotproperty, ddproperty, hipflat, baania), each priced
-against comparable listings in the same project and within 1–2 km. Test R² 0.869 when the location is a map click (0.751 from the sub-district list alone).
+against comparable listings in the same project and within 1–2 km. Test R² 0.866 when the location is a map click (0.750 from the sub-district list alone).
 
 `npm run dev` starts the API as well (http://127.0.0.1:3030, proxied at `/api`)
 once `ml/models/ensemble.joblib` exists. To run it alone:

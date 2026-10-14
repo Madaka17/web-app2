@@ -15,6 +15,7 @@ interface NearbyMapProps {
   homes?: UsedHomeListing[];
   /** Tailwind height class for the map itself. */
   mapHeight?: string;
+  focus?: { lat: number; lng: number; key: string } | null;
 }
 
 const NEARBY_HOMES_SHOWN = 6;
@@ -38,7 +39,7 @@ function baht(n: number): string {
  * (GET /api/nearby). With a building age set, the price per sqm is also given
  * after the measured ค่าเสื่อม adjustment.
  */
-export function NearbyMap({ point, onPick, buildingAge, homes = NO_HOMES, mapHeight = "h-[300px]" }: NearbyMapProps) {
+export function NearbyMap({ point, onPick, buildingAge, homes = NO_HOMES, mapHeight = "h-[300px]", focus }: NearbyMapProps) {
   const [radius, setRadius] = useState<(typeof RADII)[number]>(1000);
 
   const homesInRadius = useMemo(() => {
@@ -96,7 +97,7 @@ export function NearbyMap({ point, onPick, buildingAge, homes = NO_HOMES, mapHei
       </div>
 
       <div className="mt-4 border-y border-line/80">
-        <Map3D point={point} radius={radius} homes={homes} onPick={onPick} height={mapHeight} />
+        <Map3D point={point} radius={radius} homes={homes} onPick={onPick} height={mapHeight} focus={focus} />
       </div>
 
       <div className="space-y-3 p-5 sm:p-6">

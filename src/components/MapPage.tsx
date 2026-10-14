@@ -1,7 +1,9 @@
 import { useEffect, useState } from "react";
 import { ArrowRight } from "lucide-react";
+import { EstateProject } from "@/lib/api";
 import { UsedHomeListing, loadUsedHomes } from "@/lib/usedHomes";
 import { NearbyMap } from "./NearbyMap";
+import { VillageSearch } from "./VillageSearch";
 
 interface MapPageProps {
   point: { lat: number; lng: number } | null;
@@ -13,6 +15,16 @@ interface MapPageProps {
 export function MapPage({ point, onPick, onPrice }: MapPageProps) {
   const [buildingAge, setBuildingAge] = useState<number | undefined>();
   const [homes, setHomes] = useState<UsedHomeListing[]>([]);
+  const [village, setVillage] = useState<EstateProject | null>(null);
+  const [focus, setFocus] = useState<{ lat: number; lng: number; key: string } | null>(null);
+
+  const pickVillage = (v: EstateProject | null) => {
+    setVillage(v);
+    if (v?.lat != null && v.lng != null) {
+      onPick(v.lat, v.lng);
+      setFocus({ lat: v.lat, lng: v.lng, key: `${v.key}:${Date.now()}` });
+    }
+  };
 
   // The map works without them; a failed load just leaves the layer empty.
   useEffect(() => {
@@ -34,7 +46,12 @@ export function MapPage({ point, onPick, onPrice }: MapPageProps) {
         </p>
       </div>
 
-      <div className="card flex flex-wrap items-end gap-x-6 gap-y-4 p-5 sm:p-6">
+      {/* z-20: the village list must paint over the map card below. */}
+      <div className="card z-20 flex flex-wrap items-end gap-x-6 gap-y-4 p-5 sm:p-6">
+        <div className="min-w-[240px] flex-1">
+          <p className="label mb-2.5">ค้นหาหมู่บ้าน</p>
+          <VillageSearch selected={village} onSelect={pickVillage} />
+        </div>
         <div className="w-40">
           <label htmlFor="map-building-age" className="label block">
             อายุอาคาร
@@ -80,7 +97,8 @@ export function MapPage({ point, onPick, onPrice }: MapPageProps) {
         onPick={onPick}
         buildingAge={buildingAge}
         homes={homes}
-        mapHeight="h-[520px] sm:h-[640px]"
+        focus={focus}
+        mapHeight="h-[440px] sm:h-[640px]"
       />
     </div>
   );

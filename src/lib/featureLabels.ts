@@ -42,4 +42,5 @@ export const FEATURE_LABELS: Record<string, string> = {
   bathrooms: "ห้องน้ำ",
   building_age: "อายุอาคาร (ค่าเสื่อม)",
   transit_m: "ระยะถึงรถไฟฟ้า",
+  estate: "อยู่ในหมู่บ้านจัดสรรหรือไม่",
 };

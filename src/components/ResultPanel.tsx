@@ -11,6 +11,7 @@ import {
   FileText,
   FileSpreadsheet,
   Check,
+  Home,
 } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 import { PredictionInput } from "@/lib/types";
@@ -35,6 +36,7 @@ const ICON_MAP: Record<string, typeof Train> = {
   CalendarClock,
   Building2,
   Car,
+  Home,
 };
 
 interface ResultPanelProps {
@@ -50,9 +52,13 @@ export function ResultPanel({ result, input }: ResultPanelProps) {
   return (
     <div className="space-y-4 animate-slide-up">
       {/* Price */}
-      <section className="card relative overflow-hidden p-6 sm:p-7">
-        <div className="bg-grid pointer-events-none absolute inset-0 opacity-60 [mask-image:linear-gradient(to_bottom_left,black,transparent_60%)]" />
-        <div className="orbit pointer-events-none absolute -right-16 -top-16 h-56 w-56" aria-hidden="true" />
+      {/* Not overflow-hidden, and raised: the download menu opens past its
+          bottom edge over the next card. The decorations clip themselves. */}
+      <section className="card relative z-10 p-6 sm:p-7">
+        <div className="pointer-events-none absolute inset-0 overflow-hidden rounded-2xl" aria-hidden="true">
+          <div className="bg-grid absolute inset-0 opacity-60 [mask-image:linear-gradient(to_bottom_left,black,transparent_60%)]" />
+          <div className="orbit absolute -right-16 -top-16 h-56 w-56" />
+        </div>
         <div className="relative">
           <div className="flex flex-wrap items-start justify-between gap-3">
             <div>
@@ -64,6 +70,14 @@ export function ResultPanel({ result, input }: ResultPanelProps) {
                 ≈ <span className="num text-ink">฿<Num value={perSqm} /></span> ต่อ ตร.ม. ·{" "}
                 {result.meta.subdistrict}, {result.meta.district}
               </p>
+              {result.meta.estate && (
+                <p className="mt-2 inline-flex items-center gap-1.5 rounded-md border border-accent/30 bg-accent/10 px-2 py-0.5 text-[11.5px] text-accent">
+                  <Home className="h-3 w-3" />
+                  {result.meta.estate === "in" ? "ในหมู่บ้านจัดสรร" : "นอกหมู่บ้านจัดสรร"}
+                  {result.meta.estate === "in" && result.meta.project && ` · ${result.meta.project}`}
+                  {result.meta.estate_adjustment && ` · ปรับ ${result.meta.estate_adjustment.pct.toFixed(1)}% จากส่วนต่างที่วัดได้`}
+                </p>
+              )}
             </div>
             <DownloadMenu input={input} result={result} />
           </div>
@@ -90,7 +104,7 @@ export function ResultPanel({ result, input }: ResultPanelProps) {
         </section>
 
         <section className="card p-5 md:col-span-3">
-          <div className="flex items-baseline justify-between">
+          <div className="flex flex-wrap items-baseline justify-between gap-x-3 gap-y-1">
             <h3 className="label">สามโมเดลว่าอย่างไร</h3>
             <span className="text-[11px] text-faint">น้ำหนักเลือกจากชุด validation</span>
           </div>
@@ -113,7 +127,7 @@ export function ResultPanel({ result, input }: ResultPanelProps) {
                 <span className="num w-10 text-right text-[12px] text-muted">
                   {(c.weight * 100).toFixed(0)}%
                 </span>
-                <span className="num w-28 text-right text-[13px] text-ink"><Baht value={c.prediction} /></span>
+                <span className="num whitespace-nowrap text-right text-[13px] text-ink"><Baht value={c.prediction} /></span>
               </li>
             ))}
           </ul>
@@ -269,30 +283,33 @@ function FutureValue({ result, input }: ResultPanelProps) {
         </span>
       </div>
 
-      <table className="mt-4 w-full text-[13px]">
-        <thead>
-          <tr className="text-[11px] text-faint">
-            <th className="pb-2 text-left font-medium">ปี</th>
-            <th className="pb-2 text-right font-medium">ต่ำ</th>
-            <th className="pb-2 text-right font-medium">คาดการณ์</th>
-            <th className="pb-2 text-right font-medium">สูง</th>
-          </tr>
-        </thead>
-        <tbody className="divide-y divide-line/70">
-          {HORIZONS_YEARS.map((y) => (
-            <tr key={y}>
-              <td className="py-2 text-muted">
-                {input.year + y} <span className="text-faint">(+{y} ปี)</span>
-              </td>
-              <td className="num py-2 text-right text-muted"><Baht value={compound(result.lowerBound, rate, y)} /></td>
-              <td className="num py-2 text-right font-medium text-ink">
-                <Baht value={compound(result.predictedPrice, rate, y)} />
-              </td>
-              <td className="num py-2 text-right text-muted"><Baht value={compound(result.upperBound, rate, y)} /></td>
+      {/* Scrolls sideways on a phone rather than breaking "ล้านบาท" over two lines. */}
+      <div className="-mx-1 mt-4 overflow-x-auto px-1 scrollbar-thin">
+        <table className="w-full min-w-[340px] whitespace-nowrap text-[12.5px] sm:text-[13px]">
+          <thead>
+            <tr className="text-[11px] text-faint">
+              <th className="pb-2 text-left font-medium">ปี</th>
+              <th className="pb-2 text-right font-medium">ต่ำ</th>
+              <th className="pb-2 text-right font-medium">คาดการณ์</th>
+              <th className="pb-2 text-right font-medium">สูง</th>
             </tr>
-          ))}
-        </tbody>
-      </table>
+          </thead>
+          <tbody className="divide-y divide-line/70">
+            {HORIZONS_YEARS.map((y) => (
+              <tr key={y}>
+                <td className="py-2 pr-2 text-muted">
+                  {input.year + y} <span className="hidden text-faint min-[420px]:inline">(+{y} ปี)</span>
+                </td>
+                <td className="num py-2 text-right text-muted"><Baht value={compound(result.lowerBound, rate, y)} /></td>
+                <td className="num py-2 text-right font-medium text-ink">
+                  <Baht value={compound(result.predictedPrice, rate, y)} />
+                </td>
+                <td className="num py-2 text-right text-muted"><Baht value={compound(result.upperBound, rate, y)} /></td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
 
       <p className="mt-4 border-t border-line/80 pt-3 text-[11.5px] leading-relaxed text-faint">
         ทบต้นจากราคาคาดการณ์วันนี้ด้วยอัตราที่เลือก ค่าเริ่มต้นเป็นค่าเฉลี่ยระยะยาวคร่าว ๆ ของดัชนีราคาที่อยู่อาศัย
@@ -315,7 +332,7 @@ function Stat({ label, value, emphasis }: { label: string; value: string; emphas
   return (
     <div className="flex items-baseline justify-between gap-3">
       <dt className="text-[13px] text-muted">{label}</dt>
-      <dd className={`num font-medium ${emphasis ? "text-[22px] text-ink" : "text-[15px] text-ink"}`}>
+      <dd className={`num whitespace-nowrap font-medium ${emphasis ? "text-[22px] text-ink" : "text-[15px] text-ink"}`}>
         {value}
       </dd>
     </div>

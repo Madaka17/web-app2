@@ -6,7 +6,12 @@ const BASE = import.meta.env.VITE_API_URL ?? "";
 export interface PredictionMeta {
   /** Project the map click snapped to (within 75 m), if any. */
   project: string | null;
-  location_from: "map" | "subdistrict";
+  /** The estate status the models were given ("in" also when a project was named). */
+  estate: "in" | "out" | null;
+  estate_premium: EstatePremium | null;
+  /** Measured discount applied when the house is stated to be outside an estate. */
+  estate_adjustment: { factor: number; pct: number; basis: PremiumGap } | null;
+  location_from: "map" | "subdistrict" | "project";
   province: string;
   district: string;
   subdistrict: string;
@@ -84,6 +89,47 @@ export interface ModelMetricsReport {
   calibration?: Record<string, Calibration>;
 }
 
+/** In-estate premium per sqm, matched on type, place and size (ml/estate.py). */
+export interface PremiumGap {
+  pct: number;
+  lo: number;
+  hi: number;
+  cells: number;
+  pairs: number;
+}
+
+export interface EstatePremium {
+  n_in: number;
+  n_out: number;
+  n_unknown: number;
+  /** vs listings that name no estate - a lower bound, the group is mixed. */
+  vs_unnamed: PremiumGap | null;
+  /** vs listings that say they are outside one - few of them. */
+  vs_out: PremiumGap | null;
+}
+
+/** A หมู่บ้านจัดสรร or condo project from GET /api/projects (ml/projects.py). */
+export interface EstateProject {
+  key: string;
+  name: string;
+  kind: ProjectKind;
+  grade: string;
+  types: string[];
+  n: number;
+  ppsqm: number;
+  price: number;
+  area: number;
+  transit_m: number | null;
+  /** Share of its listings that mention security / a juristic person. */
+  security: number;
+  juristic: number;
+  province: string;
+  district: string;
+  sub_district: string;
+  lat: number | null;
+  lng: number | null;
+}
+
 async function request<T>(path: string, init?: RequestInit): Promise<T> {
   const res = await fetch(`${BASE}${path}`, init);
   if (!res.ok) {
@@ -111,6 +157,75 @@ export function predict(
     body: JSON.stringify(input),
     signal,
   });
+}
+
+export type ProjectKind = "village" | "condo";
+
+export interface ProjectFilter {
+  q?: string;
+  kind?: ProjectKind;
+  province?: string;
+  district?: string;
+  grade?: string;
+  limit?: number;
+}
+
+export function searchProjects(
+  filter: ProjectFilter,
+  signal?: AbortSignal,
+): Promise<{ total: number; results: EstateProject[] }> {
+  const q = new URLSearchParams({ kind: filter.kind ?? "village", limit: String(filter.limit ?? 10) });
+  for (const key of ["q", "province", "district", "grade"] as const) {
+    const v = filter[key];
+    if (v) q.set(key, v);
+  }
+  return request(`/api/projects?${q}`, { signal });
+}
+
+export interface ProjectArea {
+  province: string;
+  n: number;
+  districts: { district: string; n: number }[];
+}
+
+export function getProjectAreas(kind: ProjectKind = "village", signal?: AbortSignal): Promise<ProjectArea[]> {
+  return request(`/api/project-areas?kind=${kind}`, { signal });
+}
+
+/** One grade of the ladder, from GET /api/grades. Figures are over projects
+ * with at least `min_listings` listings and absent when a grade has none. */
+export interface GradeRow {
+  grade: string;
+  label: string;
+  low: number;
+  high: number | null;
+  projects: number;
+  graded_projects: number;
+  listings: number;
+  price_median?: number;
+  price_p25?: number;
+  price_p75?: number;
+  ppsqm_median?: number;
+  area_median?: number;
+  transit_m_median?: number | null;
+  security_share?: number;
+  juristic_share?: number;
+  /** Median baht/sqm over the grade below, in percent. */
+  ppsqm_vs_next_pct?: number;
+  examples?: { key: string; name: string; district: string; price: number; ppsqm: number; n: number }[];
+}
+
+export function getGrades(
+  signal?: AbortSignal,
+): Promise<{ min_listings: number; village: GradeRow[]; condo: GradeRow[] }> {
+  return request("/api/grades", { signal });
+}
+
+export function getEstatePremium(signal?: AbortSignal): Promise<{
+  premium: Record<string, EstatePremium>;
+  estates: number;
+}> {
+  return request("/api/estate", { signal });
 }
 
 export interface DepreciationStep {

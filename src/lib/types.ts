@@ -1,6 +1,6 @@
 export type ThemeMode = "dark" | "light";
 
-export type PageId = "predictor" | "map" | "pipeline" | "metrics" | "image-valuation" | "used-homes";
+export type PageId = "predictor" | "map" | "grades" | "pipeline" | "metrics" | "image-valuation" | "used-homes";
 
 export type PropertyType = "condo" | "house" | "townhome" | "land";
 
@@ -18,7 +18,13 @@ export interface PredictionInput {
   bathrooms?: number;
   /** Years since completion; drives the ค่าเสื่อม (depreciation) adjustment. */
   buildingAge?: number;
+  /** หมู่บ้านจัดสรร or not (houses and townhouses only); absent = not told. */
+  estate?: EstateStatus;
+  /** Key of the หมู่บ้าน picked in the village search (implies estate "in"). */
+  project?: string;
 }
+
+export type EstateStatus = "in" | "out";
 
 export interface ModelContribution {
   name: string;

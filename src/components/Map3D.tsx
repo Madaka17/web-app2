@@ -29,6 +29,9 @@ interface Map3DProps {
   onPick: (lat: number, lng: number) => void;
   /** Tailwind height class. */
   height: string;
+  /** A place to fly to from outside the map (the village search); keyed so
+   * picking the same village twice still flies. */
+  focus?: { lat: number; lng: number; key: string } | null;
 }
 
 const reducedMotion = () => window.matchMedia?.("(prefers-reduced-motion: reduce)").matches ?? false;
@@ -121,7 +124,7 @@ function homeCard(home: UsedHomeListing): HTMLElement {
  * into satellite imagery, where every used-home listing in view carries a
  * price callout, oneatlaz-style.
  */
-export function Map3D({ point, radius, homes, onPick, height }: Map3DProps) {
+export function Map3D({ point, radius, homes, onPick, height, focus }: Map3DProps) {
   const { mode } = useTheme();
   const containerRef = useRef<HTMLDivElement>(null);
   const mapRef = useRef<MlMap>();
@@ -360,6 +363,15 @@ export function Map3D({ point, radius, homes, onPick, height }: Map3DProps) {
     refreshCallouts();
   }, [satellite, refreshCallouts]);
 
+  useEffect(() => {
+    const map = mapRef.current;
+    if (!map || !focus) return;
+    setSatellite(true);
+    const target = { center: [focus.lng, focus.lat] as [number, number], zoom: 16.5, pitch: 45 };
+    if (reducedMotion()) map.jumpTo(target);
+    else map.flyTo({ ...target, duration: 2200, essential: true });
+  }, [focus]);
+
   const overview = () => {
     setSatellite(false);
     popup.current?.remove();
@@ -389,7 +401,7 @@ export function Map3D({ point, radius, homes, onPick, height }: Map3DProps) {
         </button>
       </div>
 
-      <div className="pointer-events-none absolute bottom-3 left-3 flex flex-col gap-1 rounded-lg border border-line/70 bg-surface/80 px-2.5 py-2 text-[11px] text-muted backdrop-blur-md">
+      <div className="pointer-events-none absolute bottom-10 left-3 flex flex-col gap-1 rounded-lg sm:bottom-3 border border-line/70 bg-surface/80 px-2.5 py-2 text-[11px] text-muted backdrop-blur-md">
         <span className="flex items-center gap-1.5">
           <span className="h-2 w-2 rounded-full" style={{ background: HOME, boxShadow: `0 0 6px ${HOME}` }} />
           บ้านมือสอง {homes.length.toLocaleString()} หลัง

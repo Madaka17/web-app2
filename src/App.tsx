@@ -8,6 +8,7 @@ import { PipelineBoard } from "@/components/PipelineBoard";
 import { ModelMetrics } from "@/components/ModelMetrics";
 import { ImageValuation } from "@/components/ImageValuation";
 import { UsedHomes } from "@/components/UsedHomes";
+import { ProjectGrades } from "@/components/ProjectGrades";
 import { useHashRoute } from "@/lib/useHashRoute";
 
 // MapLibre is ~1 MB; only the map page pays for it.
@@ -51,6 +52,7 @@ function AppContent() {
                 />
               </Suspense>
             )}
+            {activePage === "grades" && <ProjectGrades />}
             {activePage === "used-homes" && <UsedHomes />}
             {activePage === "image-valuation" && <ImageValuation />}
             {activePage === "pipeline" && <PipelineBoard />}
