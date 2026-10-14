@@ -33,6 +33,7 @@ from prepare_data import (
     add_features, build_reference, form_view,
     build_training_frame, clean, load_raw, log_ppsqm, split, to_price,
 )
+from estate import ESTATE_TYPES, estate_premium
 
 OUT = Path(__file__).parent / "models"
 OUT.mkdir(exist_ok=True)
@@ -152,6 +153,23 @@ def map_points(df: pd.DataFrame) -> pd.DataFrame:
     })
 
 
+def estate_view_scores(models: dict, weights: dict, rows: pd.DataFrame, ref: dict,
+                       categories: dict) -> dict:
+    """Houses whose listing says in or out of an estate, priced from a map
+    click with and without the user telling the form which it is."""
+    known = rows[rows["collateral_type"].isin(ESTATE_TYPES) & rows["estate"].notna()
+                 & rows["latitude"].notna()]
+    scores = {}
+    for name, frame in [("click", form_view(known)),
+                        ("click_estate", form_view(known).assign(estate=known["estate"]))]:
+        f = add_features(frame, ref)
+        x = f[FEATURES]
+        p = predict_prices(models, x, as_categorical(x, categories), f["area_sqm"].to_numpy(dtype=float))
+        ens = sum(weights[n] * v for n, v in p.items())
+        scores[name] = {"rows": len(f), **metrics(f[TARGET].to_numpy(dtype=float), ens)}
+    return scores
+
+
 def app_views(rows: pd.DataFrame, ref: dict) -> dict[str, pd.DataFrame]:
     """The same held-out rows described three ways:
       click     what the app sends after a map click: pin, type, size, place -
@@ -258,6 +276,11 @@ def main() -> None:
     for vname, m in view_scores.items():
         print(f"  {vname:<9} n={m['rows']:>6,}  R2 {m['R2']:.4f}  MdAPE {m['MdAPE']:.2f}%  ±20% {m['Within_20Pct']:.1f}%")
 
+    estate_scores = estate_view_scores(models, weights, test, fit_ref, categories)
+    print("\nhouses with a stated estate status, map click without / with it:")
+    for vname, m in estate_scores.items():
+        print(f"  {vname:<13} n={m['rows']:>6,}  R2 {m['R2']:.4f}  MdAPE {m['MdAPE']:.2f}%  ±20% {m['Within_20Pct']:.1f}%")
+
     print("\n" + "=" * 78)
     print(f"{'model':<12}{'MAPE':>9}{'MdAPE':>9}{'R2':>9}{'MAE':>14}{'±10%':>9}{'±20%':>9}")
     print("-" * 78)
@@ -287,6 +310,13 @@ def main() -> None:
     for r in depreciation:
         print(f"  {r['age_lo']:>2}-{r['age_hi']:<2} yrs  x{r['factor']:.3f}  (n={r['n']:,})")
     points = map_points(df)
+    project_names = (df.dropna(subset=["project_key", "project_name"])
+                     .groupby("project_key")["project_name"].first().to_dict())
+    premium = estate_premium(df, TARGET)
+    print("\nestate premium (in vs unnamed / in vs stated outside):")
+    for ctype, r in premium.items():
+        fmt = lambda x: "n/a" if x is None else f"{x['pct']:+.1f}% [{x['lo']:+.1f}..{x['hi']:+.1f}]"
+        print(f"  {ctype:<12} {fmt(r['vs_unnamed'])}  /  {fmt(r['vs_out'])}  (in {r['n_in']:,}, out {r['n_out']:,})")
 
     joblib.dump({
         "models": serve_models,
@@ -294,8 +324,7 @@ def main() -> None:
         "points": points,
         "locator": BallTree(np.radians(points[["lat", "lng"]].to_numpy()), metric="haversine"),
         # Display name per project key, for telling the user which building a click snapped to.
-        "project_names": df.dropna(subset=["project_key", "project_name"])
-                           .groupby("project_key")["project_name"].first().to_dict(),
+        "project_names": project_names,
         "weights": weights,
         "features": FEATURES,
         "categorical": CATEGORICAL,
@@ -314,6 +343,8 @@ def main() -> None:
         },
         "rows": {"fit": len(fit_frame), "validation": len(val_frame), "test": len(test_frame)},
         "views": view_scores,
+        "estate_views": estate_scores,
+        "estate_premium": premium,
         "primary_view": PRIMARY_VIEW,
         "cleaning": report,
         "features": FEATURES,

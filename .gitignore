@@ -25,6 +25,8 @@ dist-ssr
 # python model service
 ml/.venv/
 ml/models/*.joblib
+# Built by ml/projects.py (~5 MB).
+ml/models/projects.json
 ml/__pycache__/
 ml/catboost_info/
 ml/.pytest_cache/

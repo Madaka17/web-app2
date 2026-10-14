@@ -37,6 +37,8 @@ import numpy as np
 import pandas as pd
 from sklearn.neighbors import BallTree
 
+from estate import ESTATE_TYPES, IN_ESTATE, estate_flag, quality_flags
+
 DATA_DIR = Path(__file__).parent.parent / "Data"
 SOURCES = ("dotproperty", "ddproperty", "hipflat", "baania")
 SCRAPE_DATE = "2026-09-18"
@@ -80,6 +82,8 @@ NUMERIC = [
     "bathrooms",
     "building_age",
     "transit_m",
+    # หมู่บ้านจัดสรร for houses and townhouses: 1 in, 0 outside, -1 unknown.
+    "estate",
     "latitude",
     "longitude",
     # Same project, and same type within walking / short-drive distance.
@@ -144,7 +148,7 @@ OOF_FOLDS = 5
 UNKNOWN = -1.0
 # Columns load_raw provides that a serve-time row may not have.
 OPTIONAL = ["bedrooms", "bathrooms", "latitude", "longitude", "project_key",
-            "building_age", "transit_m"]
+            "building_age", "transit_m", "estate"]
 
 
 def _squash(text: str) -> str:
@@ -237,6 +241,11 @@ def load_raw() -> pd.DataFrame:
     df["project_key"] = df["project_name"].map(project_key)
     df["project_key"] = _match_projects(df)
     df = _spread_by_project(df)
+    text = df["title"].fillna("") + " " + df["description"].fillna("")
+    df["estate"] = estate_flag(df["property_type"], df["project_key"], text)
+    # Not features: what the text says about security and management, for
+    # grading projects (projects.py).
+    df = df.join(quality_flags(text))
     # The same unit is often re-posted, on one site or across sites; keep one
     # copy so it cannot sit in both train and test.
     df = df.drop_duplicates(
@@ -262,6 +271,9 @@ def load_raw() -> pd.DataFrame:
         # Completion year is CE on ddproperty; age is counted at the listing year.
         "building_age": (year - 543 - df["built_year"]).clip(lower=0),
         "transit_m": df["transit_m"],
+        "estate": df["estate"],
+        "security": df["security"],
+        "juristic": df["juristic"],
         "rent_like": _rent_like(df["title"]),
         TARGET: df["price_thb"],
     })
@@ -281,7 +293,7 @@ def _rent_like(title: pd.Series) -> pd.Series:
     return priced_per_month | rent_only
 
 
-def clean(df: pd.DataFrame) -> tuple[pd.DataFrame, dict]:
+def clean(df: pd.DataFrame, ppsqm_trim: tuple[float, float] = PPSQM_TRIM) -> tuple[pd.DataFrame, dict]:
     """Drop unusable rows. Returns the cleaned frame and a report of what went."""
     n0 = len(df)
     report = {"rows_in": n0}
@@ -308,8 +320,8 @@ def clean(df: pd.DataFrame) -> tuple[pd.DataFrame, dict]:
 
     n = len(df)
     ppsqm = df[TARGET] / df["area_sqm"]
-    lo = ppsqm.groupby(df["collateral_type"]).transform(lambda s: s.quantile(PPSQM_TRIM[0]))
-    hi = ppsqm.groupby(df["collateral_type"]).transform(lambda s: s.quantile(PPSQM_TRIM[1]))
+    lo = ppsqm.groupby(df["collateral_type"]).transform(lambda s: s.quantile(ppsqm_trim[0]))
+    hi = ppsqm.groupby(df["collateral_type"]).transform(lambda s: s.quantile(ppsqm_trim[1]))
     df = df[(ppsqm >= lo) & (ppsqm <= hi)]
     report["dropped_ppsqm_tails"] = n - len(df)
 
@@ -606,7 +618,10 @@ def add_features(df: pd.DataFrame, ref: dict) -> pd.DataFrame:
     out["proj_ppsqm"] = _shrink(lookup(ref["proj"], proj_key, "med"), proj_n, sd, SHRINK["proj"])
     out["proj_n"] = np.nan_to_num(proj_n)
     out = out.assign(**_geo_features(out, ref, sd))
-    for col in ("bedrooms", "bathrooms", "building_age", "transit_m", "latitude", "longitude"):
+    # A house that names (or snaps to) a project is in that estate.
+    in_project = out["project_key"].notna() & out["collateral_type"].isin(ESTATE_TYPES)
+    out["estate"] = out["estate"].astype(float).where(~(out["estate"].isna() & in_project), IN_ESTATE)
+    for col in ("bedrooms", "bathrooms", "building_age", "transit_m", "estate", "latitude", "longitude"):
         out[col] = out[col].astype(float).fillna(UNKNOWN)
     return out
 
@@ -635,11 +650,11 @@ def build_training_frame(train: pd.DataFrame) -> pd.DataFrame:
 # Facts a listing may state but a user of the form may not know, blanked
 # together per group, each group independently with probability MASK_P.
 MASK_GROUPS = [["project_key"], ["bedrooms", "bathrooms"], ["latitude", "longitude"],
-               ["building_age", "transit_m"]]
+               ["building_age", "transit_m"], ["estate"]]
 MASK_P = 0.4
 # What an empty form sends: no project, rooms or building facts. A map pin may
 # still be there (the user clicked), so it is kept.
-FORM_HIDDEN = ["project_key", "bedrooms", "bathrooms", "building_age", "transit_m"]
+FORM_HIDDEN = ["project_key", "bedrooms", "bathrooms", "building_age", "transit_m", "estate"]
 
 
 def mask_optional(df: pd.DataFrame, rng: np.random.Generator) -> pd.DataFrame:

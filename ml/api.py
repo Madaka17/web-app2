@@ -8,6 +8,10 @@ the real appraisal data (Data real/appraisal_2561-2569.parquet).
     GET  /api/metrics  honest accuracy figures from the held-out years
     POST /api/predict  {subdistrictId | lat+lng, area, propertyType, nUnits?, year?,
                         bedrooms?, bathrooms?, buildingAge?}
+    GET  /api/projects ?q=&kind=village|condo&grade=&province=&district=&limit=  search projects
+    GET  /api/project-areas ?kind=  provinces and districts that have projects, with counts
+    GET  /api/grades                village and condo grades, compared
+    GET  /api/estate                in-estate price premium, measured per type
     GET  /api/nearby   ?lat=&lng=&radius=1000|2000&type=condo&buildingAge=
                        what listings within the radius ask, per sqm, with an
                        optional building-age (ค่าเสื่อม) adjustment
@@ -26,12 +30,18 @@ import pandas as pd
 from flask import Flask, jsonify, request
 from flask_cors import CORS
 
-from prepare_data import CATEGORICAL, EARTH_M, FEATURES, GEO_RADII_M, add_features, to_price
+from estate import ESTATE_TYPES, IN_ESTATE, OUT_ESTATE
+from prepare_data import CATEGORICAL, EARTH_M, FEATURES, GEO_RADII_M, _squash, add_features, to_price
 
 HERE = Path(__file__).parent
 BUNDLE = joblib.load(HERE / "models/ensemble.joblib")
 LOCATIONS = json.loads((HERE / "models/location_map.json").read_text(encoding="utf-8"))
 METRICS = json.loads((HERE / "models/metrics.json").read_text(encoding="utf-8"))
+# Built by projects.py; independent of the models, so it can be refreshed alone.
+# Without it the API still prices; only village search and grades come back empty.
+_project_file = HERE / "models/projects.json"
+PROJECT_INDEX = (json.loads(_project_file.read_text(encoding="utf-8")) if _project_file.exists()
+                 else {"min_listings": 0, "projects": [], "grades": {"village": [], "condo": []}})
 
 # The web form's property choices -> the categories the model was trained on.
 PROPERTY_TYPES = {
@@ -91,6 +101,7 @@ FEATURE_LABELS = {
     "bathrooms": ("ห้องน้ำ", "Bath"),
     "building_age": ("อายุอาคาร (ค่าเสื่อม)", "CalendarClock"),
     "transit_m": ("ระยะถึงรถไฟฟ้า", "MapPin"),
+    "estate": ("อยู่ในหมู่บ้านจัดสรรหรือไม่", "Home"),
 }
 # The model has 42 features; a bar chart of all of them is a wall, not an
 # explanation. The panel shows the ones that actually move a prediction.
@@ -98,6 +109,12 @@ FEATURES_SHOWN = 8
 
 TYPE_LABELS = {v: k for k, v in PROPERTY_TYPES.items()}
 POINTS = BUNDLE["points"]
+PROJECTS = PROJECT_INDEX["projects"]
+PROJECTS_BY_KEY = {p["key"]: p for p in PROJECTS if p["kind"] == "village"}
+# Searchable text per project: its name (both halves) and where it is.
+PROJECT_SEARCH = [(_squash(f"{p['name']}{p['key']}"), _squash(f"{p['district']}{p['sub_district']}"), p)
+                  for p in PROJECTS]
+ESTATE_VALUES = {"in": IN_ESTATE, "out": OUT_ESTATE}
 
 
 def depreciation_factor(age: float) -> float:
@@ -168,6 +185,77 @@ def health():
     })
 
 
+@app.get("/api/projects")
+def projects():
+    """Villages (หมู่บ้านจัดสรร, the default) or condo projects whose name - or
+    district - contains the query, best first: a name that starts with it,
+    then one that contains it, then a district match; ties go to the project
+    with more listings behind its figures. An empty query lists the largest."""
+    q = _squash(request.args.get("q", ""))
+    kind = request.args.get("kind", "village")
+    want_grade = request.args.get("grade") or None
+    want_province = request.args.get("province") or None
+    want_district = request.args.get("district") or None
+    if kind not in ("village", "condo"):
+        return jsonify({"error": "kind must be village or condo"}), 400
+    try:
+        limit = max(1, min(200, int(request.args.get("limit", 12))))
+    except ValueError:
+        limit = 12
+    hits = []
+    for name, place, p in PROJECT_SEARCH:
+        if p["kind"] != kind or (want_grade and p["grade"] != want_grade):
+            continue
+        if (want_province and p["province"] != want_province) or (want_district and p["district"] != want_district):
+            continue
+        if not q:
+            rank = 0
+        elif name.startswith(q):
+            rank = 0
+        elif q in name:
+            rank = 1
+        elif q in place:
+            rank = 2
+        else:
+            continue
+        hits.append((rank, -p["n"], p))
+    hits.sort(key=lambda h: h[:2])
+    return jsonify({"total": len(hits), "results": [h[2] for h in hits[:limit]]})
+
+
+@app.get("/api/project-areas")
+def project_areas():
+    """Provinces, and the districts within them, that have projects of this
+    kind - the village search's จังหวัด / อำเภอ filters - largest first."""
+    kind = request.args.get("kind", "village")
+    counts: dict[str, dict[str, int]] = {}
+    for p in PROJECTS:
+        if p["kind"] == kind:
+            d = counts.setdefault(p["province"], {})
+            d[p["district"]] = d.get(p["district"], 0) + 1
+    areas = [{"province": prov, "n": sum(ds.values()),
+              "districts": [{"district": k, "n": v} for k, v in sorted(ds.items(), key=lambda kv: -kv[1])]}
+             for prov, ds in counts.items()]
+    return jsonify(sorted(areas, key=lambda a: -a["n"]))
+
+
+@app.get("/api/estate")
+def estate():
+    """What being inside a หมู่บ้านจัดสรร is worth, per sqm, measured against
+    comparable listings (same type, sub-district and size band)."""
+    return jsonify({"premium": METRICS.get("estate_premium", {}),
+                    "views": METRICS.get("estate_views", {}),
+                    "estates": len(PROJECTS_BY_KEY)})
+
+
+@app.get("/api/grades")
+def grades():
+    """Villages graded by median asking price, condos by median baht per sqm,
+    each grade with what its listings say about transit, security and
+    management (projects.py)."""
+    return jsonify({"min_listings": PROJECT_INDEX["min_listings"], **PROJECT_INDEX["grades"]})
+
+
 @app.get("/api/metrics")
 def metrics():
     return jsonify(METRICS)
@@ -195,6 +283,22 @@ def predict():
     if (lat is None) != (lng is None):
         return jsonify({"error": "lat and lng must be given together"}), 400
 
+    # A chosen หมู่บ้าน names the project outright; without a click its pin
+    # stands in for the location.
+    project_key = body.get("project") or None
+    estate_project = None
+    if project_key is not None:
+        estate_project = PROJECTS_BY_KEY.get(str(project_key))
+        if estate_project is None:
+            return jsonify({"error": f"unknown project: {project_key}"}), 400
+        if lat is None and estate_project["lat"] is not None:
+            lat, lng = estate_project["lat"], estate_project["lng"]
+    estate_raw = body.get("estate") or None
+    if estate_project is not None:
+        estate_raw = "in"
+    if estate_raw is not None and estate_raw not in ESTATE_VALUES:
+        return jsonify({"error": "estate must be 'in', 'out' or omitted"}), 400
+
     # A map click is more precise than the dropdown, so it wins when both are sent.
     subdistrict_id = str(body.get("subdistrictId") or "")
     if lat is not None:
@@ -208,6 +312,9 @@ def predict():
     if key not in PROPERTY_TYPES:
         return jsonify({"error": f"propertyType must be one of {sorted(PROPERTY_TYPES)}"}), 400
     collateral_type = PROPERTY_TYPES[key]
+    # Estates are a house and townhouse thing; for a condo or land it is ignored.
+    if collateral_type not in ESTATE_TYPES:
+        estate_raw, project_key = None, None
 
     try:
         n_units = max(1, min(4, int(body.get("nUnits", 1) or 1)))
@@ -230,12 +337,29 @@ def predict():
         "bedrooms": bedrooms,
         "bathrooms": bathrooms,
         "building_age": building_age,
+        "project_key": project_key,
+        "estate": ESTATE_VALUES[estate_raw] if estate_raw else np.nan,
     }])
 
     featured = add_features(frame, BUNDLE["reference"])
     per_model = _predict_each(featured)
     weights = {k: float(v) for k, v in BUNDLE["weights"].items()}
     price = sum(weights[n] * p for n, p in per_model.items())
+
+    # Outside a หมู่บ้านจัดสรร. The models barely use the flag (0.2% importance):
+    # a house's comparables are mostly estate listings, so the prediction sits
+    # at estate level (held-out estate houses: actual/predicted 1.00), and the
+    # few listings that say "outside" (278) cannot teach a tree much. So the
+    # measured gap (estate.estate_premium, in vs stated outside, same type,
+    # district and size) is applied here, like ค่าเสื่อม on the map.
+    estate_adjustment = None
+    premium = METRICS.get("estate_premium", {}).get(collateral_type)
+    if estate_raw == "out" and premium and premium.get("vs_out"):
+        factor = 1 / (1 + premium["vs_out"]["pct"] / 100)
+        price *= factor
+        per_model = {n: p * factor for n, p in per_model.items()}
+        estate_adjustment = {"factor": round(factor, 4), "pct": round((factor - 1) * 100, 1),
+                             "basis": premium["vs_out"]}
 
     # The comparables the models were handed, back in baht per sqm, so the UI
     # can say what the district goes for and how far this estimate sits from it.
@@ -263,6 +387,7 @@ def predict():
     calib = table.get(collateral_type, table["__default__"])
     snapped = f["project_key"]
     project = BUNDLE["project_names"].get(snapped, snapped) if isinstance(snapped, str) else None
+    estate_used = {IN_ESTATE: "in", OUT_ESTATE: "out"}.get(float(f["estate"]))
     lower, upper = price * calib["q10"], price * calib["q90"]
 
     importance = list(METRICS["feature_importance"].items())[:FEATURES_SHOWN]
@@ -289,7 +414,11 @@ def predict():
         "comparables": comparables,
         "meta": {
             "project": project,
-            "location_from": "map" if lat is not None else "subdistrict",
+            "estate": estate_used,
+            "estate_premium": premium,
+            "estate_adjustment": estate_adjustment,
+            "location_from": ("project" if estate_project is not None and body.get("lat") in (None, "")
+                              else "map" if lat is not None else "subdistrict"),
             "province": location["province"],
             "district": location["district"],
             "subdistrict": location["subdistrict"],

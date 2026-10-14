@@ -33,6 +33,8 @@ Besides price, size and location the listings carry:
 | คลิกบนแผนที่ | `latitude`/`longitude` and every radius feature below |
 | ห้องนอน / ห้องน้ำ (optional) | `bedrooms` / `bathrooms` |
 | อายุอาคาร (optional) | `building_age` |
+| หมู่บ้านจัดสรร ใน / นอก / ไม่ระบุ (houses, townhouses) | `estate` (1 / 0 / -1) |
+| ค้นหาหมู่บ้าน (optional) | `project_key` of the chosen village; its pin when no click |
 
 An optional field left blank is sent as unknown (-1), exactly how the many
 listings that did not state it were seen in training.
@@ -74,12 +76,12 @@ not know:
 
 | input | what the model gets | rows | R² | MdAPE | within ±20% |
 |---|---|---|---|---|---|
-| **map click** (headline) | pin, type, size; project snapped from the pin | 16,071 | **0.869** | **11.5%** | **72.0%** |
-| sub-district dropdown | type, size, sub-district - no pin | 22,926 | 0.751 | 22.2% | 45.9% |
-| full listing | everything the listing states | 22,926 | 0.837 | 13.1% | 65.7% |
+| **map click** (headline) | pin, type, size; project snapped from the pin | 16,071 | **0.866** | **11.4%** | **72.2%** |
+| sub-district dropdown | type, size, sub-district - no pin | 22,926 | 0.750 | 22.3% | 45.8% |
+| full listing | everything the listing states | 22,926 | 0.833 | 13.2% | 65.9% |
 
 Per model on the map-click view: CatBoost R² 0.872, LightGBM 0.869, XGBoost
-0.848, ensemble (0.6 / 0.1 / 0.3) 0.869.
+0.845, ensemble (0.45 / 0.1 / 0.45) 0.866.
 
 The dropdown alone cannot reach the same accuracy: within one sub-district a
 condo can ask twice what the next one does, and only a pin says which.
@@ -111,13 +113,72 @@ is the factor (6-10 yrs ≈ ×0.85, 16-20 ≈ ×0.65, 31+ ≈ ×0.43). The map's
 "หลังค่าเสื่อม" column brings each nearby listing back to a new-building
 equivalent with its own age factor, then ages it to the requested building.
 
+## หมู่บ้านจัดสรร (housing estates)
+
+`estate.py` flags each house and townhouse listing: **in** an estate when it
+names a project or its text mentions หมู่บ้าน / โครงการ / ค่าส่วนกลาง / รปภ. /
+คลับเฮ้าส์; **out** only when the text says so (บ้านสร้างเอง, ปลูกสร้างเอง,
+นอกโครงการ, ไม่มีค่าส่วนกลาง, …); unknown otherwise - most listings do not
+say, and silence is not evidence either way. "Out" wins over "in": a self-built
+house on an estate road is not priced like an estate home.
+
+`estate_premium` measures the gap the way depreciation is measured - against
+comparables, never as a raw average: median baht/sqm inside vs outside an
+estate within the same type, sub-district (district for "out") and size band,
+weighted by the smaller side of each cell, with a bootstrap interval over
+cells.
+
+| | in vs no estate named | in vs stated outside |
+|---|---|---|
+| houses + townhouses | +8.3% [+5.8..+11.3] | +23.0% [+12.6..+35.1] (n out 278) |
+| บ้านเดี่ยว | +12.6% [+9.2..+17.7] | +29.7% [+16.8..+45.1] (n out 191) |
+| ทาวน์เฮ้าส์ | +3.6% [+0.3..+7.2] | +7.1% [-2.2..+19.0] (n out 87) |
+
+"No estate named" mixes estate homes whose listing just does not say so, so
+that column is a lower bound.
+
+`estate` is a model feature (blanked at random in fit rows like the other
+optional facts, so "not told" stays neutral) but the models barely use it
+(0.2% importance; held-out houses priced from a click with and without the
+flag: MdAPE 17.07% vs 17.03%). A house's comparables are mostly estate
+listings, so a prediction already sits at estate level - held-out estate
+houses come in at actual/predicted 1.00, stated-outside ones at 0.82 - and 278
+"outside" rows are too few for a tree to learn the gap. The API therefore
+applies the measured gap itself when the form says **outside**: price ÷ (1 +
+in-vs-outside premium) for that type (บ้านเดี่ยว ×0.77, ทาวน์เฮ้าส์ ×0.93),
+reported as `meta.estate_adjustment`. "In" and "not told" are the model as is.
+
+## Grades
+
+`projects.py` writes `models/projects.json`: every village and condo project
+on record, graded, for the village search and the grade page.
+
+| villages (median asking price) | condos (median baht/sqm) |
+|---|---|
+| Super Luxury 50M+ | Ultimate Class 500k+ |
+| Luxury 20-50M | Super Luxury 200-500k |
+| Upper Medium 6-20M | High Class 120-200k |
+| Economy 3-6M | Main Class 80-120k |
+| below 3M: ต่ำกว่า Economy | Economy 50-80k, below: ต่ำกว่า Economy |
+
+Each grade also reports what its listings say about the criteria for a good
+village: median distance to rail, share mentioning security (รปภ., CCTV, key
+cards, 24h) and share mentioning a juristic person / common fee / clubhouse.
+Construction quality is not in the data and is not scored. Grading keeps the
+top 1% of baht/sqm that model training trims (`PPSQM_TRIM`): that 1% is
+exactly the Ultimate Class condos (Ritz-Carlton, Four Seasons, Scope at
+550-750k/sqm).
+
 ## API
 
 | | |
 |---|---|
 | `GET /api/health` | what is loaded, weights, row counts |
 | `GET /api/metrics` | the full metrics.json |
-| `POST /api/predict` | `{subdistrictId \| lat+lng, area, propertyType, nUnits?, year?, bedrooms?, bathrooms?, buildingAge?}` |
+| `POST /api/predict` | `{subdistrictId \| lat+lng, area, propertyType, nUnits?, year?, bedrooms?, bathrooms?, buildingAge?, estate?: "in"\|"out", project?}` |
+| `GET /api/projects` | `?q&kind=village\|condo&grade?&limit?` - project search, with grade and quality signals |
+| `GET /api/grades` | village and condo grades compared |
+| `GET /api/estate` | measured in-estate premium per type |
 | `GET /api/nearby` | `?lat&lng&radius=1000\|2000&type?&buildingAge?` - median, 25-75% range and age-adjusted price per sqm of listings in the radius |
 
 `npm run dev` starts the API too (Vite plugin in `vite.config.ts`), once
@@ -129,6 +190,7 @@ equivalent with its own age factor, then ages it to the requested building.
 .venv/bin/python train_models.py      # ~15 min, writes models/ensemble.joblib
 .venv/bin/python calibrate.py         # intervals from held-out error
 .venv/bin/python build_location_map.py
+.venv/bin/python projects.py          # village/condo index and grades
 .venv/bin/python -m pytest test_pipeline.py -q
 ```
 
@@ -141,8 +203,10 @@ equivalent with its own age factor, then ages it to the requested building.
 | `calibrate.py` | prediction intervals from out-of-sample error |
 | `build_location_map.py` | TIS-1099 subdistrict id → district/province |
 | `eval_breakdown.py` | accuracy by type, province, area, value band |
+| `estate.py` | in/out of a housing estate, premium, grade bands |
+| `projects.py` | project index and grades → models/projects.json |
 | `api.py` | Flask serving layer |
-| `test_pipeline.py` | 27 tests over cleaning, rent filter, splitting, features, project snap, bundle, API |
+| `test_pipeline.py` | 39 tests over cleaning, rent filter, splitting, features, project snap, estates, grades, bundle, API |
 
 ## Limits worth repeating
 

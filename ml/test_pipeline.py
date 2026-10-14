@@ -269,6 +269,78 @@ class TestApi:
         assert r.status_code == 200
         assert r.get_json()["predictedPrice"] > 0
 
+    def test_village_search_finds_an_estate_by_name(self, client):
+        body = client.get("/api/projects?q=พฤกษา").get_json()
+        assert body["total"] > 0
+        assert all("พฤกษา" in p["name"].replace(" ", "") or "pruksa" in p["name"].lower()
+                   for p in body["results"][:3])
+
+    def test_predict_in_a_named_village(self, client):
+        village = client.get("/api/projects?q=พฤกษา").get_json()["results"][0]
+        r = client.post("/api/predict", json={
+            "area": 120, "propertyType": "house" if "บ้านเดี่ยว" in village["types"] else "townhome",
+            "project": village["key"]})
+        assert r.status_code == 200
+        meta = r.get_json()["meta"]
+        assert meta["estate"] == "in" and meta["location_from"] == "project"
+
+    def test_outside_an_estate_takes_the_measured_discount(self, client):
+        base = {"lat": 13.86, "lng": 100.67, "area": 160, "propertyType": "house"}
+        plain = client.post("/api/predict", json=base).get_json()
+        out = client.post("/api/predict", json={**base, "estate": "out"}).get_json()
+        adj = out["meta"]["estate_adjustment"]
+        assert adj["factor"] < 1 and plain["meta"]["estate_adjustment"] is None
+        # The model's own response to the flag is small; the discount dominates.
+        assert out["predictedPrice"] / plain["predictedPrice"] == pytest.approx(adj["factor"], abs=0.05)
+
+    def test_estate_is_ignored_for_a_condo(self, client):
+        r = client.post("/api/predict", json={
+            "lat": 13.7245, "lng": 100.56, "area": 40, "propertyType": "condo", "estate": "in"})
+        assert r.get_json()["meta"]["estate"] is None
+
+    def test_rejects_an_unknown_village(self, client):
+        r = client.post("/api/predict", json={"area": 120, "propertyType": "house", "project": "nope"})
+        assert r.status_code == 400
+
+
+    def test_condo_search_and_grade_filter(self, client):
+        body = client.get("/api/projects?kind=condo&grade=ultimate").get_json()
+        assert body["total"] > 0
+        assert all(p["kind"] == "condo" and p["grade"] == "ultimate" for p in body["results"])
+
+    def test_grades_rise_with_price(self, client):
+        body = client.get("/api/grades").get_json()
+        for kind in ("village", "condo"):
+            prices = [r["ppsqm_median"] for r in body[kind] if "ppsqm_median" in r]
+            assert prices == sorted(prices, reverse=True)
+
+
+class TestEstate:
+    def test_grade_bands(self):
+        from estate import CONDO_GRADES, VILLAGE_GRADES, grade
+        assert grade(70e6, VILLAGE_GRADES) == "super_luxury"
+        assert grade(150e6, VILLAGE_GRADES) == "super_luxury"
+        assert grade(20e6, VILLAGE_GRADES) == "luxury"
+        assert grade(4e6, VILLAGE_GRADES) == "economy"
+        assert grade(2e6, VILLAGE_GRADES) == "entry"
+        assert grade(600e3, CONDO_GRADES) == "ultimate"
+        assert grade(100e3, CONDO_GRADES) == "main"
+        assert grade(40e3, CONDO_GRADES) == "entry"
+
+    def test_flag_prefers_a_stated_outside(self):
+        from estate import estate_flag
+        flag = estate_flag(pd.Series(["บ้านเดี่ยว", "บ้านเดี่ยว", "บ้านเดี่ยว", "คอนโด"]),
+                           pd.Series([None, "x", None, "y"]),
+                           pd.Series(["หมู่บ้าน ... บ้านสร้างเอง", "", "ขายบ้าน", "โครงการ"]))
+        assert flag.iloc[0] == 0 and flag.iloc[1] == 1
+        assert np.isnan(flag.iloc[2]) and np.isnan(flag.iloc[3])
+
+    def test_premium_is_reported_for_both_house_types(self):
+        m = json.loads((HERE / "models/metrics.json").read_text(encoding="utf-8"))
+        for t in ("บ้านเดี่ยว", "ทาวน์เฮ้าส์"):
+            assert m["estate_premium"][t]["vs_unnamed"]["cells"] >= 5
+
+
 class TestMetricsFile:
     def test_reports_the_honest_test_years(self):
         m = json.loads((HERE / "models/metrics.json").read_text(encoding="utf-8"))
