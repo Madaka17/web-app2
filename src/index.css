@@ -171,6 +171,7 @@
      overflow is clipped by overflow-x: clip on html/body. */
   .horizon {
     position: relative;
+    isolation: isolate;
   }
   .horizon::before,
   .horizon::after {
@@ -184,7 +185,10 @@
     left: -35%;
     top: 55%;
     width: 170%;
-    aspect-ratio: 2.4 / 1;
+    height: 90%;
+    /* Cut at the wrapper's own bottom (55% + 45%): adds no page height and
+       shows no second rim. Negative insets keep the glow above the crest. */
+    clip-path: inset(-400px -100vw 50% -100vw);
     border-radius: 50%;
     background: rgb(var(--c-canvas));
     box-shadow:
@@ -198,7 +202,7 @@
     left: 0;
     right: 0;
     top: 15%;
-    height: 60%;
+    height: 40%;
     background:
       radial-gradient(ellipse 45% 55% at 50% 100%, rgb(168 85 247 / 0.35), transparent 70%),
       radial-gradient(ellipse 70% 40% at 50% 100%, rgb(251 146 60 / 0.12), transparent 75%);
@@ -213,7 +217,7 @@
   html:not(.dark) .horizon::after {
     opacity: 0.5;
   }
-  .horizon > * {
+  :where(.horizon) > * {
     position: relative;
     z-index: 1;
   }
@@ -239,6 +243,9 @@
     background: rgb(var(--c-surface) / 0.55);
     box-shadow: inset 0 1px 0 rgb(255 255 255 / 0.08);
     backdrop-filter: blur(12px);
+  }
+  html:not(.dark) .glass-field {
+    border-color: rgb(var(--c-line));
   }
 
   .orb-btn {

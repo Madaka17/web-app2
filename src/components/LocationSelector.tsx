@@ -5,9 +5,13 @@ import { LOCATIONS, findDistrict, findRegion, findLocationPath } from "@/lib/loc
 interface LocationSelectorProps {
   subdistrictId: string;
   onChange: (subdistrictId: string) => void;
+  /** Skip the "ทำเล / จังหวัด › เขต › แขวง" header row. */
+  hideHeader?: boolean;
+  /** Open the dropdown panel wider than the trigger, centred on it. */
+  wide?: boolean;
 }
 
-export function LocationSelector({ subdistrictId, onChange }: LocationSelectorProps) {
+export function LocationSelector({ subdistrictId, onChange, hideHeader = false, wide = false }: LocationSelectorProps) {
   const [open, setOpen] = useState(false);
   const [selectedRegion, setSelectedRegion] = useState<string>("");
   const [selectedDistrict, setSelectedDistrict] = useState<string>("");
@@ -77,10 +81,12 @@ export function LocationSelector({ subdistrictId, onChange }: LocationSelectorPr
 
   return (
     <div className="relative" ref={containerRef}>
-      <div className="mb-2.5 flex items-baseline justify-between">
-        <span className="label">ทำเล</span>
-        <span className="text-[11px] text-faint">จังหวัด › เขต › แขวง</span>
-      </div>
+      {!hideHeader && (
+        <div className="mb-2.5 flex items-baseline justify-between">
+          <span className="label">ทำเล</span>
+          <span className="text-[11px] text-faint">จังหวัด › เขต › แขวง</span>
+        </div>
+      )}
 
       <button
         ref={triggerRef}
@@ -90,7 +96,7 @@ export function LocationSelector({ subdistrictId, onChange }: LocationSelectorPr
         aria-haspopup="listbox"
         aria-controls="location-listbox"
         onClick={() => setOpen((v) => !v)}
-        className={`field flex items-center justify-between text-left ${
+        className={`field flex items-center justify-between text-left ${hideHeader ? "glass-field" : ""} ${
           open ? "border-accent/50 bg-surface ring-4 ring-accent/10" : ""
         }`}
       >
@@ -117,7 +123,9 @@ export function LocationSelector({ subdistrictId, onChange }: LocationSelectorPr
           id="location-listbox"
           role="listbox"
           aria-label="เลือกทำเล"
-          className="absolute z-30 mt-1.5 w-full overflow-hidden rounded-xl border border-line bg-surface shadow-pop animate-fade-in"
+          className={`absolute z-30 mt-1.5 overflow-hidden rounded-xl border border-line bg-surface shadow-pop animate-fade-in ${
+            wide ? "w-full sm:w-[min(680px,92vw)] sm:right-0 xl:right-auto xl:left-1/2 xl:-translate-x-1/2" : "w-full"
+          }`}
         >
           <div className="grid grid-cols-1 sm:grid-cols-3 max-h-[70vh] overflow-y-auto sm:max-h-[28rem] sm:overflow-hidden">
             {/* Region Column */}
