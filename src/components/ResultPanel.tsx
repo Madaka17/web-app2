@@ -26,6 +26,7 @@ import {
   HORIZONS_YEARS,
   compound,
 } from "@/lib/growth";
+import { ConclusionCards } from "./ConclusionCards";
 import { downloadFile, reportToJSON, reportToCSV, reportToText } from "@/lib/download";
 
 const ICON_MAP: Record<string, typeof Train> = {
@@ -47,63 +48,17 @@ interface ResultPanelProps {
 export function ResultPanel({ result, input }: ResultPanelProps) {
   const maxFeatureValue = Math.max(...result.features.map((f) => f.value));
   const barTotal = result.contributions.reduce((sum, c) => sum + c.weight, 0);
-  const perSqm = result.predictedPrice / input.area;
+  const [rate, setRate] = useState<number>(DEFAULT_GROWTH_PCT[input.propertyType]);
+  // A new property type brings its own starting rate.
+  useEffect(() => setRate(DEFAULT_GROWTH_PCT[input.propertyType]), [input.propertyType]);
 
   return (
     <div className="space-y-4 animate-slide-up">
-      {/* Price */}
-      {/* Not overflow-hidden, and raised: the download menu opens past its
-          bottom edge over the next card. The decorations clip themselves. */}
-      <section className="card relative z-10 p-6 sm:p-7">
-        <div className="pointer-events-none absolute inset-0 overflow-hidden rounded-2xl" aria-hidden="true">
-          <div className="bg-grid absolute inset-0 opacity-60 [mask-image:linear-gradient(to_bottom_left,black,transparent_60%)]" />
-          <div className="orbit absolute -right-16 -top-16 h-56 w-56" />
-        </div>
-        <div className="relative">
-          <div className="flex flex-wrap items-start justify-between gap-3">
-            <div>
-              <p className="label">ราคาคาดการณ์ · {result.meta.collateral_type}</p>
-              <p className="mt-2 font-display text-[40px] font-semibold leading-none tracking-tight text-accent text-glow sm:text-[48px]">
-                <Baht value={result.predictedPrice} />
-              </p>
-              <p className="mt-2 text-[13px] text-muted">
-                ≈ <span className="num text-ink">฿<Num value={perSqm} /></span> ต่อ ตร.ม. ·{" "}
-                {result.meta.subdistrict}, {result.meta.district}
-              </p>
-              {result.meta.estate && (
-                <p className="mt-2 inline-flex items-center gap-1.5 rounded-md border border-accent/30 bg-accent/10 px-2 py-0.5 text-[11.5px] text-accent">
-                  <Home className="h-3 w-3" />
-                  {result.meta.estate === "in" ? "ในหมู่บ้านจัดสรร" : "นอกหมู่บ้านจัดสรร"}
-                  {result.meta.estate === "in" && result.meta.project && ` · ${result.meta.project}`}
-                  {result.meta.estate_adjustment && ` · ปรับ ${result.meta.estate_adjustment.pct.toFixed(1)}% จากส่วนต่างที่วัดได้`}
-                </p>
-              )}
-            </div>
-            <DownloadMenu input={input} result={result} />
-          </div>
-        </div>
-      </section>
+      <ConclusionCards result={result} input={input} rate={rate} />
 
-      {/* Accuracy + ensemble, side by side with different weights */}
-      <div className="grid grid-cols-1 gap-4 md:grid-cols-5">
-        <section className="card p-5 md:col-span-2">
-          <h3 className="label">แม่นแค่ไหนกับกลุ่มนี้</h3>
-          <dl className="mt-4 space-y-3.5">
-            <Stat label="ถูกต้องภายใน ±20%" value={`${result.meta.within_20pct}%`} emphasis />
-            <Stat label="คลาดเคลื่อนกลาง" value={`${result.meta.median_abs_pct_error}%`} />
-            <Stat label="ตัวอย่างที่วัด" value={result.meta.sample_size.toLocaleString("en-US")} />
-          </dl>
-          <p className="mt-4 border-t border-line/80 pt-3 text-[11.5px] leading-relaxed text-faint">
-            วัดจากประกาศปีล่าสุดที่โมเดลไม่เคยเห็นตอนเทรน
-            {!result.meta.district_in_training_data && (
-              <span className="mt-1 block text-warn">
-                เขตนี้ไม่มีในข้อมูลเทรน — ใช้ค่าระดับจังหวัดแทน
-              </span>
-            )}
-          </p>
-        </section>
-
-        <section className="card p-5 md:col-span-3">
+      {/* Ensemble */}
+      <div className="grid grid-cols-1 gap-4">
+        <section className="card p-5">
           <div className="flex flex-wrap items-baseline justify-between gap-x-3 gap-y-1">
             <h3 className="label">สามโมเดลว่าอย่างไร</h3>
             <span className="text-[11px] text-faint">น้ำหนักเลือกจากชุด validation</span>
@@ -136,7 +91,7 @@ export function ResultPanel({ result, input }: ResultPanelProps) {
 
       <WhyThisPrice result={result} input={input} />
 
-      <FutureValue result={result} input={input} />
+      <FutureValue result={result} input={input} rate={rate} onRate={setRate} />
 
       {/* Feature importance */}
       <section className="card p-5 sm:p-6">
@@ -251,11 +206,12 @@ function WhyThisPrice({ result, input }: ResultPanelProps) {
   );
 }
 
-function FutureValue({ result, input }: ResultPanelProps) {
-  const [rate, setRate] = useState<number>(DEFAULT_GROWTH_PCT[input.propertyType]);
-  // A new property type brings its own starting rate.
-  useEffect(() => setRate(DEFAULT_GROWTH_PCT[input.propertyType]), [input.propertyType]);
-
+function FutureValue({
+  result,
+  input,
+  rate,
+  onRate,
+}: ResultPanelProps & { rate: number; onRate: (r: number) => void }) {
   return (
     <section className="card p-5 sm:p-6">
       <div className="flex items-baseline justify-between">
@@ -274,7 +230,7 @@ function FutureValue({ result, input }: ResultPanelProps) {
           max={GROWTH_MAX_PCT}
           step={GROWTH_STEP_PCT}
           value={rate}
-          onChange={(e) => setRate(parseFloat(e.target.value))}
+          onChange={(e) => onRate(parseFloat(e.target.value))}
           className="flex-1 accent-ink"
         />
         <span className="num w-14 text-right text-[15px] font-medium text-ink">
@@ -320,26 +276,20 @@ function FutureValue({ result, input }: ResultPanelProps) {
   );
 }
 
-function Baht({ value }: { value: number }) {
+export function Baht({ value }: { value: number }) {
   return <>{formatBaht(useAnimatedNumber(value))}</>;
 }
 
-function Num({ value }: { value: number }) {
+export function Num({ value }: { value: number }) {
   return <>{Math.round(useAnimatedNumber(value)).toLocaleString("en-US")}</>;
 }
 
-function Stat({ label, value, emphasis }: { label: string; value: string; emphasis?: boolean }) {
-  return (
-    <div className="flex items-baseline justify-between gap-3">
-      <dt className="text-[13px] text-muted">{label}</dt>
-      <dd className={`num whitespace-nowrap font-medium ${emphasis ? "text-[22px] text-ink" : "text-[15px] text-ink"}`}>
-        {value}
-      </dd>
-    </div>
-  );
-}
-
-function DownloadMenu({ input, result }: ResultPanelProps) {
+export function DownloadMenu({
+  input,
+  result,
+  triggerClassName = "btn-ghost",
+  fullWidth = false,
+}: ResultPanelProps & { triggerClassName?: string; fullWidth?: boolean }) {
   const [open, setOpen] = useState(false);
   const [done, setDone] = useState<string | null>(null);
   const rootRef = useRef<HTMLDivElement>(null);
@@ -381,13 +331,13 @@ function DownloadMenu({ input, result }: ResultPanelProps) {
   ];
 
   return (
-    <div className="relative" ref={rootRef}>
+    <div className={fullWidth ? "relative w-full" : "relative"} ref={rootRef}>
       <button
         type="button"
         onClick={() => setOpen((v) => !v)}
         aria-haspopup="menu"
         aria-expanded={open}
-        className="btn-ghost"
+        className={triggerClassName}
       >
         {done ? <Check className="h-4 w-4 text-ok" /> : <Download className="h-4 w-4" />}
         {done ? "บันทึกแล้ว" : "บันทึกรายงาน"}
