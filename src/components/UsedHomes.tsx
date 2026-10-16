@@ -413,7 +413,7 @@ function PropertyMap({
   onClose: () => void;
 }) {
   return (
-    <div className="relative h-[560px] overflow-hidden rounded-2xl border border-line/80 bg-raised shadow-[0_18px_40px_-24px_rgb(var(--c-glow)/0.35)] xl:h-[calc(100vh-7rem)]">
+    <div className="relative isolate h-[560px] overflow-hidden rounded-2xl border border-line/80 bg-raised shadow-[0_18px_40px_-24px_rgb(var(--c-glow)/0.35)] xl:h-[calc(100vh-7rem)]">
       <MapContainer center={BANGKOK} zoom={11} preferCanvas className="h-full w-full" scrollWheelZoom>
         <TileLayer
           {...MAP_TILES}

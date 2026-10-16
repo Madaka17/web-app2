@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { projectSeries, toPath } from "../projection";
+import { projectSeries, toBandPath, toPath } from "../projection";
 
 describe("projectSeries", () => {
   it("starts at today's values and has years + 1 points", () => {
@@ -24,5 +24,16 @@ describe("toPath", () => {
   });
   it("draws a flat midline when max equals min", () => {
     expect(toPath([5, 5, 5], 100, 40, 5, 5)).toBe("M0,20 L50,20 L100,20");
+  });
+});
+
+describe("toBandPath", () => {
+  it("runs the high edge left to right, then the low edge back, and closes", () => {
+    expect(toBandPath([0, 0], [10, 10], 100, 50, 0, 10)).toBe("M0,0 L100,0 L100,50 L0,50 Z");
+  });
+  it("collapses onto the midline when max equals min", () => {
+    expect(toBandPath([5, 5, 5], [5, 5, 5], 100, 40, 5, 5)).toBe(
+      "M0,20 L50,20 L100,20 L100,20 L50,20 L0,20 Z",
+    );
   });
 });

@@ -190,7 +190,13 @@
        shows no second rim. Negative insets keep the glow above the crest. */
     clip-path: inset(-400px -100vw 50% -100vw);
     border-radius: 50%;
-    background: rgb(var(--c-canvas));
+    /* Fade the fill out before the clip line so no straight edge shows. */
+    background: linear-gradient(
+      to bottom,
+      rgb(var(--c-canvas)) 0%,
+      rgb(var(--c-canvas)) 22%,
+      rgb(var(--c-canvas) / 0) 50%
+    );
     box-shadow:
       0 -2px 0 rgb(216 180 254 / 0.55),
       0 -30px 80px -10px rgb(168 85 247 / 0.55),
@@ -208,7 +214,12 @@
       radial-gradient(ellipse 70% 40% at 50% 100%, rgb(251 146 60 / 0.12), transparent 75%);
   }
   html:not(.dark) .horizon::before {
-    background: rgb(var(--c-surface));
+    background: linear-gradient(
+      to bottom,
+      rgb(var(--c-surface)) 0%,
+      rgb(var(--c-surface)) 22%,
+      rgb(var(--c-surface) / 0) 50%
+    );
     box-shadow:
       0 -1px 0 rgb(216 180 254 / 0.28),
       0 -30px 80px -10px rgb(168 85 247 / 0.28),

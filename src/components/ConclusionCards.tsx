@@ -4,8 +4,8 @@ import { Home } from "lucide-react";
 import { PredictionInput } from "@/lib/types";
 import { ApiPrediction } from "@/lib/api";
 import { formatBaht } from "@/lib/prediction";
-import { projectSeries, toPath } from "@/lib/projection";
-import { Baht, DownloadMenu, Num } from "./ResultPanel";
+import { projectSeries, toBandPath, toPath } from "@/lib/projection";
+import { Baht, DownloadMenu, Num } from "./ResultAtoms";
 
 interface ConclusionCardsProps {
   result: ApiPrediction;
@@ -22,7 +22,7 @@ export function ConclusionCards({ result, input, rate }: ConclusionCardsProps) {
         <Captioned caption="แนวโน้มราคา">
           <TrendCard result={result} input={input} rate={rate} />
         </Captioned>
-        <Captioned caption="ราคาคาดการณ์">
+        <Captioned caption="ราคาคาดการณ์" className="relative z-20">
           <EstimateCard result={result} input={input} />
         </Captioned>
         <Captioned caption="ความแม่นยำ">
@@ -33,9 +33,17 @@ export function ConclusionCards({ result, input, rate }: ConclusionCardsProps) {
   );
 }
 
-function Captioned({ caption, children }: { caption: string; children: ReactNode }) {
+function Captioned({
+  caption,
+  children,
+  className = "",
+}: {
+  caption: string;
+  children: ReactNode;
+  className?: string;
+}) {
   return (
-    <div className="flex flex-col">
+    <div className={`flex flex-col ${className}`}>
       <div className="flex-1 [&>*]:h-full">{children}</div>
       <p className="mt-2.5 text-center text-[12px] text-muted">{caption}</p>
     </div>
@@ -53,14 +61,14 @@ function TrendCard({ result, input, rate }: ConclusionCardsProps) {
   const min = Math.min(...series.map((p) => p.low));
   const max = Math.max(...series.map((p) => p.high));
   const mid = toPath(series.map((p) => p.mid), W, H, min, max);
-  const highPath = toPath(series.map((p) => p.high), W, H, min, max);
-  // Walk the low edge back from right to left so the band closes cleanly.
-  const lowBack = toPath(series.map((p) => p.low), W, H, min, max)
-    .split(" ")
-    .reverse()
-    .map((c) => `L${c.slice(1)}`)
-    .join(" ");
-  const band = `${highPath} ${lowBack} Z`;
+  const band = toBandPath(
+    series.map((p) => p.low),
+    series.map((p) => p.high),
+    W,
+    H,
+    min,
+    max,
+  );
   const first = series[0].year;
   const last = series[series.length - 1].year;
   const middle = series[Math.floor(series.length / 2)].year;

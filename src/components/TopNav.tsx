@@ -25,6 +25,7 @@ export function TopNav({ activePage, onNavigate }: TopNavProps) {
   const [scrolled, setScrolled] = useState(false);
   const [open, setOpen] = useState(false);
   const wrapRef = useRef<HTMLElement>(null);
+  const menuBtnRef = useRef<HTMLButtonElement>(null);
 
   useEffect(() => {
     const onScroll = () => setScrolled(window.scrollY > 8);
@@ -36,7 +37,10 @@ export function TopNav({ activePage, onNavigate }: TopNavProps) {
   useEffect(() => {
     if (!open) return;
     const onKey = (e: KeyboardEvent) => {
-      if (e.key === "Escape") setOpen(false);
+      if (e.key === "Escape") {
+        setOpen(false);
+        menuBtnRef.current?.focus();
+      }
     };
     const onDown = (e: PointerEvent) => {
       if (wrapRef.current && !wrapRef.current.contains(e.target as Node)) setOpen(false);
@@ -87,7 +91,7 @@ export function TopNav({ activePage, onNavigate }: TopNavProps) {
           </span>
         </a>
 
-        <nav className="hidden xl:flex xl:items-center xl:gap-7" aria-label="หน้าหลัก">
+        <nav className="hidden xl:absolute xl:left-1/2 xl:flex xl:-translate-x-1/2 xl:items-center xl:gap-7" aria-label="หน้าหลัก">
           {NAV_ITEMS.map((item) => {
             const isActive = activePage === item.id;
             return (
@@ -136,6 +140,7 @@ export function TopNav({ activePage, onNavigate }: TopNavProps) {
             {mode === "dark" ? <Sun className="h-4 w-4" /> : <Moon className="h-4 w-4" />}
           </button>
           <button
+            ref={menuBtnRef}
             onClick={() => setOpen((v) => !v)}
             className="rounded-lg border border-line bg-surface/60 p-2 text-muted transition-colors hover:text-ink xl:hidden"
             aria-label={open ? "ปิดเมนู" : "เปิดเมนู"}
@@ -150,7 +155,7 @@ export function TopNav({ activePage, onNavigate }: TopNavProps) {
       {open && (
         <div
           id="topnav-panel"
-          className="absolute inset-x-0 top-full border-b border-line/60 bg-canvas/95 backdrop-blur-xl xl:hidden"
+          className="absolute inset-x-0 top-full max-h-[calc(100dvh-4rem)] overflow-y-auto border-b border-line/60 bg-canvas/95 backdrop-blur-xl xl:hidden"
         >
           <ul className="mx-auto max-w-6xl space-y-0.5 px-4 py-3 sm:px-6">
             {NAV_ITEMS.map((item) => {

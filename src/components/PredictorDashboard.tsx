@@ -249,7 +249,9 @@ export function PredictorDashboard({ point: mapPoint, onClearPoint }: PredictorD
                   {areaField.unit}
                 </span>
               </div>
-              <p className="mt-2 text-center text-[12px] text-muted">{areaField.label}</p>
+              <p className="mt-2 text-center text-[12px] text-muted">
+                {areaField.label} <span className="text-faint">· ช่วง {areaField.hint}</span>
+              </p>
             </div>
 
             <div>
@@ -289,7 +291,7 @@ export function PredictorDashboard({ point: mapPoint, onClearPoint }: PredictorD
             )}
           </div>
 
-          <div className="mt-8 flex justify-center pb-10">
+          <div className="mt-8 flex flex-col items-center pb-4">
             <button
               type="submit"
               disabled={isRunning}
@@ -310,6 +312,7 @@ export function PredictorDashboard({ point: mapPoint, onClearPoint }: PredictorD
                 </text>
               </svg>
             </button>
+            <p className="mt-12 text-center text-[11px] text-faint">ราคาอัปเดตเองทุกครั้งที่แก้ข้อมูล</p>
           </div>
         </section>
 

@@ -33,6 +33,22 @@ export function projectSeries(
 
 const round1 = (n: number): number => Math.round(n * 10) / 10;
 
+function toPoints(
+  values: number[],
+  width: number,
+  height: number,
+  min: number,
+  max: number,
+): string[] {
+  const n = values.length;
+  const span = max - min;
+  return values.map((v, i) => {
+    const x = n > 1 ? (i * width) / (n - 1) : 0;
+    const y = span === 0 ? height / 2 : height - ((v - min) / span) * height;
+    return `${round1(x)},${round1(y)}`;
+  });
+}
+
 /**
  * Builds an SVG path `d` for a polyline through values. X spans 0..width evenly;
  * min maps to the bottom (y = height) and max to the top (y = 0). When max equals
@@ -45,12 +61,26 @@ export function toPath(
   min: number,
   max: number,
 ): string {
-  const n = values.length;
-  const span = max - min;
-  const commands = values.map((v, i) => {
-    const x = n > 1 ? (i * width) / (n - 1) : 0;
-    const y = span === 0 ? height / 2 : height - ((v - min) / span) * height;
-    return `${i === 0 ? "M" : "L"}${round1(x)},${round1(y)}`;
-  });
-  return commands.join(" ");
+  return toPoints(values, width, height, min, max)
+    .map((pt, i) => `${i === 0 ? "M" : "L"}${pt}`)
+    .join(" ");
+}
+
+/**
+ * Builds a closed SVG polygon between two series: the high edge left to right,
+ * then the low edge right to left, ending with `Z`.
+ */
+export function toBandPath(
+  low: number[],
+  high: number[],
+  width: number,
+  height: number,
+  min: number,
+  max: number,
+): string {
+  const up = toPoints(high, width, height, min, max).map((pt, i) => `${i === 0 ? "M" : "L"}${pt}`);
+  const back = toPoints(low, width, height, min, max)
+    .reverse()
+    .map((pt) => `L${pt}`);
+  return `${[...up, ...back].join(" ")} Z`;
 }
