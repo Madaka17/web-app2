@@ -1,8 +1,7 @@
 import { Suspense, lazy, useState } from "react";
 import { ThemeProvider } from "@/context/ThemeContext";
 import { ErrorBoundary } from "@/components/ErrorBoundary";
-import { Header } from "@/components/Header";
-import { Sidebar } from "@/components/Sidebar";
+import { TopNav } from "@/components/TopNav";
 import { PredictorDashboard } from "@/components/PredictorDashboard";
 import { PipelineBoard } from "@/components/PipelineBoard";
 import { ModelMetrics } from "@/components/ModelMetrics";
@@ -16,7 +15,6 @@ const MapPage = lazy(() => import("@/components/MapPage").then((m) => ({ default
 
 function AppContent() {
   const [activePage, navigate] = useHashRoute();
-  const [sidebarOpen, setSidebarOpen] = useState(false);
   // Lives here, not in a page, so a point picked on the map page carries over
   // to the valuation form (and survives switching pages).
   const [mapPoint, setMapPoint] = useState<{ lat: number; lng: number } | null>(null);
@@ -28,51 +26,43 @@ function AppContent() {
         <span />
         <span />
       </div>
-      <div className="flex">
-        <Sidebar
-          activePage={activePage}
-          onNavigate={navigate}
-          isOpen={sidebarOpen}
-          onClose={() => setSidebarOpen(false)}
-        />
+      <TopNav activePage={activePage} onNavigate={navigate} />
 
-        <div className="min-w-0 flex-1">
-          <Header activePage={activePage} onMenuClick={() => setSidebarOpen(true)} />
+      <main className="mx-auto w-full max-w-6xl px-4 py-6 sm:px-6 lg:px-8 lg:py-8">
+        {activePage === "predictor" && (
+          <PredictorDashboard point={mapPoint} onClearPoint={() => setMapPoint(null)} />
+        )}
+        {activePage === "map" && (
+          <Suspense fallback={<div className="card h-[640px] animate-pulse" />}>
+            <MapPage
+              point={mapPoint}
+              onPick={(lat, lng) => setMapPoint({ lat, lng })}
+              onPrice={() => navigate("predictor")}
+            />
+          </Suspense>
+        )}
+        {activePage === "grades" && <ProjectGrades />}
+        {activePage === "used-homes" && <UsedHomes />}
+        {activePage === "image-valuation" && <ImageValuation />}
+        {activePage === "pipeline" && <PipelineBoard />}
+        {activePage === "metrics" && <ModelMetrics />}
+      </main>
 
-          <main className="mx-auto w-full max-w-6xl px-4 py-6 sm:px-6 lg:px-8 lg:py-8">
-            {activePage === "predictor" && (
-              <PredictorDashboard point={mapPoint} onClearPoint={() => setMapPoint(null)} />
-            )}
-            {activePage === "map" && (
-              <Suspense fallback={<div className="card h-[640px] animate-pulse" />}>
-                <MapPage
-                  point={mapPoint}
-                  onPick={(lat, lng) => setMapPoint({ lat, lng })}
-                  onPrice={() => navigate("predictor")}
-                />
-              </Suspense>
-            )}
-            {activePage === "grades" && <ProjectGrades />}
-            {activePage === "used-homes" && <UsedHomes />}
-            {activePage === "image-valuation" && <ImageValuation />}
-            {activePage === "pipeline" && <PipelineBoard />}
-            {activePage === "metrics" && <ModelMetrics />}
-          </main>
-
-          <footer className="mx-auto mt-6 w-full max-w-6xl px-4 pb-8 sm:px-6 lg:px-8">
-            <div className="flex flex-col gap-1.5 border-t border-line/70 pt-5 text-[11.5px] leading-relaxed text-faint sm:flex-row sm:items-start sm:justify-between">
-              <p>
-                CatBoost · LightGBM · XGBoost — เทรนจากประกาศขายบน dotproperty, ddproperty,
-                hipflat, baania ทดสอบกับประกาศที่โมเดลไม่เคยเห็น
-              </p>
-              <p className="sm:max-w-sm sm:text-right">
-                โมเดลเห็น ประเภท · พื้นที่ · ทำเล/พิกัด · โครงการ · ห้อง · อายุอาคาร — ใช้เป็นตัวเลขตั้งต้น
-                ไม่ใช่ราคาประเมินทางการ
-              </p>
-            </div>
-          </footer>
+      <footer className="mx-auto mt-6 w-full max-w-6xl px-4 pb-8 sm:px-6 lg:px-8">
+        <div className="flex flex-col gap-1.5 border-t border-line/70 pt-5 text-[11.5px] leading-relaxed text-faint sm:flex-row sm:items-start sm:justify-between">
+          <p>
+            <span className="chip mr-2 border-warn/25 bg-warn-soft text-warn">
+              ราคาประกาศขาย ไม่ใช่ราคาประเมินทางการ
+            </span>
+            CatBoost · LightGBM · XGBoost — เทรนจากประกาศขายบน dotproperty, ddproperty, hipflat,
+            baania ทดสอบกับประกาศที่โมเดลไม่เคยเห็น
+          </p>
+          <p className="sm:max-w-sm sm:text-right">
+            โมเดลเห็น ประเภท · พื้นที่ · ทำเล/พิกัด · โครงการ · ห้อง · อายุอาคาร —
+            ใช้เป็นตัวเลขตั้งต้น ไม่ใช่ราคาประเมินทางการ
+          </p>
         </div>
-      </div>
+      </footer>
     </div>
   );
 }
