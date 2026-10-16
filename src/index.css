@@ -6,49 +6,49 @@
 
 @layer base {
   :root {
-    /* Light: high-altitude daylight - pale indigo, ink-dark text. */
-    --c-canvas: 236 240 252;
+    /* Light: lavender daylight - pale violet, deep-indigo ink. */
+    --c-canvas: 244 240 255;
     --c-surface: 255 255 255;
-    --c-raised: 243 245 253;
-    --c-line: 212 218 240;
-    --c-ink: 14 17 43;
-    --c-muted: 84 92 135;
-    --c-faint: 138 146 184;
-    --c-accent: 79 70 229;
-    --c-accent-soft: 232 231 252;
-    --c-accent-ink: 49 46 129;
-    --c-accent-2: 8 145 178;
+    --c-raised: 238 232 255;
+    --c-line: 220 210 245;
+    --c-ink: 30 16 64;
+    --c-muted: 98 82 150;
+    --c-faint: 150 138 190;
+    --c-accent: 124 58 237;
+    --c-accent-soft: 237 228 255;
+    --c-accent-ink: 76 29 149;
+    --c-accent-2: 219 39 119;
     --c-ok: 21 128 61;
     --c-ok-soft: 230 246 236;
     --c-warn: 161 98 7;
     --c-warn-soft: 253 246 228;
     --c-bad: 190 18 60;
     --c-bad-soft: 254 233 238;
-    --c-glow: 79 70 229;
+    --c-glow: 124 58 237;
     --star-opacity: 0;
     --surface-alpha: 0.82;
   }
 
   .dark {
-    /* Dark: deep space - near-black blue, cyan signal, violet nebula. */
-    --c-canvas: 4 6 18;
-    --c-surface: 11 15 36;
-    --c-raised: 19 25 54;
-    --c-line: 38 48 92;
-    --c-ink: 232 238 255;
-    --c-muted: 152 163 206;
-    --c-faint: 96 107 150;
-    --c-accent: 94 234 255;
-    --c-accent-soft: 10 42 62;
-    --c-accent-ink: 190 248 255;
-    --c-accent-2: 167 139 250;
+    /* Dark: deep indigo space - violet accent, magenta secondary, amber at the rim. */
+    --c-canvas: 9 6 22;
+    --c-surface: 22 15 44;
+    --c-raised: 32 23 62;
+    --c-line: 62 48 104;
+    --c-ink: 240 236 255;
+    --c-muted: 170 160 210;
+    --c-faint: 112 102 150;
+    --c-accent: 196 140 255;
+    --c-accent-soft: 44 24 78;
+    --c-accent-ink: 236 220 255;
+    --c-accent-2: 244 114 182;
     --c-ok: 74 222 128;
     --c-ok-soft: 12 44 30;
     --c-warn: 250 204 21;
     --c-warn-soft: 48 40 10;
     --c-bad: 251 113 133;
     --c-bad-soft: 54 16 28;
-    --c-glow: 94 234 255;
+    --c-glow: 168 85 247;
     --star-opacity: 1;
     --surface-alpha: 0.62;
   }
@@ -60,6 +60,8 @@
 
   html {
     color-scheme: light;
+    /* The oversized .horizon arc must not cause horizontal page scroll. */
+    overflow-x: clip;
   }
   html.dark {
     color-scheme: dark;
@@ -67,11 +69,14 @@
 
   body {
     @apply bg-canvas text-ink font-sans;
+    overflow-x: clip;
     font-feature-settings: 'ss01', 'cv11';
     /* Nebula glow behind the starfield. */
     background-image:
-      radial-gradient(ellipse 60% 45% at 12% 0%, rgb(var(--c-accent-2) / 0.16), transparent 70%),
-      radial-gradient(ellipse 50% 40% at 92% 18%, rgb(var(--c-accent) / 0.10), transparent 70%),
+      radial-gradient(ellipse 60% 45% at 12% 0%, rgb(var(--c-accent-2) / 0.14), transparent 70%),
+      radial-gradient(ellipse 50% 40% at 50% 8%, rgb(var(--c-glow) / 0.16), transparent 70%),
+      radial-gradient(ellipse 40% 45% at 0% 60%, rgb(251 146 60 / 0.10), transparent 70%),
+      radial-gradient(ellipse 40% 45% at 100% 60%, rgb(251 146 60 / 0.10), transparent 70%),
       radial-gradient(ellipse 70% 50% at 50% 110%, rgb(var(--c-accent-2) / 0.14), transparent 70%);
     background-attachment: fixed;
   }
@@ -126,7 +131,7 @@
     @apply inline-flex items-center justify-center gap-2 rounded-xl px-4 py-2.5 text-sm font-semibold text-white
       transition-all duration-200 ease-out hover:brightness-110 active:scale-[0.98]
       disabled:cursor-not-allowed disabled:opacity-50 disabled:active:scale-100;
-    background: linear-gradient(110deg, rgb(var(--c-accent-2)), rgb(79 70 229) 45%, rgb(8 145 178));
+    background: linear-gradient(110deg, rgb(147 51 234), rgb(219 39 119) 55%, rgb(249 115 22));
     box-shadow:
       inset 0 0 0 1px rgb(255 255 255 / 0.10),
       0 10px 28px -10px rgb(var(--c-glow) / 0.7);
@@ -161,6 +166,124 @@
   .scrollbar-thin::-webkit-scrollbar-thumb:hover {
     background: rgb(var(--c-faint) / 0.6);
   }
+  /* Hero wrapper: a dark planet arc whose rim glows violet/magenta.
+     No overflow clipping here so dropdowns can escape; the arc's sideways
+     overflow is clipped by overflow-x: clip on html/body. */
+  .horizon {
+    position: relative;
+  }
+  .horizon::before,
+  .horizon::after {
+    content: '';
+    position: absolute;
+    pointer-events: none;
+  }
+  .horizon::before {
+    /* Planet: ellipse whose crest sits ~55% down the wrapper. */
+    z-index: 0;
+    left: -35%;
+    top: 55%;
+    width: 170%;
+    aspect-ratio: 2.4 / 1;
+    border-radius: 50%;
+    background: rgb(var(--c-canvas));
+    box-shadow:
+      0 -2px 0 rgb(216 180 254 / 0.55),
+      0 -30px 80px -10px rgb(168 85 247 / 0.55),
+      0 -10px 120px 10px rgb(236 72 153 / 0.25);
+  }
+  .horizon::after {
+    /* Glow above the crest. */
+    z-index: 0;
+    left: 0;
+    right: 0;
+    top: 15%;
+    height: 60%;
+    background:
+      radial-gradient(ellipse 45% 55% at 50% 100%, rgb(168 85 247 / 0.35), transparent 70%),
+      radial-gradient(ellipse 70% 40% at 50% 100%, rgb(251 146 60 / 0.12), transparent 75%);
+  }
+  html:not(.dark) .horizon::before {
+    background: rgb(var(--c-surface));
+    box-shadow:
+      0 -1px 0 rgb(216 180 254 / 0.28),
+      0 -30px 80px -10px rgb(168 85 247 / 0.28),
+      0 -10px 120px 10px rgb(236 72 153 / 0.13);
+  }
+  html:not(.dark) .horizon::after {
+    opacity: 0.5;
+  }
+  .horizon > * {
+    position: relative;
+    z-index: 1;
+  }
+
+  .wordmark {
+    letter-spacing: 0.32em;
+    font-weight: 600;
+    background: linear-gradient(180deg, #fff 30%, rgb(196 181 253));
+    -webkit-background-clip: text;
+    background-clip: text;
+    -webkit-text-fill-color: transparent;
+    color: transparent;
+  }
+  html:not(.dark) .wordmark {
+    background: linear-gradient(180deg, rgb(76 29 149), rgb(124 58 237));
+    -webkit-background-clip: text;
+    background-clip: text;
+  }
+
+  .glass-field {
+    border-radius: 0.75rem;
+    border: 1px solid rgb(255 255 255 / 0.08);
+    background: rgb(var(--c-surface) / 0.55);
+    box-shadow: inset 0 1px 0 rgb(255 255 255 / 0.08);
+    backdrop-filter: blur(12px);
+  }
+
+  .orb-btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 64px;
+    height: 64px;
+    border-radius: 9999px;
+    color: #fff;
+    background:
+      radial-gradient(circle at 32% 24%, rgb(255 255 255 / 0.55), transparent 32%),
+      radial-gradient(circle at 70% 85%, rgb(251 146 60 / 0.85), transparent 55%),
+      radial-gradient(circle at 50% 50%, rgb(236 72 153), rgb(147 51 234) 80%);
+    box-shadow:
+      inset 0 0 0 1px rgb(255 255 255 / 0.18),
+      0 0 28px 2px rgb(236 72 153 / 0.45),
+      0 10px 40px -6px rgb(168 85 247 / 0.7);
+    transition: transform 0.2s ease, box-shadow 0.2s ease, filter 0.2s ease;
+  }
+  .orb-btn:hover {
+    transform: translateY(-3px);
+    filter: brightness(1.1);
+    box-shadow:
+      inset 0 0 0 1px rgb(255 255 255 / 0.25),
+      0 0 36px 4px rgb(236 72 153 / 0.6),
+      0 14px 48px -6px rgb(168 85 247 / 0.85);
+  }
+  .orb-btn:active {
+    transform: translateY(0) scale(0.97);
+  }
+  .orb-btn svg text {
+    fill: currentColor;
+    font: 600 9px 'Chakra Petch', sans-serif;
+    letter-spacing: 0.2em;
+    text-transform: uppercase;
+  }
+
+  .section-title {
+    text-align: center;
+    letter-spacing: 0.3em;
+    text-transform: uppercase;
+    font-weight: 600;
+  }
+
   /* HUD grid for hero surfaces. */
   .bg-grid {
     background-image:
@@ -172,7 +295,7 @@
     text-shadow: 0 0 24px rgb(var(--c-glow) / 0.45);
   }
   .brand-mark {
-    background: radial-gradient(circle at 30% 25%, rgb(var(--c-accent)), rgb(79 70 229) 55%, rgb(var(--c-accent-2)));
+    background: radial-gradient(circle at 30% 25%, rgb(var(--c-accent)), rgb(124 58 237) 55%, rgb(var(--c-accent-2)));
     box-shadow: 0 0 18px -2px rgb(var(--c-glow) / 0.6);
   }
 
