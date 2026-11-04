@@ -5,7 +5,7 @@ CatBoost + LightGBM + XGBoost ensemble that prices a property for the web app.
 ## What it is trained on
 
 Asking prices scraped from four listing sites (`Data/*_listings.csv`, Bangkok +
-ปริมณฑล, scraped 2026-10-08; see `Data/scrape_dotproperty.py` and
+ปริมณฑล, re-scraped 2026-11-04; see `Data/scrape_dotproperty.py` and
 `Data/scrape_sites.py`): dotproperty, ddproperty, hipflat and baania.
 Livinginsider was scraped too but its list pages carry no district, so it cannot
 feed a district-keyed model. The target is the **asking price**, not a recorded
@@ -76,12 +76,19 @@ not know:
 
 | input | what the model gets | rows | R² | MdAPE | within ±20% |
 |---|---|---|---|---|---|
-| **map click** (headline) | pin, type, size; project snapped from the pin | 16,071 | **0.866** | **11.4%** | **72.2%** |
-| sub-district dropdown | type, size, sub-district - no pin | 22,926 | 0.750 | 22.3% | 45.8% |
-| full listing | everything the listing states | 22,926 | 0.833 | 13.2% | 65.9% |
+| **map click** (headline) | pin, type, size; project snapped from the pin | 13,928 | **0.858** | **11.5%** | **71.7%** |
+| sub-district dropdown | type, size, sub-district - no pin | 17,808 | 0.763 | 22.2% | 45.8% |
+| full listing | everything the listing states | 17,808 | 0.851 | 12.7% | 67.9% |
 
-Per model on the map-click view: CatBoost R² 0.872, LightGBM 0.869, XGBoost
-0.845, ensemble (0.45 / 0.1 / 0.45) 0.866.
+Per model on the map-click view: CatBoost R² 0.854, LightGBM 0.858, XGBoost
+0.863, ensemble (0.8 / 0.1 / 0.1, picked on validation) 0.858. (The previous
+2026-10-08 scrape gave 0.866; the data differs, the pipeline does not.)
+
+R² is measured on baht, so it is dominated by a handful of expensive rows: on
+validation the 20 worst rows (0.3%) carry 59% of the squared error, and some
+of them look like listing typos (a 1,200 sqm condo at a tenth of its project's
+rate). No row is dropped from the test set to raise it; MdAPE and the ±20%
+share are the steadier figures.
 
 The dropdown alone cannot reach the same accuracy: within one sub-district a
 condo can ask twice what the next one does, and only a pin says which.
@@ -96,10 +103,10 @@ By property type, map click (`calibrate.py`):
 
 | segment | n | MdAPE | within ±20% |
 |---|---|---|---|
-| คอนโด | 11,267 | 9.6% | 80.4% |
-| ทาวน์เฮ้าส์ | 1,704 | 16.3% | 58.0% |
-| บ้านเดี่ยว | 2,656 | 17.3% | 54.7% |
-| ที่ดิน | 444 | 34.8% | 28.6% |
+| คอนโด | 10,158 | 9.6% | 80.3% |
+| ทาวน์เฮ้าส์ | 1,385 | 17.2% | 55.3% |
+| บ้านเดี่ยว | 1,916 | 19.4% | 51.3% |
+| ที่ดิน | 469 | 34.1% | 33.7% |
 
 Asking prices are noisier than appraisals: the same unit is listed at very
 different prices by different agents, which caps how well any model can do.
@@ -109,7 +116,7 @@ different prices by different agents, which caps how well any model can do.
 `train_models.depreciation_curve` measures it instead of assuming a rate: each
 listing with a known completion year is compared with its own sub-district's
 going rate, and the median gap per age bucket, relative to a 0-2 year building,
-is the factor (6-10 yrs ≈ ×0.85, 16-20 ≈ ×0.65, 31+ ≈ ×0.43). The map's
+is the factor (6-10 yrs ≈ ×0.84, 16-20 ≈ ×0.64, 31+ ≈ ×0.41). The map's
 "หลังค่าเสื่อม" column brings each nearby listing back to a new-building
 equivalent with its own age factor, then ages it to the requested building.
 
@@ -130,9 +137,14 @@ cells.
 
 | | in vs no estate named | in vs stated outside |
 |---|---|---|
-| houses + townhouses | +8.3% [+5.8..+11.3] | +23.0% [+12.6..+35.1] (n out 278) |
-| บ้านเดี่ยว | +12.6% [+9.2..+17.7] | +29.7% [+16.8..+45.1] (n out 191) |
-| ทาวน์เฮ้าส์ | +3.6% [+0.3..+7.2] | +7.1% [-2.2..+19.0] (n out 87) |
+| houses + townhouses | +16.8% [+14.1..+19.4] | +26.8% [-25.0..+106.9] (n out 68) |
+| บ้านเดี่ยว | +22.9% [+18.7..+27.5] | n/a - too few matched cells (n out 58) |
+| ทาวน์เฮ้าส์ | +11.6% [+9.2..+14.1] | n/a - too few matched cells (n out 10) |
+
+The 2026-11-04 scrape has far fewer listings that say "outside" (68, against
+278 in the 2026-10-08 scrape), too few for `_matched_gap` to measure the
+per-type gap. Until a scrape yields enough, choosing **outside** on the form
+applies no discount (`meta.estate_adjustment` is null).
 
 "No estate named" mixes estate homes whose listing just does not say so, so
 that column is a lower bound.
@@ -142,11 +154,11 @@ optional facts, so "not told" stays neutral) but the models barely use it
 (0.2% importance; held-out houses priced from a click with and without the
 flag: MdAPE 17.07% vs 17.03%). A house's comparables are mostly estate
 listings, so a prediction already sits at estate level - held-out estate
-houses come in at actual/predicted 1.00, stated-outside ones at 0.82 - and 278
-"outside" rows are too few for a tree to learn the gap. The API therefore
-applies the measured gap itself when the form says **outside**: price ÷ (1 +
-in-vs-outside premium) for that type (บ้านเดี่ยว ×0.77, ทาวน์เฮ้าส์ ×0.93),
-reported as `meta.estate_adjustment`. "In" and "not told" are the model as is.
+houses come in at actual/predicted 1.00, stated-outside ones at 0.82 (2026-10-08
+scrape) - and the few "outside" rows are too few for a tree to learn the gap.
+The API therefore applies the measured gap itself when the form says
+**outside**: price ÷ (1 + in-vs-outside premium) for that type, when that
+premium could be measured (see above), reported as `meta.estate_adjustment`. "In" and "not told" are the model as is.
 
 ## Grades
 

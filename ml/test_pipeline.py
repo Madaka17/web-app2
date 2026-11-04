@@ -289,6 +289,9 @@ class TestApi:
         plain = client.post("/api/predict", json=base).get_json()
         out = client.post("/api/predict", json={**base, "estate": "out"}).get_json()
         adj = out["meta"]["estate_adjustment"]
+        from api import METRICS
+        if adj is None and not (METRICS.get("estate_premium", {}).get("บ้านเดี่ยว") or {}).get("vs_out"):
+            pytest.skip("this scrape has too few 'outside' houses to measure the gap")
         assert adj["factor"] < 1 and plain["meta"]["estate_adjustment"] is None
         # The model's own response to the flag is small; the discount dominates.
         assert out["predictedPrice"] / plain["predictedPrice"] == pytest.approx(adj["factor"], abs=0.05)

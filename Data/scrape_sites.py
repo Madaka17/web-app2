@@ -467,7 +467,9 @@ def main():
                     done_f.write(f"{job}:{pg}\n")
                 raw.flush()
                 done_f.flush()
-        if finished:
+        # A --max-pages smoke cap is not the end of the job: marking it END
+        # would make the next full run skip the job entirely.
+        if exhausted or (finished and max_pages >= site_cap):
             done_f.write(f"{job}:END\n")
             done_f.flush()
         print(f"{job}: done through page {page - 1}, unique so far {len(ids)}", flush=True)
