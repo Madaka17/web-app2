@@ -1,6 +1,12 @@
 import { useState } from 'react';
 import { Car, ChevronDown, Filter, Map as MapIcon, Mountain, Ruler, Satellite, X } from 'lucide-react';
 import { useLang } from '../i18n.jsx';
+import { EMPTY_FILTER, LISTING_LEGEND, PROJECT_LEGEND } from '../lib/mapData';
+
+// The land type shares its legend key with the mode name, so it gets its own label.
+export function legendLabelKey(key) {
+  return key === 'land' ? 'landType' : key;
+}
 
 function Toggle({ on, onChange, label }) {
   return (
@@ -13,7 +19,7 @@ function Toggle({ on, onChange, label }) {
 const BASES = [
   { key: 'hybrid', icon: MapIcon, tone: '#7a4a2a' },
   { key: 'satellite', icon: Satellite, tone: '#39432b' },
-  { key: 'traffic', icon: Car, tone: '#6f8f7f' },
+  { key: 'street', icon: Car, tone: '#6f8f7f' },
   { key: 'terrain', icon: Mountain, tone: '#8fa3a8' },
 ];
 
@@ -71,7 +77,7 @@ function FakeSelect({ label, value, options, onChange }) {
       <span className="mb-1 block text-xs font-medium text-ink-primary">{label}</span>
       <span className="relative block">
         <select value={value} onChange={(e) => onChange(e.target.value)} className="h-10 w-full appearance-none rounded-lg border border-line bg-white pl-3 pr-8 text-sm text-ink-secondary outline-none focus:border-primary">
-          {options.map((o) => <option key={o} value={o}>{o}</option>)}
+          {options.map(([key, text]) => <option key={key} value={key}>{text}</option>)}
         </select>
         <ChevronDown size={16} className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-ink-muted" />
       </span>
@@ -93,12 +99,13 @@ function RangeField({ label, value, onChange }) {
   );
 }
 
-const EMPTY = { listing: 'All', posted: 'All', property: 'All', size: ['', ''], unit: ['', ''], total: ['', ''] };
-
-export function FilterPanel({ onClose, onApply }) {
+export function FilterPanel({ mode, value, onApply, onClose }) {
   const { t } = useLang();
-  const [form, setForm] = useState(EMPTY);
-  const set = (key) => (value) => setForm((f) => ({ ...f, [key]: value }));
+  const [form, setForm] = useState(value);
+  const legend = mode === 'future' ? PROJECT_LEGEND : LISTING_LEGEND;
+  const typeOptions = [['all', t('all')], ...legend.map(([key]) => [key, t(legendLabelKey(key))])];
+  const setField = (key) => (v) => setForm((f) => ({ ...f, [key]: v }));
+  const setRange = (minKey, maxKey) => ([min, max]) => setForm((f) => ({ ...f, [minKey]: min, [maxKey]: max }));
   return (
     <div role="dialog" aria-label={t('filters')} className="anim-fade absolute right-full top-0 mr-1.5 w-[min(calc(100vw-4.75rem),300px)] sm:mr-3 sm:w-[320px]" style={{ zIndex: 1100 }}>
       <section className="flex max-h-[calc(100dvh-var(--nav-h)-8rem)] flex-col overflow-hidden rounded-xl border border-[#E0E0E0] bg-white shadow-lg">
@@ -107,16 +114,13 @@ export function FilterPanel({ onClose, onApply }) {
           <button type="button" aria-label="ปิด" onClick={onClose} className="inline-flex h-6 w-6 items-center justify-center rounded text-white/85 hover:text-white"><X size={15} /></button>
         </header>
         <div className="min-h-0 flex-1 space-y-4 overflow-y-auto p-4">
-          <FakeSelect label={t('listingType')} value={form.listing} options={['All', 'Sale', 'Rent']} onChange={set('listing')} />
-          <FakeSelect label={t('postedBy')} value={form.posted} options={['All', 'Owner', 'Agent']} onChange={set('posted')} />
-          <FakeSelect label={t('propertyType')} value={form.property} options={['All', 'Land', 'House', 'Condo']} onChange={set('property')} />
-          <RangeField label={t('plotSize')} value={form.size} onChange={set('size')} />
-          <RangeField label={t('priceRange')} value={form.unit} onChange={set('unit')} />
-          <RangeField label={t('totalPrice')} value={form.total} onChange={set('total')} />
+          <FakeSelect label={t('propertyType')} value={form.group} options={typeOptions} onChange={setField('group')} />
+          <RangeField label={t('sizeSqm')} value={[form.sizeMin, form.sizeMax]} onChange={setRange('sizeMin', 'sizeMax')} />
+          <RangeField label={t('totalPrice')} value={[form.priceMin, form.priceMax]} onChange={setRange('priceMin', 'priceMax')} />
         </div>
         <div className="flex gap-2 border-t border-line p-3">
           <button type="button" onClick={() => onApply(form)} className="btn-primary btn-md flex-1">{t('applyFilters')}</button>
-          <button type="button" onClick={() => setForm(EMPTY)} className="btn-outline btn-md flex-1">{t('clear')}</button>
+          <button type="button" onClick={() => { setForm(EMPTY_FILTER); onApply(EMPTY_FILTER); }} className="btn-outline btn-md flex-1">{t('clear')}</button>
         </div>
       </section>
     </div>

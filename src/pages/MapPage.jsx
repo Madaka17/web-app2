@@ -1,17 +1,18 @@
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import {
   Banknote, Building2, Calculator, ChevronDown, ChevronUp, CircleHelp, Coins, Filter, House, Layers, ListChecks, Lock, LocateFixed,
-  LogOut, MapPin, Minus, Plus, ReceiptText, Search, Tag, TrendingUp, Users, Wallet, X,
+  LogOut, MapPin, Minus, Plus, ReceiptText, Search, Tag, TrendingUp, X,
 } from 'lucide-react';
 import { BRAND, useLang, usePageMeta } from '../i18n.jsx';
 import Header from '../components/Header.jsx';
 import { SeoBlock } from '../components/Footer.jsx';
 import { useAlerts } from '../components/Alerts.jsx';
 import MapCanvas from '../components/MapCanvas.jsx';
-import { FilterPanel, LayerPanel } from '../components/MapPanels.jsx';
+import { FilterPanel, LayerPanel, legendLabelKey } from '../components/MapPanels.jsx';
 import { areaArt, modeArt, modeArtWide } from '../art.js';
-import { AREAS, FUTURE_LEGEND, LAND_LEGEND, LISTINGS, PLACE_LABELS } from '../data.js';
+import { AREAS, PLACE_LABELS } from '../data.js';
+import { EMPTY_FILTER, LISTING_LEGEND, PROJECT_LEGEND, applyFilter, findPoint, loadListings, loadProjects, summarize } from '../lib/mapData';
 
 const CARD_BASE = 'group relative flex min-h-[9.5rem] flex-1 flex-col overflow-hidden rounded-2xl bg-cover bg-center text-center shadow-[0_24px_64px_rgba(0,0,0,0.45)] transition-transform duration-300 active:scale-[0.995] anim-up sm:min-h-0 sm:rounded-3xl';
 
@@ -132,8 +133,27 @@ export default function MapPage() {
   const [selecting, setSelecting] = useState(false);
   const [query, setQuery] = useState('');
   const [tourStep, setTourStep] = useState(null);
+  const [listings, setListings] = useState(null);
+  const [projects, setProjects] = useState(null);
+  const [loadError, setLoadError] = useState(false);
+  const [filter, setFilter] = useState(EMPTY_FILTER);
+  const [target, setTarget] = useState(null);
 
   usePageMeta(BRAND, 'สำรวจประกาศซื้อขายและขายฝากที่ดินบนแผนที่ (ตัวอย่าง)');
+
+  // Both data files load once. The map keeps working without them; it just shows no pins.
+  useEffect(() => {
+    const controller = new AbortController();
+    Promise.all([loadListings(controller.signal), loadProjects(controller.signal)])
+      .then(([listingRows, projectRows]) => {
+        setListings(listingRows);
+        setProjects(projectRows);
+      })
+      .catch(() => {
+        if (!controller.signal.aborted) setLoadError(true);
+      });
+    return () => controller.abort();
+  }, []);
 
   const openTour = () => {
     seenTour.current = true;
@@ -149,6 +169,8 @@ export default function MapPage() {
     setArea(null);
     setAreaOpen(next === 'future');
     setPanel(null);
+    setFilter(EMPTY_FILTER);
+    setTarget(null);
     if (!seenNotice.current) {
       seenNotice.current = true;
       if (!alert) {
@@ -156,6 +178,14 @@ export default function MapPage() {
       }
     }
   };
+
+  const dataset = mode === 'future' ? projects : listings;
+  // Pins for the current mode after filtering. Empty until a mode is chosen, so none show behind the picker.
+  const points = useMemo(() => (mode ? applyFilter(dataset ?? [], filter) : []), [mode, dataset, filter]);
+  const summary = useMemo(() => summarize(points), [points]);
+
+  const onPick = (lat, lng) => setTarget({ lat, lng, source: 'map' });
+  const onSelectPoint = (p) => setTarget({ lat: p.lat, lng: p.lng, source: p.kind, point: p });
 
   const chooseArea = (item) => {
     setArea(item.key);
@@ -177,32 +207,36 @@ export default function MapPage() {
 
   const runSearch = (event) => {
     event.preventDefault();
-    const q = query.trim().toLowerCase();
+    const q = query.trim();
     if (!q) return;
-    const place = PLACE_LABELS.find((p) => p.text.toLowerCase().includes(q) || p.sub.includes(query.trim()));
+    const place = PLACE_LABELS.find((p) => p.text.toLowerCase().includes(q.toLowerCase()) || p.sub.includes(q));
     if (place) {
       canvas.current?.flyTo([place.lat, place.lng], 13);
       return;
     }
-    const listing = LISTINGS.find((l) => l.code.toLowerCase().includes(q) || l.district.includes(query.trim()) || l.province.includes(query.trim()));
-    if (listing) canvas.current?.flyTo([listing.lat, listing.lng], 15);
+    const found = findPoint(points, q);
+    if (found) canvas.current?.flyTo([found.lat, found.lng], 15);
   };
 
-  const legendItems = mode === 'future' ? FUTURE_LEGEND : LAND_LEGEND;
+  const legendItems = mode === 'future' ? PROJECT_LEGEND : LISTING_LEGEND;
   const chosen = mode === 'future' || mode === 'land';
+  const ready = chosen && dataset !== null;
+  const countOf = (rows) => (rows ? rows.length.toLocaleString('en-US') : '—');
+  const fmtCount = (n) => (ready ? n.toLocaleString('en-US') : '—');
+  const fmtMillions = (baht) => (ready ? (baht / 1e6).toLocaleString('en-US', { maximumFractionDigits: 1 }) : '—');
   const showModePicker = !chosen;
   const showAreaPicker = mode === 'future' && areaOpen;
 
   const stats = mode === 'future'
     ? [
-      { icon: ReceiptText, bigIcon: MapPin, title: t('totalProjects'), value: '558', unit: t('projects'), tint: '#df201c14', iconBg: '#df201c1a', iconColor: '#df201c', minW: 'xl:min-w-[160px]' },
-      { icon: TrendingUp, bigIcon: Coins, title: t('projectValue'), value: '1,430,400,822', unit: t('mthb'), tint: '#ef6c0014', iconBg: 'transparent', iconColor: '#e65100', minW: 'xl:min-w-[190px]' },
-      { icon: Wallet, bigIcon: Coins, title: t('investment'), value: '1,330,117,510', unit: t('mthb'), tint: '#2e7d3214', iconBg: 'transparent', iconColor: '#2e7d32', minW: 'xl:min-w-[160px]' },
+      { icon: ReceiptText, bigIcon: MapPin, title: t('totalProjects'), value: fmtCount(summary.count), unit: t('projects'), tint: '#df201c14', iconBg: '#df201c1a', iconColor: '#df201c', minW: 'xl:min-w-[160px]' },
+      { icon: House, bigIcon: House, title: t('villages'), value: fmtCount(summary.villages), unit: t('projects'), tint: '#ef6c0014', iconBg: 'transparent', iconColor: '#e65100', minW: 'xl:min-w-[190px]' },
+      { icon: Building2, bigIcon: Building2, title: t('condos'), value: fmtCount(summary.condos), unit: t('projects'), tint: '#2e7d3214', iconBg: 'transparent', iconColor: '#2e7d32', minW: 'xl:min-w-[160px]' },
     ]
     : [
-      { icon: ListChecks, bigIcon: MapPin, title: t('totalLand'), value: '692', unit: t('listings'), tint: '#df201c14', iconBg: '#df201c1a', iconColor: '#df201c', minW: 'xl:min-w-[160px]' },
-      { icon: Banknote, bigIcon: Coins, title: t('totalValue'), value: '52,439', unit: t('mthb'), tint: '#ef6c0014', iconBg: 'transparent', iconColor: '#e65100', minW: 'xl:min-w-[190px]' },
-      { icon: Users, bigIcon: Users, title: t('totalUsers'), value: '7,427', unit: t('users'), tint: '#2e7d3214', iconBg: 'transparent', iconColor: '#2e7d32', minW: 'xl:min-w-[160px]' },
+      { icon: ListChecks, bigIcon: MapPin, title: t('totalListings'), value: fmtCount(summary.count), unit: t('listings'), tint: '#df201c14', iconBg: '#df201c1a', iconColor: '#df201c', minW: 'xl:min-w-[160px]' },
+      { icon: Banknote, bigIcon: Coins, title: t('totalValue'), value: fmtMillions(summary.totalPrice), unit: t('mthb'), tint: '#ef6c0014', iconBg: 'transparent', iconColor: '#e65100', minW: 'xl:min-w-[190px]' },
+      { icon: TrendingUp, bigIcon: Coins, title: t('medianPrice'), value: fmtMillions(summary.medianPrice), unit: t('mthb'), tint: '#2e7d3214', iconBg: 'transparent', iconColor: '#2e7d32', minW: 'xl:min-w-[160px]' },
     ];
 
   return (
@@ -222,7 +256,7 @@ export default function MapPage() {
             )}
           />
           <div className="relative h-full w-full" data-tour="listing-map-stage">
-            <MapCanvas ref={canvas} mode={mode} baseMap={baseMap} cityPlan={cityPlan} measuring={measuring} focus={linked} />
+            <MapCanvas ref={canvas} mode={mode} points={points} baseMap={baseMap} cityPlan={cityPlan} measuring={measuring} focus={linked} target={target} onPick={onPick} onSelectPoint={onSelectPoint} />
 
             <div className="pointer-events-none absolute inset-x-0 top-3 z-[1200] flex flex-col items-center gap-2 px-3 max-lg:top-2 sm:top-4 md:max-lg:top-3">
               <div className="pointer-events-auto flex w-full max-w-[min(96vw,640px)] items-center justify-center gap-2 md:max-lg:max-w-[min(calc(100vw-1.5rem),34rem)] md:max-lg:gap-1.5 lg:max-w-[min(calc(100vw-12rem),36rem)] lg:gap-1.5 xl:max-w-[min(96vw,640px)] xl:gap-2">
@@ -251,6 +285,9 @@ export default function MapPage() {
                   )}
                 </div>
               </div>
+              {loadError && (
+                <p role="alert" className="pointer-events-auto rounded-lg border border-[#DC2626]/30 bg-white/95 px-3 py-1.5 text-xs font-semibold text-[#DC2626] shadow-md">{t('dataLoadError')}</p>
+              )}
               {(selecting || tourStep !== null) && (
                 <div className="pointer-events-auto flex w-full max-w-[520px] items-center gap-2 rounded-xl border border-line bg-white/95 p-3 shadow-md">
                   <button type="button" onClick={() => setSelecting(false)} className="inline-flex shrink-0 items-center gap-1.5 rounded-lg border border-line bg-white px-3 py-2 text-xs font-semibold text-ink-primary hover:bg-surface-2">
@@ -272,7 +309,7 @@ export default function MapPage() {
                 {panel === 'layer' && (
                   <LayerPanel baseMap={baseMap} setBaseMap={setBaseMap} measuring={measuring} setMeasuring={setMeasuring} cityPlan={cityPlan} setCityPlan={setCityPlan} onClose={() => setPanel(null)} />
                 )}
-                {panel === 'filters' && <FilterPanel onClose={() => setPanel(null)} onApply={() => setPanel(null)} />}
+                {panel === 'filters' && <FilterPanel mode={mode} value={filter} onClose={() => setPanel(null)} onApply={(next) => { setFilter(next); setPanel(null); }} />}
               </div>
             </div>
 
@@ -309,7 +346,7 @@ export default function MapPage() {
                       {legendItems.map(([key, color]) => (
                         <li key={key} className="flex items-center gap-1.5 py-0.5">
                           <span className="inline-block h-3 w-3 shrink-0 rounded-full border border-white shadow" style={{ background: color }} aria-hidden="true" />
-                          <span className="text-[11px] leading-snug text-gray-800">{mode === 'future' ? key : t(key)}</span>
+                          <span className="text-[11px] leading-snug text-gray-800">{t(legendLabelKey(key))}</span>
                         </li>
                       ))}
                     </ul>
@@ -326,8 +363,8 @@ export default function MapPage() {
                     <h2 className="font-display text-lg font-bold text-white drop-shadow-md sm:text-2xl md:text-3xl">{t('selectMode')}</h2>
                   </div>
                   <div className="flex max-h-[min(calc(100dvh-var(--nav-h)-5.5rem),640px)] min-h-[min(68dvh,520px)] flex-col gap-2 sm:min-h-[min(62dvh,560px)] md:flex-row md:gap-2.5">
-                    <ModeCard kind="future" icon={Building2} title={t('future')} count="558" unit={t('projects')} delay={0} onClick={() => pickMode('future')} />
-                    <ModeCard kind="land" icon={House} title={t('land')} count="660" unit={t('plots')} delay={90} onClick={() => pickMode('land')} />
+                    <ModeCard kind="future" icon={Building2} title={t('future')} count={countOf(projects)} unit={t('projects')} delay={0} onClick={() => pickMode('future')} />
+                    <ModeCard kind="land" icon={House} title={t('land')} count={countOf(listings)} unit={t('listings')} delay={90} onClick={() => pickMode('land')} />
                     <ModeCard kind="lease" icon={Tag} title={t('lease')} locked delay={180} comingSoon={t('comingSoon')} onClick={() => pickMode('lease')} />
                   </div>
                 </div>
@@ -350,7 +387,7 @@ export default function MapPage() {
                         onClick={() => chooseArea(item)}
                         aria-pressed={area === item.key}
                         className="anim-up group relative flex min-h-[11rem] flex-col overflow-hidden rounded-2xl bg-cover bg-center text-center shadow-[0_24px_64px_rgba(0,0,0,0.45)] transition-transform duration-300 hover:brightness-[1.04] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-[-2px] focus-visible:outline-white active:scale-[0.995] sm:min-h-0 sm:rounded-3xl"
-                        style={{ animationDelay: `${index * 80}ms`, backgroundImage: `url("${areaArt(item.key)}")` }}
+                        style={{ animationDelay: `${index * 80}ms`, backgroundImage: `url("${areaArt(item.art)}")` }}
                       >
                         <div className="absolute inset-0 bg-gradient-to-t from-black via-black/55 to-transparent transition-opacity duration-300 group-hover:via-black/45" aria-hidden="true" />
                         <div className="relative z-10 flex h-full w-full flex-col items-center justify-center px-3 py-5 sm:px-4 sm:py-6 md:px-5 md:py-7">

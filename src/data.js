@@ -52,41 +52,12 @@ function makeListing(i) {
 export const LISTINGS = Array.from({ length: 1250 }, (_, i) => makeListing(i));
 export const PROVINCES = ['กรุงเทพมหานคร', 'นนทบุรี', 'ภูเก็ต'];
 
-export const FUTURE_LEGEND = [
-  ['housing', '#7f1d1d'], ['Condo', '#22d3ee'], ['Hotel', '#a21caf'], ['Office', '#2563eb'], ['Data Center', '#16a34a'],
-  ['Mixed Use / Mall', '#facc15'], ['Health / Wellness / Sport Club', '#34d399'], ['Cafe & Co-working', '#f97316'],
-  ['Pet Welcome Place', '#84cc16'], ['Infrastructure', '#ef4444'],
-];
-export const LAND_LEGEND = [['owner', '#22d3ee'], ['agent', '#fde047']];
-
-// Scatter points the map clusters. Fixed seed, so the map looks the same on each visit.
-function scatter(count, seed, center, spread) {
-  const r = rng(seed);
-  return Array.from({ length: count }, (_, i) => {
-    const angle = r() * Math.PI * 2;
-    const dist = Math.pow(r(), 0.7) * spread;
-    return { id: `${seed}-${i}`, lat: center[0] + Math.sin(angle) * dist * 0.75, lng: center[1] + Math.cos(angle) * dist * 1.25, r: r() };
-  });
-}
-
-export const LAND_POINTS = [
-  ...scatter(340, 301, [13.7, 100.72], 0.15).map((p) => ({ ...p, kind: p.r < 0.5 ? 'agent' : 'owner' })),
-  ...scatter(190, 303, [13.77, 100.58], 0.13).map((p) => ({ ...p, kind: p.r < 0.5 ? 'agent' : 'owner' })),
-  ...scatter(162, 302, [13.8, 100.42], 0.17).map((p) => ({ ...p, kind: p.r < 0.5 ? 'agent' : 'owner' })),
-];
-
-const FUTURE_CENTERS = [
-  [[13.74, 100.56], 0.14, 400], [[13.0, 101.0], 0.25, 80], [[7.93, 98.33], 0.12, 48], [[16.43, 102.83], 0.1, 30],
-];
-export const FUTURE_POINTS = FUTURE_CENTERS.flatMap(([center, spread, count], i) =>
-  scatter(count, 400 + i, center, spread).map((p) => ({ ...p, kind: FUTURE_LEGEND[Math.floor(p.r * FUTURE_LEGEND.length)][0] })),
-);
-
+// Areas offered by the future-projects picker. `art` is a key of areaArt() in art.js.
 export const AREAS = [
-  { key: 'bangkok', name: 'Bangkok', th: 'กรุงเทพฯ', center: [13.75, 100.52], zoom: 12 },
-  { key: 'eec', name: 'EEC', th: 'EEC', center: [13.0, 101.0], zoom: 11 },
-  { key: 'phuket', name: 'Phuket', th: 'ภูเก็ต', center: [7.93, 98.33], zoom: 12 },
-  { key: 'khonkaen', name: 'Khon kaen', th: 'ขอนแก่น', center: [16.43, 102.83], zoom: 12 },
+  { key: 'bangkok', name: 'Bangkok', th: 'กรุงเทพฯ', center: [13.75, 100.52], zoom: 12, art: 'bangkok' },
+  { key: 'nonthaburi', name: 'Nonthaburi', th: 'นนทบุรี', center: [13.86, 100.51], zoom: 12, art: 'eec' },
+  { key: 'pathumthani', name: 'Pathum Thani', th: 'ปทุมธานี', center: [14.02, 100.6], zoom: 12, art: 'phuket' },
+  { key: 'samutprakan', name: 'Samut Prakan', th: 'สมุทรปราการ', center: [13.6, 100.6], zoom: 12, art: 'khonkaen' },
 ];
 
 export const PLACE_LABELS = [
@@ -102,28 +73,4 @@ export const PLACE_LABELS = [
   { lat: 13.79, lng: 100.36, text: 'THAWI WATTHANA', sub: 'ทวีวัฒนา', size: 12 },
   { lat: 13.64, lng: 100.53, text: 'Phra Pradaeng', sub: 'พระประแดง', size: 13 },
   { lat: 13.6, lng: 100.6, text: 'Samut Prakan', sub: 'สมุทรปราการ', size: 13 },
-  { lat: 13.0, lng: 101.0, text: 'Chon Buri', sub: 'ชลบุรี', size: 18 },
-  { lat: 7.93, lng: 98.34, text: 'Phuket', sub: 'ภูเก็ต', size: 18 },
-  { lat: 16.43, lng: 102.83, text: 'Khon Kaen', sub: 'ขอนแก่น', size: 18 },
-];
-
-export const RAIL_LINES = [
-  { color: '#2563eb', points: [[13.82, 100.54], [13.79, 100.51], [13.75, 100.46], [13.72, 100.47], [13.7, 100.5], [13.72, 100.55], [13.77, 100.575], [13.81, 100.56]] },
-  { color: '#c81e1e', points: [[13.9, 100.6], [13.84, 100.56], [13.8, 100.54], [13.76, 100.56], [13.72, 100.62], [13.68, 100.74]] },
-  { color: '#65a30d', points: [[13.93, 100.62], [13.83, 100.57], [13.75, 100.56], [13.68, 100.61], [13.6, 100.62]] },
-  { color: '#eab308', points: [[13.8, 100.6], [13.75, 100.63], [13.68, 100.64], [13.62, 100.66]] },
-  { color: '#a21caf', points: [[13.9, 100.43], [13.86, 100.47], [13.82, 100.53]] },
-  { color: '#0f766e', points: [[13.71, 100.38], [13.71, 100.45], [13.72, 100.52]] },
-];
-
-export const RIVER = [
-  [13.98, 100.53], [13.9, 100.5], [13.84, 100.51], [13.79, 100.5], [13.74, 100.49], [13.71, 100.51], [13.7, 100.54], [13.66, 100.57], [13.68, 100.53], [13.63, 100.53], [13.56, 100.59], [13.48, 100.6],
-];
-export const ROADS = [
-  [[13.74, 100.2], [13.74, 100.4], [13.76, 100.52], [13.75, 100.66], [13.74, 100.95]],
-  [[13.5, 100.4], [13.66, 100.46], [13.8, 100.45], [13.96, 100.42]],
-  [[13.5, 100.72], [13.66, 100.68], [13.82, 100.67], [14.0, 100.62]],
-  [[13.85, 100.2], [13.84, 100.42], [13.85, 100.6], [13.82, 100.9]],
-  [[13.6, 100.25], [13.67, 100.45], [13.67, 100.65], [13.62, 100.95]],
-  [[13.5, 100.55], [13.7, 100.55], [13.82, 100.56], [14.05, 100.6]],
 ];
