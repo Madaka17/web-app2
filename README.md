@@ -41,7 +41,7 @@ the dev server at `/api`). It only starts when `ml/models/ensemble.joblib`
 exists. The API takes up to a minute to load the model, so price requests fail
 for a short time after startup until it is ready. The API is started
 with `ml/.venv/Scripts/python.exe` on Windows or `ml/.venv/bin/python` when
-those exist, and with `python` on your PATH otherwise.
+those exist, and otherwise with `python` on your PATH on Windows or `python3` elsewhere.
 
 To run the API on its own:
 
@@ -51,22 +51,19 @@ cd ml && .venv/bin/python api.py     # Windows: .venv\Scripts\python api.py
 
 ### Python packages for the API
 
-There is no requirements file yet. The API (`ml/api.py`) and the data scripts
-need these packages:
+The API (`ml/api.py`) and the data scripts need the packages in
+`ml/requirements.txt`. The versions are pinned because `ml/models/ensemble.joblib`
+may not load with others. They need Python 3.12 or newer. Create the environment
+before the first `npm run dev`:
 
-- flask
-- flask-cors
-- joblib
-- numpy
-- pandas
-- scikit-learn
-- catboost
-- lightgbm
-- xgboost
-- pyahocorasick (imported as `ahocorasick` in `ml/prepare_data.py`)
+```bash
+python3 -m venv ml/.venv                         # Windows: python -m venv ml\.venv
+ml/.venv/bin/pip install -r ml/requirements.txt  # Windows: ml\.venv\Scripts\pip install -r ml\requirements.txt
+```
 
-Install them with `pip install flask flask-cors joblib numpy pandas scikit-learn catboost lightgbm xgboost pyahocorasick`
-inside `ml/.venv`. The model test suite (`ml/test_pipeline.py`) also uses pytest.
+On macOS, also run `brew install libomp`. LightGBM and XGBoost need it. macOS setup has not been tested yet.
+
+The model test suite (`ml/test_pipeline.py`) also uses pytest, which is not in the requirements file.
 
 ### Hosting the API separately
 

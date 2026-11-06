@@ -6,7 +6,7 @@ import { existsSync } from 'node:fs';
 
 // `npm run dev` also starts the Flask model API (ml/api.py) on 127.0.0.1:3030,
 // so the app never shows "ต่อกับ Model API ไม่ได้" just because it was not started.
-// Uses ml/.venv when present, otherwise python on PATH.
+// Uses ml/.venv when present, otherwise python on PATH (python3 outside Windows).
 function modelApi(): Plugin {
   let proc: ChildProcess | undefined;
   return {
@@ -16,8 +16,10 @@ function modelApi(): Plugin {
       // vitest builds a dev server too; a test run must not start (and hang on) the API.
       if (process.env.VITEST) return;
       const ml = fileURLToPath(new URL('./ml', import.meta.url));
-      const venv = process.platform === 'win32' ? '.venv/Scripts/python.exe' : '.venv/bin/python';
-      const python = existsSync(`${ml}/${venv}`) ? `${ml}/${venv}` : 'python';
+      const isWindows = process.platform === 'win32';
+      const venv = isWindows ? '.venv/Scripts/python.exe' : '.venv/bin/python';
+      const fallback = isWindows ? 'python' : 'python3';
+      const python = existsSync(`${ml}/${venv}`) ? `${ml}/${venv}` : fallback;
       if (!existsSync(`${ml}/models/ensemble.joblib`)) {
         server.config.logger.warn('[model-api] ml/models/ensemble.joblib missing - run ml/train_models.py first');
         return;
