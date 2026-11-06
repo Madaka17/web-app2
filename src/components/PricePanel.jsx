@@ -16,6 +16,17 @@ const PROPERTY_TYPES = [
   ['land', 'landType'],
 ];
 
+// The fields the result panels read. Anything missing means the response is unusable.
+function isUsableResult(r) {
+  return Boolean(r)
+    && Number.isFinite(r.predictedPrice)
+    && Array.isArray(r.contributions)
+    && r.comparables != null
+    && r.meta != null
+    && Number.isFinite(r.meta.within_20pct)
+    && Number.isFinite(r.meta.median_abs_pct_error);
+}
+
 function clamp(n, lo, hi) {
   return Math.min(hi, Math.max(lo, n));
 }
@@ -141,18 +152,23 @@ export default function PricePanel({ target, onClearTarget, onClose }) {
 
   const inCoverage = !target || isInCoverage(target.lat, target.lng);
   const payload = inCoverage ? toPayload(form, target) : null;
-  const { result, running, error } = usePrediction(payload);
+  const { result, resultPayload, running, error } = usePrediction(payload);
 
   const point = target?.point ?? null;
   const pointTitle = point ? (point.kind === 'listing' ? point.title : point.name) : null;
   const coords = target ? `${target.lat.toFixed(5)}, ${target.lng.toFixed(5)}` : '';
   const pointPlace = point ? `${point.district} · ${point.province}` : coords;
 
-  const showResult = inCoverage && !error && result;
+  // A response missing the fields the panel reads counts as an error, not a crash.
+  const usable = isUsableResult(result);
+  const failed = Boolean(error) || (Boolean(result) && !usable);
+  const showResult = inCoverage && !failed && Boolean(result);
+  // The stale result belongs to the current target only when its lat and lng match.
+  const resultIsCurrent = Boolean(resultPayload) && resultPayload.lat === payload?.lat && resultPayload.lng === payload?.lng;
   const predicted = showResult ? result.predictedPrice : 0;
   const isListing = target?.source === 'listing' && point?.kind === 'listing';
   const priced = isListing && point.group !== 'other';
-  const gap = priced && predicted > 0 ? askingGap(point.price, predicted) : null;
+  const gap = priced && resultIsCurrent && predicted > 0 ? askingGap(point.price, predicted) : null;
   const gapTone = gap == null ? '' : gap > 10 ? 'text-[#DC2626]' : gap < -10 ? 'text-[#16a34a]' : 'text-ink-secondary';
   const gapVerdict = gap == null ? '' : gap > 10 ? t('askingAbove') : gap < -10 ? t('askingBelow') : t('askingNear');
 
@@ -285,14 +301,14 @@ export default function PricePanel({ target, onClearTarget, onClose }) {
           <div role="status" className="rounded-lg border border-line bg-surface-soft p-3 text-sm leading-relaxed text-ink-secondary">{t('outOfCoverage')}</div>
         )}
 
-        {inCoverage && error && (
+        {inCoverage && failed && (
           <div role="alert" className="rounded-lg border border-[#DC2626]/30 bg-red-50 p-3 text-sm text-[#DC2626]">
             <p className="flex items-center gap-2 font-semibold"><AlertTriangle size={15} className="shrink-0" aria-hidden="true" />{t('apiError')}</p>
-            <p className="mt-1 break-words text-xs text-[#991b1b]">{error}</p>
+            {error && <p className="mt-1 break-words text-xs text-[#991b1b]">{error}</p>}
           </div>
         )}
 
-        {inCoverage && !error && !result && running && (
+        {inCoverage && !failed && !result && running && (
           <div role="status" className="flex items-center gap-2 text-sm text-ink-secondary">
             <Loader2 size={16} className="animate-spin" aria-hidden="true" />
             {t('calculating')}
@@ -326,7 +342,7 @@ export default function PricePanel({ target, onClearTarget, onClose }) {
                 </dl>
               </div>
 
-              {isListing && (
+              {isListing && resultIsCurrent && (
                 <div className="rounded-xl border border-line p-4">
                   <div className="flex items-baseline justify-between gap-2">
                     <span className="text-xs font-medium text-ink-secondary">{t('askingPrice')}</span>

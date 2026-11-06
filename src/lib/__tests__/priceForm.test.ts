@@ -9,7 +9,7 @@ import {
   toPayload,
   type PriceTarget,
 } from "../priceForm";
-import { DEFAULT_SUBDISTRICT_ID, DEFAULT_YEAR } from "../defaults";
+import { DEFAULT_SUBDISTRICT_ID, DEFAULT_YEAR, YEAR_MAX, YEAR_MIN } from "../defaults";
 import type { MapListing, MapProject } from "../mapData";
 
 const listing = (over: Partial<MapListing> = {}): MapListing => ({
@@ -153,6 +153,36 @@ describe("toPayload", () => {
   it("maps a non-finite area to the minimum", () => {
     expect(toPayload({ ...DEFAULT_FORM, area: NaN }, null).area).toBe(AREA_MIN);
     expect(toPayload({ ...DEFAULT_FORM, area: Infinity }, null).area).toBe(AREA_MIN);
+  });
+
+  it("clamps year to the served range", () => {
+    expect(toPayload({ ...DEFAULT_FORM, year: 2 }, null).year).toBe(YEAR_MIN);
+    expect(toPayload({ ...DEFAULT_FORM, year: 9999 }, null).year).toBe(YEAR_MAX);
+  });
+
+  it("clamps nUnits to 1-4", () => {
+    expect(toPayload({ ...DEFAULT_FORM, nUnits: 0 }, null).nUnits).toBe(1);
+    expect(toPayload({ ...DEFAULT_FORM, nUnits: 9 }, null).nUnits).toBe(4);
+  });
+
+  it("clamps bedrooms and bathrooms to 0-20", () => {
+    expect(toPayload({ ...DEFAULT_FORM, bedrooms: 25 }, null).bedrooms).toBe(20);
+    expect(toPayload({ ...DEFAULT_FORM, bedrooms: -1 }, null).bedrooms).toBe(0);
+    expect(toPayload({ ...DEFAULT_FORM, bathrooms: 25 }, null).bathrooms).toBe(20);
+  });
+
+  it("clamps buildingAge to 0-100", () => {
+    expect(toPayload({ ...DEFAULT_FORM, buildingAge: 500 }, null).buildingAge).toBe(100);
+  });
+
+  it("keeps an optional blank field undefined", () => {
+    expect(toPayload({ ...DEFAULT_FORM, bedrooms: undefined }, null).bedrooms).toBeUndefined();
+    expect(toPayload({ ...DEFAULT_FORM, buildingAge: undefined }, null).buildingAge).toBeUndefined();
+  });
+
+  it("falls back to the default for a non-finite required value", () => {
+    expect(toPayload({ ...DEFAULT_FORM, year: NaN }, null).year).toBe(DEFAULT_FORM.year);
+    expect(toPayload({ ...DEFAULT_FORM, nUnits: NaN }, null).nUnits).toBe(DEFAULT_FORM.nUnits);
   });
 });
 
