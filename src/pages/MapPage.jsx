@@ -264,7 +264,7 @@ export default function MapPage() {
       <div className="h-[var(--nav-h)] shrink-0" aria-hidden="true" />
       <main className="relative flex min-h-0 flex-1 overflow-hidden overscroll-none">
         {chosen && panelOpen && (
-          <aside aria-label={t('priceEstimate')} className="flex min-h-0 flex-col bg-white max-lg:fixed max-lg:inset-x-0 max-lg:bottom-0 max-lg:z-[1500] max-lg:max-h-[62dvh] max-lg:rounded-t-xl max-lg:shadow-lg lg:relative lg:w-[380px] lg:shrink-0 lg:border-r lg:border-line">
+          <aside aria-label={t('priceEstimate')} className="flex min-h-0 flex-col bg-white max-lg:fixed max-lg:inset-x-0 max-lg:bottom-0 max-lg:z-[1500] max-lg:max-h-[62dvh] max-lg:rounded-t-xl max-lg:shadow-lg lg:relative lg:w-[440px] xl:w-[500px] lg:shrink-0 lg:border-r lg:border-line">
             <PricePanel target={target} onClearTarget={() => setTarget(null)} onClose={() => setPanelOpen(false)} />
           </aside>
         )}
@@ -322,7 +322,7 @@ export default function MapPage() {
               )}
             </div>
 
-            <div className="pointer-events-auto absolute right-3 top-[4.25rem] flex flex-col items-end gap-2 sm:right-4 sm:top-4" style={{ zIndex: 1000 }}>
+            <div className="pointer-events-auto absolute right-3 top-[4.25rem] flex flex-col items-end gap-2 sm:right-4 2xl:top-4" style={{ zIndex: 1000 }}>
               <div className="relative" style={{ zIndex: 1000 }}>
                 <div className="flex flex-col gap-2">
                   <RoundButton label={t('layer')} dot active={panel === 'layer'} onClick={() => setPanel(panel === 'layer' ? null : 'layer')}><Layers size={16} /></RoundButton>
