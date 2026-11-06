@@ -41,3 +41,6 @@ ml/train.log
 *.crt
 *.key
 __pycache__/
+
+# TypeScript incremental build info
+*.tsbuildinfo

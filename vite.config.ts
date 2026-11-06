@@ -42,18 +42,11 @@ export default defineConfig({
       '@': fileURLToPath(new URL('./src', import.meta.url)),
     },
   },
-  optimizeDeps: {
-    exclude: ['lucide-react'],
-  },
   build: {
-    // maplibre-gl is ~1 MB minified and cannot be split further; it is only
-    // loaded with the lazy map page, so it is kept in its own cached chunk
-    // instead of one 1 MB blob. The 500 kB warning is raised to its size.
     chunkSizeWarningLimit: 1100,
     rollupOptions: {
       output: {
         manualChunks: {
-          maplibre: ['maplibre-gl'],
           leaflet: ['leaflet'],
         },
       },

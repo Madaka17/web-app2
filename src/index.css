@@ -1,528 +1,114 @@
-@import url('https://fonts.googleapis.com/css2?family=Chakra+Petch:wght@500;600;700&family=IBM+Plex+Sans+Thai:wght@400;500;600&family=JetBrains+Mono:wght@400;500&display=swap');
-
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
 
-@layer base {
-  :root {
-    /* Light: lavender daylight - pale violet, deep-indigo ink. */
-    --c-canvas: 244 240 255;
-    --c-surface: 255 255 255;
-    --c-raised: 238 232 255;
-    --c-line: 220 210 245;
-    --c-ink: 30 16 64;
-    --c-muted: 98 82 150;
-    --c-faint: 150 138 190;
-    --c-accent: 124 58 237;
-    --c-accent-soft: 237 228 255;
-    --c-accent-ink: 76 29 149;
-    --c-accent-2: 219 39 119;
-    --c-ok: 21 128 61;
-    --c-ok-soft: 230 246 236;
-    --c-warn: 161 98 7;
-    --c-warn-soft: 253 246 228;
-    --c-bad: 190 18 60;
-    --c-bad-soft: 254 233 238;
-    --c-glow: 124 58 237;
-    --star-opacity: 0;
-    --surface-alpha: 0.82;
-  }
-
-  .dark {
-    /* Dark: deep indigo space - violet accent, magenta secondary, amber at the rim. */
-    --c-canvas: 9 6 22;
-    --c-surface: 22 15 44;
-    --c-raised: 32 23 62;
-    --c-line: 62 48 104;
-    --c-ink: 240 236 255;
-    --c-muted: 170 160 210;
-    --c-faint: 112 102 150;
-    --c-accent: 196 140 255;
-    --c-accent-soft: 44 24 78;
-    --c-accent-ink: 236 220 255;
-    --c-accent-2: 244 114 182;
-    --c-ok: 74 222 128;
-    --c-ok-soft: 12 44 30;
-    --c-warn: 250 204 21;
-    --c-warn-soft: 48 40 10;
-    --c-bad: 251 113 133;
-    --c-bad-soft: 54 16 28;
-    --c-glow: 168 85 247;
-    --star-opacity: 1;
-    --surface-alpha: 0.62;
-  }
-
-  * {
-    -webkit-font-smoothing: antialiased;
-    -moz-osx-font-smoothing: grayscale;
-  }
-
-  html {
-    color-scheme: light;
-    /* The oversized .horizon arc must not cause horizontal page scroll. */
-    overflow-x: clip;
-  }
-  html.dark {
-    color-scheme: dark;
-  }
-
-  body {
-    @apply bg-canvas text-ink font-sans;
-    overflow-x: clip;
-    font-feature-settings: 'ss01', 'cv11';
-    /* Nebula glow behind the starfield. */
-    background-image:
-      radial-gradient(ellipse 60% 45% at 12% 0%, rgb(var(--c-accent-2) / 0.14), transparent 70%),
-      radial-gradient(ellipse 50% 40% at 50% 8%, rgb(var(--c-glow) / 0.16), transparent 70%),
-      radial-gradient(ellipse 40% 45% at 0% 60%, rgb(251 146 60 / 0.10), transparent 70%),
-      radial-gradient(ellipse 40% 45% at 100% 60%, rgb(251 146 60 / 0.10), transparent 70%),
-      radial-gradient(ellipse 70% 50% at 50% 110%, rgb(var(--c-accent-2) / 0.14), transparent 70%);
-    background-attachment: fixed;
-  }
-
-  ::selection {
-    @apply bg-accent/25;
-  }
-
-  /* One focus style for the whole app. */
-  :focus-visible {
-    outline: 2px solid rgb(var(--c-accent));
-    outline-offset: 2px;
-    border-radius: 6px;
-  }
-
-  @media (prefers-reduced-motion: reduce) {
-    *,
-    *::before,
-    *::after {
-      animation-duration: 0.01ms !important;
-      animation-iteration-count: 1 !important;
-      transition-duration: 0.01ms !important;
-    }
-  }
+@font-face {
+  font-family: Montserrat;
+  font-style: normal;
+  font-weight: 400 800;
+  font-display: swap;
+  src: url('../node_modules/@fontsource/montserrat/files/montserrat-latin-400-normal.woff2') format('woff2');
 }
+
+:root {
+  --nav-h: 64px;
+}
+@media (max-width: 1024px) {
+  :root { --nav-h: 60px; }
+}
+@media (max-width: 640px) {
+  :root { --nav-h: 56px; }
+}
+
+html, body, #root { height: 100%; }
+body {
+  font-family: Inter, system-ui, sans-serif;
+  background: #ffffff;
+  color: #555555;
+  font-size: 15px;
+  line-height: 1.7;
+  font-weight: 400;
+  -webkit-font-smoothing: antialiased;
+  overflow-x: hidden;
+}
+h1, h2, h3, h4, h5, h6 { color: #1a1a1a; font-weight: 500; }
+label { font-weight: 500; }
+button { font-family: inherit; }
 
 @layer components {
-  /* Glass panel: translucent over the starfield, lit along the top edge. */
-  .card {
-    @apply relative rounded-2xl border border-line/70;
-    background: rgb(var(--c-surface) / var(--surface-alpha));
-    backdrop-filter: blur(14px) saturate(140%);
-    box-shadow:
-      inset 0 1px 0 rgb(255 255 255 / 0.06),
-      0 18px 40px -24px rgb(var(--c-glow) / 0.35);
-  }
-  .card::before {
-    content: '';
-    position: absolute;
-    inset: 0 18% auto 18%;
-    height: 1px;
-    background: linear-gradient(90deg, transparent, rgb(var(--c-accent) / 0.55), transparent);
-    pointer-events: none;
-  }
-  .label {
-    @apply font-display text-[11px] font-semibold uppercase tracking-label text-muted;
-  }
-  .num {
-    @apply font-mono tabular-nums;
-  }
-  .btn-primary {
-    @apply inline-flex items-center justify-center gap-2 rounded-xl px-4 py-2.5 text-sm font-semibold text-white
-      transition-all duration-200 ease-out hover:brightness-110 active:scale-[0.98]
-      disabled:cursor-not-allowed disabled:opacity-50 disabled:active:scale-100;
-    background: linear-gradient(110deg, rgb(147 51 234), rgb(219 39 119) 55%, rgb(249 115 22));
-    box-shadow:
-      inset 0 0 0 1px rgb(255 255 255 / 0.10),
-      0 10px 28px -10px rgb(var(--c-glow) / 0.7);
-    text-shadow: 0 1px 1px rgb(0 0 0 / 0.25);
-  }
-  .btn-ghost {
-    @apply inline-flex items-center justify-center gap-2 rounded-xl border border-line bg-surface/60 px-3.5 py-2 text-sm font-medium text-ink
-      transition-all duration-200 ease-out hover:border-accent/50 hover:bg-raised active:scale-[0.98];
-  }
-  .chip {
-    @apply inline-flex items-center gap-1.5 rounded-md border px-2 py-0.5 text-[11px] font-medium;
-  }
-  .field {
-    @apply w-full rounded-xl border border-line bg-raised/70 px-3 py-2.5 text-sm font-medium text-ink
-      transition-all duration-200 placeholder:text-faint
-      hover:border-faint/60 focus:border-accent/60 focus:bg-surface focus:outline-none focus:ring-4 focus:ring-accent/15;
-  }
+/* Buttons */
+.btn, .btn-primary, .btn-secondary, .btn-outline {
+  display: inline-flex; align-items: center; justify-content: center; gap: 8px;
+  border-radius: 8px; font-weight: 500;
+  transition: color .15s, background-color .15s, border-color .15s;
+}
+.btn-primary { border: 1px solid #d32f2f; background: #fff; color: #d32f2f; }
+.btn-primary:hover { background: #d32f2f; color: #fff; }
+.btn-secondary { background: #f5f5f5; color: #555555; }
+.btn-secondary:hover { background: #e0e0e0; }
+.btn-outline { border: 1px solid #e0e0e0; background: #fff; color: #1a1a1a; }
+.btn-outline:hover { background: #f5f5f5; }
+.btn-pill { border-radius: 999px; }
+.btn-sm { height: 2rem; padding-left: 12px; padding-right: 12px; font-size: .75rem; line-height: 1rem; }
+.btn-md { height: 2.5rem; padding-left: 16px; padding-right: 16px; font-size: .875rem; line-height: 1.25rem; }
+.btn-lg { height: 3rem; padding-left: 1.25rem; padding-right: 1.25rem; font-size: 15px; }
+.cookie-action { white-space: normal; text-align: center; }
+@media (max-width: 639px) {
+  .cookie-action { min-width: 0; height: auto; min-height: 1.75rem; padding: .25rem .375rem; font-size: 10px; }
 }
 
-@layer utilities {
-  .scrollbar-thin::-webkit-scrollbar {
-    width: 6px;
-    height: 6px;
-  }
-  .scrollbar-thin::-webkit-scrollbar-track {
-    background: transparent;
-  }
-  .scrollbar-thin::-webkit-scrollbar-thumb {
-    background: rgb(var(--c-faint) / 0.35);
-    border-radius: 3px;
-  }
-  .scrollbar-thin::-webkit-scrollbar-thumb:hover {
-    background: rgb(var(--c-faint) / 0.6);
-  }
-  /* Hero wrapper: a dark planet arc whose rim glows violet/magenta.
-     No overflow clipping here so dropdowns can escape; the arc's sideways
-     overflow is clipped by overflow-x: clip on html/body. */
-  .horizon {
-    position: relative;
-    isolation: isolate;
-  }
-  .horizon::before,
-  .horizon::after {
-    content: '';
-    position: absolute;
-    pointer-events: none;
-  }
-  .horizon::before {
-    /* Planet: ellipse whose crest sits ~55% down the wrapper. */
-    z-index: 0;
-    left: -35%;
-    top: 55%;
-    width: 170%;
-    height: 90%;
-    /* Cut at the wrapper's own bottom (55% + 45%): adds no page height and
-       shows no second rim. Negative insets keep the glow above the crest. */
-    clip-path: inset(-400px -100vw 50% -100vw);
-    border-radius: 50%;
-    /* Fade the fill out before the clip line so no straight edge shows. */
-    background: linear-gradient(
-      to bottom,
-      rgb(var(--c-canvas)) 0%,
-      rgb(var(--c-canvas)) 22%,
-      rgb(var(--c-canvas) / 0) 50%
-    );
-    box-shadow:
-      0 -2px 0 rgb(216 180 254 / 0.55),
-      0 -30px 80px -10px rgb(168 85 247 / 0.55),
-      0 -10px 120px 10px rgb(236 72 153 / 0.25);
-  }
-  .horizon::after {
-    /* Glow above the crest. */
-    z-index: 0;
-    left: 0;
-    right: 0;
-    top: 15%;
-    height: 40%;
-    background:
-      radial-gradient(ellipse 45% 55% at 50% 100%, rgb(168 85 247 / 0.35), transparent 70%),
-      radial-gradient(ellipse 70% 40% at 50% 100%, rgb(251 146 60 / 0.12), transparent 75%);
-  }
-  html:not(.dark) .horizon::before {
-    background: linear-gradient(
-      to bottom,
-      rgb(var(--c-surface)) 0%,
-      rgb(var(--c-surface)) 22%,
-      rgb(var(--c-surface) / 0) 50%
-    );
-    box-shadow:
-      0 -1px 0 rgb(216 180 254 / 0.28),
-      0 -30px 80px -10px rgb(168 85 247 / 0.28),
-      0 -10px 120px 10px rgb(236 72 153 / 0.13);
-  }
-  html:not(.dark) .horizon::after {
-    opacity: 0.5;
-  }
-  :where(.horizon) > * {
-    position: relative;
-    z-index: 1;
-  }
+.input {
+  width: 100%; border-radius: 8px; background: #fff; padding: .625rem 12px;
+  font-size: .875rem; line-height: 1.25rem; outline: 2px solid transparent; outline-offset: 2px;
+  border: .5px solid #e0e0e0; transition: border-color .15s;
+}
+.input:focus { border-color: #d32f2f; }
 
-  .wordmark {
-    letter-spacing: 0.32em;
-    font-weight: 600;
-    background: linear-gradient(180deg, #fff 30%, rgb(196 181 253));
-    -webkit-background-clip: text;
-    background-clip: text;
-    -webkit-text-fill-color: transparent;
-    color: transparent;
-  }
-  html:not(.dark) .wordmark {
-    background: linear-gradient(180deg, rgb(76 29 149), rgb(124 58 237));
-    -webkit-background-clip: text;
-    background-clip: text;
-  }
-
-  .glass-field {
-    border-radius: 0.75rem;
-    border: 1px solid rgb(255 255 255 / 0.08);
-    background: rgb(var(--c-surface) / 0.55);
-    box-shadow: inset 0 1px 0 rgb(255 255 255 / 0.08);
-    backdrop-filter: blur(12px);
-  }
-  html:not(.dark) .glass-field {
-    border-color: rgb(var(--c-line));
-  }
-
-  .orb-btn {
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    width: 64px;
-    height: 64px;
-    border-radius: 9999px;
-    color: #fff;
-    background:
-      radial-gradient(circle at 32% 24%, rgb(255 255 255 / 0.55), transparent 32%),
-      radial-gradient(circle at 70% 85%, rgb(251 146 60 / 0.85), transparent 55%),
-      radial-gradient(circle at 50% 50%, rgb(236 72 153), rgb(147 51 234) 80%);
-    box-shadow:
-      inset 0 0 0 1px rgb(255 255 255 / 0.18),
-      0 0 28px 2px rgb(236 72 153 / 0.45),
-      0 10px 40px -6px rgb(168 85 247 / 0.7);
-    transition: transform 0.2s ease, box-shadow 0.2s ease, filter 0.2s ease;
-  }
-  .orb-btn:hover {
-    transform: translateY(-3px);
-    filter: brightness(1.1);
-    box-shadow:
-      inset 0 0 0 1px rgb(255 255 255 / 0.25),
-      0 0 36px 4px rgb(236 72 153 / 0.6),
-      0 14px 48px -6px rgb(168 85 247 / 0.85);
-  }
-  .orb-btn:active {
-    transform: translateY(0) scale(0.97);
-  }
-  .orb-btn svg text {
-    fill: currentColor;
-    font: 600 9px 'Chakra Petch', sans-serif;
-    letter-spacing: 0.2em;
-    text-transform: uppercase;
-  }
-
-  .section-title {
-    text-align: center;
-    letter-spacing: 0.3em;
-    text-transform: uppercase;
-    font-weight: 600;
-  }
-
-  /* HUD grid for hero surfaces. */
-  .bg-grid {
-    background-image:
-      linear-gradient(rgb(var(--c-accent) / 0.08) 1px, transparent 1px),
-      linear-gradient(90deg, rgb(var(--c-accent) / 0.08) 1px, transparent 1px);
-    background-size: 28px 28px;
-  }
-  .text-glow {
-    text-shadow: 0 0 24px rgb(var(--c-glow) / 0.45);
-  }
-  .brand-mark {
-    background: radial-gradient(circle at 30% 25%, rgb(var(--c-accent)), rgb(124 58 237) 55%, rgb(var(--c-accent-2)));
-    box-shadow: 0 0 18px -2px rgb(var(--c-glow) / 0.6);
-  }
-
-  /* Two tilted rings with a moon riding the outer one. */
-  .orbit {
-    border-radius: 9999px;
-    border: 1px solid rgb(var(--c-accent) / 0.22);
-    transform: rotate(-18deg) scaleY(0.55);
-  }
-  .orbit::before {
-    content: '';
-    position: absolute;
-    inset: 22%;
-    border-radius: 9999px;
-    border: 1px dashed rgb(var(--c-accent-2) / 0.30);
-  }
-  .orbit::after {
-    content: '';
-    position: absolute;
-    inset: 0;
-    border-radius: 9999px;
-    background: radial-gradient(circle at 50% 0, rgb(var(--c-accent)) 0 3px, transparent 4px);
-    filter: drop-shadow(0 0 6px rgb(var(--c-glow)));
-    animation: spin 14s linear infinite;
-  }
-
-  /* Fixed starfield behind everything: three tiled layers drifting at
-     different speeds, the middle one twinkling. Hidden in light mode. */
-  .starfield {
-    position: fixed;
-    inset: 0;
-    z-index: -1;
-    overflow: hidden;
-    pointer-events: none;
-    opacity: var(--star-opacity);
-    transition: opacity 0.6s ease;
-  }
-  .starfield > span {
-    position: absolute;
-    inset: -480px 0 0 0;
-  }
-  .starfield > span:nth-child(1) {
-    background-image:
-      radial-gradient(1px 1px at 23px 41px, rgb(255 255 255 / 0.7), transparent),
-      radial-gradient(1px 1px at 91px 133px, rgb(255 255 255 / 0.5), transparent),
-      radial-gradient(1px 1px at 157px 77px, rgb(190 220 255 / 0.6), transparent),
-      radial-gradient(1px 1px at 61px 181px, rgb(255 255 255 / 0.4), transparent),
-      radial-gradient(1px 1px at 189px 17px, rgb(255 255 255 / 0.5), transparent);
-    background-size: 200px 200px;
-    animation: drift-200 240s linear infinite;
-  }
-  .starfield > span:nth-child(2) {
-    background-image:
-      radial-gradient(1.5px 1.5px at 47px 211px, rgb(255 255 255 / 0.9), transparent),
-      radial-gradient(1.5px 1.5px at 233px 59px, rgb(170 240 255 / 0.9), transparent),
-      radial-gradient(1.5px 1.5px at 151px 283px, rgb(220 200 255 / 0.8), transparent),
-      radial-gradient(1.5px 1.5px at 271px 167px, rgb(255 255 255 / 0.8), transparent);
-    background-size: 320px 320px;
-    animation: drift-320 160s linear infinite, twinkle 5s ease-in-out infinite alternate;
-  }
-  .starfield > span:nth-child(3) {
-    background-image:
-      radial-gradient(2px 2px at 113px 97px, rgb(255 255 255), transparent),
-      radial-gradient(2px 2px at 389px 311px, rgb(160 235 255), transparent),
-      radial-gradient(2.5px 2.5px at 277px 431px, rgb(200 180 255), transparent);
-    background-size: 480px 480px;
-    animation: drift-480 100s linear infinite;
-  }
-  /* Each layer moves exactly one tile, so the loop has no visible jump. */
-  @keyframes drift-200 {
-    to { transform: translateY(200px); }
-  }
-  @keyframes drift-320 {
-    to { transform: translateY(320px); }
-  }
-  @keyframes drift-480 {
-    to { transform: translateY(480px); }
-  }
-  @keyframes twinkle {
-    from { opacity: 0.35; }
-    to { opacity: 1; }
-  }
 }
 
-/* Leaflet chrome to match the theme (its own CSS loads after this file). */
-.leaflet-container {
-  background: rgb(var(--c-raised)) !important;
-  font-family: inherit !important;
-}
-.leaflet-bar a {
-  background: rgb(var(--c-surface)) !important;
-  color: rgb(var(--c-ink)) !important;
-  border-color: rgb(var(--c-line)) !important;
-}
-.leaflet-bar {
-  border: 1px solid rgb(var(--c-line)) !important;
-  box-shadow: 0 0 16px -6px rgb(var(--c-glow) / 0.6) !important;
-}
-.leaflet-control-attribution {
-  background: rgb(var(--c-surface) / 0.75) !important;
-  color: rgb(var(--c-muted)) !important;
-}
-.leaflet-control-attribution a {
-  color: rgb(var(--c-accent)) !important;
-}
-.dark .map-tiles {
-  filter: invert(1) hue-rotate(190deg) brightness(0.85) contrast(0.9) saturate(0.55);
+/* Simple entrance animations */
+@keyframes fade-up { from { opacity: 0; transform: translateY(12px); } to { opacity: 1; transform: none; } }
+@keyframes fade-in { from { opacity: 0; } to { opacity: 1; } }
+@keyframes slide-in-right { from { transform: translateX(100%); } to { transform: none; } }
+.anim-up { animation: fade-up .3s both; }
+.anim-fade { animation: fade-in .2s both; }
+.anim-drawer { animation: slide-in-right .28s cubic-bezier(.2,.8,.2,1); }
+@media (prefers-reduced-motion: reduce) {
+  .anim-up, .anim-fade, .anim-drawer { animation: none; }
 }
 
-/* MapLibre: price callouts over satellite imagery (oneatlaz-style). */
-.price-callout {
-  position: relative;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  padding: 3px 7px;
-  border: 1.5px solid #facc15;
-  border-radius: 7px;
-  background: rgb(8 11 30 / 0.88);
-  color: #fff;
-  font: 600 11px/1.25 'JetBrains Mono', 'IBM Plex Sans Thai', ui-monospace, monospace;
-  white-space: nowrap;
-  cursor: pointer;
-  box-shadow: 0 0 14px -4px #facc15;
-  transition: transform 0.15s ease;
+/* Leaflet */
+.leaflet-top, .leaflet-bottom { z-index: 800; }
+.leaflet-container { background: #2d3324; font-family: inherit; }
+.leaflet-control-scale-line {
+  border: 2px solid rgba(255,255,255,.8) !important; border-top: none !important;
+  line-height: 1.1 !important; padding: 2px 5px !important;
+  background: #ffffff80 !important; -webkit-backdrop-filter: blur(4px); backdrop-filter: blur(4px);
+  color: #1a1a1a; font-size: 12px; text-align: center; text-shadow: none;
 }
-.price-callout:hover {
-  transform: scale(1.08);
-  z-index: 10;
-}
-.price-callout span {
-  font-weight: 500;
-  font-size: 10px;
-  color: #fde68a;
-}
-.price-callout::after {
-  content: '';
-  position: absolute;
-  bottom: -6px;
-  left: 50%;
-  transform: translateX(-50%);
-  border: 5px solid transparent;
-  border-bottom: 0;
-  border-top-color: #facc15;
+.map-scale--stats-open.leaflet-bottom.leaflet-left { bottom: 6.5rem; left: 8px; }
+@media (min-width: 768px) {
+  .map-scale--stats-open.leaflet-bottom.leaflet-left { bottom: 20px; left: 10px; }
 }
 
-.space-pop .maplibregl-popup-content {
-  padding: 0;
-  overflow: hidden;
-  border: 1px solid rgb(var(--c-line));
-  border-radius: 12px;
-  background: rgb(var(--c-surface) / 0.95);
-  box-shadow: 0 12px 32px -10px rgb(var(--c-glow) / 0.5);
-  backdrop-filter: blur(10px);
+.map-cluster {
+  display: flex; align-items: center; justify-content: center; border-radius: 9999px;
+  background: #d32f2f; color: #fff; font-weight: 700; border: 2px solid #fff;
+  box-shadow: 0 1px 4px rgba(0,0,0,.35);
 }
-.space-pop .maplibregl-popup-tip {
-  border-top-color: rgb(var(--c-surface)) !important;
-  border-bottom-color: rgb(var(--c-surface)) !important;
+.map-dot { width: 100%; height: 100%; border-radius: 9999px; border: 2px solid #fff; box-shadow: 0 1px 3px rgba(0,0,0,.45); }
+.leaflet-popup-content { margin: 12px 14px; line-height: 1.5; }
+
+/* Document pages */
+.tos-document { color: #1a1a1a; overflow-wrap: anywhere; }
+.tos-document h3 {
+  color: #c41e3a; font-weight: 700; letter-spacing: -.02em;
+  margin-top: 1.5rem; margin-bottom: .5rem; font-size: 1.0625rem;
 }
-.space-pop .maplibregl-popup-close-button {
-  color: #fff;
-  font-size: 18px;
-  padding: 0 6px;
-  text-shadow: 0 1px 3px rgb(0 0 0 / 0.6);
-}
-.home-pop {
-  display: block;
-  color: rgb(var(--c-ink));
-  text-decoration: none;
-  font-family: 'IBM Plex Sans Thai', sans-serif;
-}
-.home-pop img {
-  display: block;
-  width: 100%;
-  height: 120px;
-  object-fit: cover;
-}
-.home-pop div {
-  padding: 8px 10px 10px;
-}
-.home-pop strong {
-  font: 600 15px 'JetBrains Mono', monospace;
-  color: rgb(var(--c-accent));
-}
-.home-pop p {
-  margin: 2px 0;
-  font-size: 12px;
-  line-height: 1.35;
-  display: -webkit-box;
-  -webkit-line-clamp: 2;
-  -webkit-box-orient: vertical;
-  overflow: hidden;
-}
-.home-pop span {
-  font-size: 11px;
-  color: rgb(var(--c-muted));
-}
-.maplibregl-ctrl-group {
-  background: rgb(var(--c-surface) / 0.85) !important;
-  border: 1px solid rgb(var(--c-line));
-  box-shadow: 0 0 16px -6px rgb(var(--c-glow) / 0.6) !important;
-}
-.dark .maplibregl-ctrl-group button .maplibregl-ctrl-icon {
-  filter: invert(1);
-}
-.maplibregl-ctrl-attrib {
-  background: rgb(var(--c-surface) / 0.75) !important;
-  color: rgb(var(--c-muted));
-}
-.maplibregl-ctrl-attrib a {
-  color: rgb(var(--c-accent));
-}
+.tos-document > *:first-child { margin-top: 0; }
+.tos-document p { margin-bottom: .875rem; line-height: 1.75; color: #1a1a1a; }
+.tos-document p:last-child { margin-bottom: 0; }
+.tos-document ul { margin: .5rem 0 1rem; padding-left: 1.35rem; list-style: disc; }
+.tos-document li { margin-top: .25rem; margin-bottom: .4rem; line-height: 1.7; }
+.tos-document b { font-weight: 500; color: #1a1a1a; }
+.tos-document a { color: #c41e3a; text-decoration: underline; text-underline-offset: 2px; }
