@@ -2,7 +2,7 @@ import { useEffect, useId, useState } from 'react';
 import { AlertTriangle, Loader2, MapPin, TrendingUp, X } from 'lucide-react';
 import { useLang } from '../i18n.jsx';
 import { LOCATIONS, findLocationPath } from '../lib/locations';
-import { AREA_MAX, AREA_MIN, DEFAULT_FORM, askingGap, isInCoverage, targetPatch, toPayload } from '../lib/priceForm';
+import { AREA_MAX, AREA_MIN, DEFAULT_FORM, askingGap, gapApplies, isInCoverage, listingPropertyType, targetPatch, toPayload } from '../lib/priceForm';
 import { DEFAULT_GROWTH_PCT, GROWTH_MAX_PCT, GROWTH_MIN_PCT, GROWTH_STEP_PCT, HORIZONS_YEARS, compound } from '../lib/growth';
 import { formatBaht } from '../lib/prediction';
 import { getHealth } from '../lib/api';
@@ -134,6 +134,8 @@ function SelectField({ label, value, onChange, children }) {
 
 export default function PricePanel({ target, onClearTarget, onClose }) {
   const { t } = useLang();
+  // Baht amounts use the active language's unit labels.
+  const fmtBaht = (value) => formatBaht(value, { million: t('mthb'), baht: t('thb') });
   const [form, setForm] = useState(DEFAULT_FORM);
   const [growth, setGrowth] = useState(DEFAULT_GROWTH_PCT[DEFAULT_FORM.propertyType]);
   const health = useHealth();
@@ -168,7 +170,9 @@ export default function PricePanel({ target, onClearTarget, onClose }) {
   const predicted = showResult ? result.predictedPrice : 0;
   const isListing = target?.source === 'listing' && point?.kind === 'listing';
   const priced = isListing && point.group !== 'other';
-  const gap = priced && resultIsCurrent && predicted > 0 ? askingGap(point.price, predicted) : null;
+  // The gap compares the listing with the shown estimate only when size and type match it.
+  const gapComparable = priced && resultIsCurrent && predicted > 0 && gapApplies(point.area, listingPropertyType(point.group), resultPayload);
+  const gap = gapComparable ? askingGap(point.price, predicted) : null;
   const gapTone = gap == null ? '' : gap > 10 ? 'text-[#DC2626]' : gap < -10 ? 'text-[#16a34a]' : 'text-ink-secondary';
   const gapVerdict = gap == null ? '' : gap > 10 ? t('askingAbove') : gap < -10 ? t('askingBelow') : t('askingNear');
 
@@ -319,10 +323,10 @@ export default function PricePanel({ target, onClearTarget, onClose }) {
           <div aria-busy={running} className={`space-y-6 transition-opacity duration-200 ${running ? 'opacity-60' : 'opacity-100'}`}>
             <div className="space-y-2.5">
               <div className="rounded-xl border border-line bg-white p-4">
-                <p className="font-display text-2xl font-extrabold leading-tight text-ink-primary">{formatBaht(result.predictedPrice)}</p>
+                <p className="font-display text-2xl font-extrabold leading-tight text-ink-primary">{fmtBaht(result.predictedPrice)}</p>
                 <p className="mt-2 text-xs text-ink-secondary">
                   <span className="font-semibold text-ink-primary">{t('estimateRange')}:</span>{' '}
-                  {formatBaht(result.lowerBound)} – {formatBaht(result.upperBound)}
+                  {fmtBaht(result.lowerBound)} – {fmtBaht(result.upperBound)}
                 </p>
                 <div className="mt-3 grid grid-cols-2 gap-2 text-xs">
                   <div className="rounded-lg bg-surface-soft p-2">
@@ -346,7 +350,7 @@ export default function PricePanel({ target, onClearTarget, onClose }) {
                 <div className="rounded-xl border border-line p-4">
                   <div className="flex items-baseline justify-between gap-2">
                     <span className="text-xs font-medium text-ink-secondary">{t('askingPrice')}</span>
-                    <span className="font-display text-base font-bold text-ink-primary">{formatBaht(point.price)}</span>
+                    <span className="font-display text-base font-bold text-ink-primary">{fmtBaht(point.price)}</span>
                   </div>
                   {gap != null && (
                     <>
@@ -357,6 +361,7 @@ export default function PricePanel({ target, onClearTarget, onClose }) {
                       <p className={`mt-1 text-xs ${gapTone}`}>{gapVerdict}</p>
                     </>
                   )}
+                  {priced && gap == null && <p className="mt-2 text-xs leading-relaxed text-ink-secondary">{t('gapNotComparable')}</p>}
                   {!priced && <p className="mt-2 text-xs leading-relaxed text-ink-secondary">{t('typeUnsupported')}</p>}
                 </div>
               )}
@@ -395,7 +400,7 @@ export default function PricePanel({ target, onClearTarget, onClose }) {
                     <span className="h-2.5 w-2.5 shrink-0 rounded-sm" style={{ background: m.color }} aria-hidden="true" />
                     <span className="flex-1 text-ink-secondary">{m.name}</span>
                     <span className="tabular-nums text-ink-muted">{Math.round((m.weight / weightSum) * 100)}%</span>
-                    <span className="w-28 text-right tabular-nums text-ink-primary">{formatBaht(m.prediction)}</span>
+                    <span className="w-28 text-right tabular-nums text-ink-primary">{fmtBaht(m.prediction)}</span>
                   </li>
                 ))}
               </ul>

@@ -13,12 +13,13 @@ const BASE_LAYERS = {
   ],
   satellite: [{ url: ESRI_IMAGERY, attribution: ESRI_ATTRIBUTION }],
   street: [{ url: 'https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors' }],
-  terrain: [{ url: 'https://{s}.tile.opentopomap.org/{z}/{x}/{y}.png', attribution: 'Map data &copy; OpenStreetMap contributors, SRTM | Map style &copy; <a href="https://opentopomap.org">OpenTopoMap</a> (CC-BY-SA)' }],
+  terrain: [{ url: 'https://{s}.tile.opentopomap.org/{z}/{x}/{y}.png', maxNativeZoom: 17, attribution:'Map data &copy; OpenStreetMap contributors, SRTM | Map style &copy; <a href="https://opentopomap.org">OpenTopoMap</a> (CC-BY-SA)' }],
 };
 
 function tileLayers(baseMap) {
-  return (BASE_LAYERS[baseMap] ?? BASE_LAYERS.hybrid).map(({ url, attribution }) =>
-    L.tileLayer(url, { attribution, maxZoom: 18, subdomains: 'abc' }));
+  // A layer with maxNativeZoom shows its last real tiles scaled up past that zoom instead of blank tiles.
+  return (BASE_LAYERS[baseMap] ?? BASE_LAYERS.hybrid).map(({ url, attribution, maxNativeZoom }) =>
+    L.tileLayer(url, { attribution, maxZoom: 18, subdomains: 'abc', ...(maxNativeZoom ? { maxNativeZoom } : {}) }));
 }
 
 // Popup HTML. Every scraped string passes escapeHtml; links pass safeHttpUrl first.
@@ -106,7 +107,8 @@ const MapCanvas = forwardRef(function MapCanvas({ mode, points, baseMap, cityPla
       onDot: (point) => {
         // A standalone popup on the map is not owned by the marker, so the redraw that
         // follows the auto-pan (moveend -> clearLayers) does not remove it.
-        L.popup({ offset: [0, -12] })
+        // The top-left padding keeps an edge popup clear of the search bar.
+        L.popup({ offset: [0, -12], autoPanPaddingTopLeft: [10, 120] })
           .setLatLng([point.lat, point.lng])
           .setContent(popupHtml(point, tRef.current))
           .openOn(mapRef.current);
@@ -165,6 +167,11 @@ const MapCanvas = forwardRef(function MapCanvas({ mode, points, baseMap, cityPla
     // The map is created once. Later changes arrive through the effects below.
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
+
+  // A popup from the previous mode would point at a pin that no longer shows.
+  useEffect(() => {
+    mapRef.current?.closePopup();
+  }, [mode]);
 
   useEffect(() => {
     const group = baseRef.current;

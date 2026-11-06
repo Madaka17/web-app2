@@ -4,6 +4,7 @@ import {
   AREA_MIN,
   DEFAULT_FORM,
   askingGap,
+  gapApplies,
   isInCoverage,
   targetPatch,
   toPayload,
@@ -201,5 +202,34 @@ describe("DEFAULT_FORM", () => {
 describe("askingGap", () => {
   it("is the percentage by which asking exceeds predicted", () => {
     expect(askingGap(110, 100)).toBe(10);
+  });
+});
+
+describe("gapApplies", () => {
+  const payload = { ...DEFAULT_FORM, propertyType: "land" as const, area: 400 };
+
+  it("is true when the area and the property type match the listing", () => {
+    expect(gapApplies(400, "land", payload)).toBe(true);
+  });
+
+  it("is false when the listing area is outside the clamped range", () => {
+    expect(gapApplies(80000, "land", { ...payload, area: 20000 })).toBe(false);
+  });
+
+  it("is false when the area was edited after the pick", () => {
+    expect(gapApplies(400, "land", { ...payload, area: 450 })).toBe(false);
+  });
+
+  it("is false when the property type was changed", () => {
+    expect(gapApplies(400, "land", { ...payload, propertyType: "house" })).toBe(false);
+  });
+
+  it("is false when the listing area is null", () => {
+    expect(gapApplies(null, "land", payload)).toBe(false);
+  });
+
+  it("is false when there is no result payload or no model type", () => {
+    expect(gapApplies(400, "land", null)).toBe(false);
+    expect(gapApplies(400, null, payload)).toBe(false);
   });
 });

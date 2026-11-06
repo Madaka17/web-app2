@@ -30,6 +30,11 @@ export function isInCoverage(lat: number, lng: number): boolean {
   );
 }
 
+/** The model property type a listing group maps to, or null when the model does not price it. */
+export function listingPropertyType(group: TypeGroup): Exclude<TypeGroup, "other"> | null {
+  return group === "other" ? null : group;
+}
+
 /**
  * Fields a chosen map point writes into the form. Project and estate are always
  * cleared first so an earlier project pick does not carry over to a new target.
@@ -40,7 +45,8 @@ export function targetPatch(target: PriceTarget): Partial<PredictionInput> {
   if (!point) return patch;
 
   if (point.kind === "listing") {
-    if (point.group !== "other") patch.propertyType = point.group as Exclude<TypeGroup, "other">;
+    const propertyType = listingPropertyType(point.group);
+    if (propertyType) patch.propertyType = propertyType;
     if (point.bedrooms !== null) patch.bedrooms = point.bedrooms;
     if (point.bathrooms !== null) patch.bathrooms = point.bathrooms;
     if (point.area !== null) patch.area = point.area;
@@ -96,4 +102,17 @@ export function toPayload(form: PredictionInput, target: PriceTarget | null): Pr
 /** Percentage by which the asking price is above (positive) or below (negative) the prediction. */
 export function askingGap(asking: number, predicted: number): number {
   return ((asking - predicted) / predicted) * 100;
+}
+
+/**
+ * True only when the shown estimate was made for the listing itself: same size and
+ * same property type. A listing outside the clamped size range, or a form edited after the pick, is not comparable.
+ */
+export function gapApplies(
+  listingArea: number | null,
+  listingModelType: string | null,
+  resultPayload: PredictionInput | null,
+): boolean {
+  if (listingArea === null || !Number.isFinite(listingArea) || !resultPayload) return false;
+  return resultPayload.area === listingArea && resultPayload.propertyType === listingModelType;
 }

@@ -14,4 +14,10 @@ describe("formatBaht", () => {
     expect(formatBaht(1_000_000)).toBe("1.00 ล้านบาท");
     expect(formatBaht(999_999)).toBe("999,999 บาท");
   });
+
+  it("uses the supplied unit labels", () => {
+    const units = { million: "M THB", baht: "THB" };
+    expect(formatBaht(8_490_000, units)).toBe("8.49 M THB");
+    expect(formatBaht(750_000, units)).toBe("750,000 THB");
+  });
 });

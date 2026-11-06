@@ -121,7 +121,15 @@ export default function MapPage() {
   const seenNotice = useRef(false);
   const seenTour = useRef(false);
 
-  const linked = params.get('lat') && params.get('lng') ? { lat: Number(params.get('lat')), lng: Number(params.get('lng')) } : null;
+  // Keyed on the param strings so a re-render with the same link keeps one object; a non-numeric link is ignored.
+  const latParam = params.get('lat');
+  const lngParam = params.get('lng');
+  const linked = useMemo(() => {
+    if (!latParam || !lngParam) return null;
+    const lat = Number(latParam);
+    const lng = Number(lngParam);
+    return Number.isFinite(lat) && Number.isFinite(lng) ? { lat, lng } : null;
+  }, [latParam, lngParam]);
   const [mode, setMode] = useState(linked ? 'land' : null);
   const [area, setArea] = useState(null);
   const [areaOpen, setAreaOpen] = useState(false);
@@ -149,13 +157,13 @@ export default function MapPage() {
   // Both data files load once. The map keeps working without them; it just shows no pins.
   useEffect(() => {
     const controller = new AbortController();
-    Promise.all([loadListings(controller.signal), loadProjects(controller.signal)])
-      .then(([listingRows, projectRows]) => {
-        setListings(listingRows);
-        setProjects(projectRows);
-      })
-      .catch(() => {
-        if (!controller.signal.aborted) setLoadError(true);
+    // allSettled: one failing file leaves the other dataset usable.
+    Promise.allSettled([loadListings(controller.signal), loadProjects(controller.signal)])
+      .then(([listingResult, projectResult]) => {
+        if (controller.signal.aborted) return;
+        if (listingResult.status === 'fulfilled') setListings(listingResult.value);
+        if (projectResult.status === 'fulfilled') setProjects(projectResult.value);
+        if (listingResult.status === 'rejected' || projectResult.status === 'rejected') setLoadError(true);
       });
     return () => controller.abort();
   }, []);
