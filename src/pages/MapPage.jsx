@@ -10,6 +10,7 @@ import { SeoBlock } from '../components/Footer.jsx';
 import { useAlerts } from '../components/Alerts.jsx';
 import MapCanvas from '../components/MapCanvas.jsx';
 import { FilterPanel, LayerPanel, legendLabelKey } from '../components/MapPanels.jsx';
+import PricePanel from '../components/PricePanel.jsx';
 import { areaArt, modeArt, modeArtWide } from '../art.js';
 import { AREAS, PLACE_LABELS } from '../data.js';
 import { EMPTY_FILTER, LISTING_LEGEND, PROJECT_LEGEND, applyFilter, findPoint, loadListings, loadProjects, summarize } from '../lib/mapData';
@@ -138,6 +139,10 @@ export default function MapPage() {
   const [loadError, setLoadError] = useState(false);
   const [filter, setFilter] = useState(EMPTY_FILTER);
   const [target, setTarget] = useState(null);
+  // The price panel docks beside the map on desktop and opens as a bottom sheet below lg.
+  const [panelOpen, setPanelOpen] = useState(
+    () => typeof window !== 'undefined' && !!window.matchMedia && window.matchMedia('(min-width:1024px)').matches,
+  );
 
   usePageMeta(BRAND, 'สำรวจประกาศซื้อขายและขายฝากที่ดินบนแผนที่ (ตัวอย่าง)');
 
@@ -184,8 +189,14 @@ export default function MapPage() {
   const points = useMemo(() => (mode ? applyFilter(dataset ?? [], filter) : []), [mode, dataset, filter]);
   const summary = useMemo(() => summarize(points), [points]);
 
-  const onPick = (lat, lng) => setTarget({ lat, lng, source: 'map' });
-  const onSelectPoint = (p) => setTarget({ lat: p.lat, lng: p.lng, source: p.kind, point: p });
+  const onPick = (lat, lng) => {
+    setTarget({ lat, lng, source: 'map' });
+    setPanelOpen(true);
+  };
+  const onSelectPoint = (p) => {
+    setTarget({ lat: p.lat, lng: p.lng, source: p.kind, point: p });
+    setPanelOpen(true);
+  };
 
   const chooseArea = (item) => {
     setArea(item.key);
@@ -243,8 +254,13 @@ export default function MapPage() {
     <div className="fixed inset-0 flex flex-col overflow-hidden overscroll-none bg-surface-soft">
       <Header tone="map" mode={mode} onSelectMode={pickMode} />
       <div className="h-[var(--nav-h)] shrink-0" aria-hidden="true" />
-      <main className="relative min-h-0 flex-1 overflow-hidden overscroll-none">
-        <div className="relative h-full w-full">
+      <main className="relative flex min-h-0 flex-1 overflow-hidden overscroll-none">
+        {chosen && panelOpen && (
+          <aside aria-label={t('priceEstimate')} className="flex min-h-0 flex-col bg-white max-lg:fixed max-lg:inset-x-0 max-lg:bottom-0 max-lg:z-[1500] max-lg:max-h-[62dvh] max-lg:rounded-t-xl max-lg:shadow-lg lg:relative lg:w-[380px] lg:shrink-0 lg:border-r lg:border-line">
+            <PricePanel target={target} onClearTarget={() => setTarget(null)} onClose={() => setPanelOpen(false)} />
+          </aside>
+        )}
+        <div className="relative h-full min-w-0 flex-1">
           <SeoBlock
             title={BRAND}
             lead="สำรวจประกาศซื้อขาย ที่ดินขายฝาก และโครงการอนาคต บนแผนที่เชิงโต้ตอบทั่วประเทศไทย"
@@ -304,6 +320,7 @@ export default function MapPage() {
                   <RoundButton label={t('layer')} dot active={panel === 'layer'} onClick={() => setPanel(panel === 'layer' ? null : 'layer')}><Layers size={16} /></RoundButton>
                   {mode === 'future' && <RoundButton label={t('chooseArea')} active={areaOpen} onClick={() => setAreaOpen(true)}><MapPin size={18} /></RoundButton>}
                   {chosen && <RoundButton label={t('filters')} active={panel === 'filters'} onClick={() => setPanel(panel === 'filters' ? null : 'filters')}><Filter size={16} /></RoundButton>}
+                  {chosen && <RoundButton label={t('priceEstimate')} active={panelOpen} onClick={() => setPanelOpen((v) => !v)}><TrendingUp size={16} /></RoundButton>}
                   {chosen && <RoundButton label={t('sumPrices')} onClick={signIn}><Calculator size={16} /></RoundButton>}
                 </div>
                 {panel === 'layer' && (
