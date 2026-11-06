@@ -49,8 +49,12 @@ export function targetPatch(target: PriceTarget): Partial<PredictionInput> {
 
   patch.propertyType = point.projectKind === "village" ? "house" : "condo";
   patch.area = point.area;
-  patch.project = point.id;
-  if (point.projectKind === "village") patch.estate = "in";
+  // ml/api.py only resolves village keys in `project`; a condo is snapped to its
+  // project from lat/lng by the API, so it leaves project unset.
+  if (point.projectKind === "village") {
+    patch.project = point.id;
+    patch.estate = "in";
+  }
   return patch;
 }
 

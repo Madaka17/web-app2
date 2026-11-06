@@ -90,6 +90,10 @@ button { font-family: inherit; }
 @media (min-width: 768px) {
   .map-scale--stats-open.leaflet-bottom.leaflet-left { bottom: 20px; left: 10px; }
 }
+@media (max-width: 767px) {
+  .leaflet-bottom.leaflet-right { bottom: 6.5rem; }
+  .leaflet-control-attribution { max-width: calc(100vw - 7rem); font-size: 10px; white-space: normal; }
+}
 
 .map-cluster {
   display: flex; align-items: center; justify-content: center; border-radius: 9999px;

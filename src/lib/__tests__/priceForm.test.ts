@@ -106,7 +106,7 @@ describe("targetPatch", () => {
     expect(patch.project).toBe("P1");
   });
 
-  it("condo project sets condo and project id but no estate", () => {
+  it("condo project sets condo and area but leaves project unset and no estate", () => {
     const patch = targetPatch({
       lat: 13.9,
       lng: 100.6,
@@ -114,7 +114,7 @@ describe("targetPatch", () => {
       point: project({ id: "C9", projectKind: "condo" }),
     });
     expect(patch.propertyType).toBe("condo");
-    expect(patch.project).toBe("C9");
+    expect(patch.project).toBeUndefined();
     expect(patch.estate).toBeUndefined();
   });
 

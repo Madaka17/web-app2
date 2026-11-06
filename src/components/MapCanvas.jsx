@@ -103,9 +103,13 @@ const MapCanvas = forwardRef(function MapCanvas({ mode, points, baseMap, cityPla
     const current = modeRef.current ? pointsRef.current : [];
     renderPoints(map, groupRef.current, current, {
       clusterTitle: (n) => `${n} ${tRef.current(modeRef.current === 'future' ? 'projects' : 'listings')}`,
-      onDot: (point, marker) => {
-        marker.unbindPopup();
-        marker.bindPopup(popupHtml(point, tRef.current)).openPopup();
+      onDot: (point) => {
+        // A standalone popup on the map is not owned by the marker, so the redraw that
+        // follows the auto-pan (moveend -> clearLayers) does not remove it.
+        L.popup({ offset: [0, -12] })
+          .setLatLng([point.lat, point.lng])
+          .setContent(popupHtml(point, tRef.current))
+          .openOn(mapRef.current);
         callbacksRef.current.onSelectPoint?.(point);
       },
     });
@@ -126,6 +130,7 @@ const MapCanvas = forwardRef(function MapCanvas({ mode, points, baseMap, cityPla
   useEffect(() => {
     const map = L.map(box.current, { zoomControl: false, attributionControl: true, center: [13.752, 100.52], zoom: 12, minZoom: 6, maxZoom: 18 });
     mapRef.current = map;
+    map.attributionControl.setPrefix(false);
     map.createPane('target');
     map.getPane('target').style.zIndex = 650;
     baseRef.current = L.layerGroup().addTo(map);
