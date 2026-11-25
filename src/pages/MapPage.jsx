@@ -1,8 +1,8 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import {
-  Banknote, Building2, Calculator, ChevronDown, ChevronUp, CircleHelp, Coins, Filter, House, Layers, ListChecks, Lock, LocateFixed,
-  LogOut, MapPin, Minus, Plus, ReceiptText, Search, Tag, TrendingUp, X,
+  Banknote, Building2, ChevronDown, ChevronUp, CircleHelp, Coins, Filter, House, Layers, ListChecks, LocateFixed,
+  LogOut, MapPin, Minus, Plus, ReceiptText, Search, TrendingUp, X,
 } from 'lucide-react';
 import { BRAND, useLang, usePageMeta } from '../i18n.jsx';
 import Header from '../components/Header.jsx';
@@ -11,47 +11,9 @@ import { useAlerts } from '../components/Alerts.jsx';
 import MapCanvas from '../components/MapCanvas.jsx';
 import { FilterPanel, LayerPanel, legendLabelKey } from '../components/MapPanels.jsx';
 import PricePanel from '../components/PricePanel.jsx';
-import { areaArt, modeArt, modeArtWide } from '../art.js';
+import { areaArt } from '../art.js';
 import { AREAS, PLACE_LABELS } from '../data.js';
 import { EMPTY_FILTER, LISTING_LEGEND, PROJECT_LEGEND, applyFilter, findPoint, loadListings, loadProjects, summarize } from '../lib/mapData';
-
-const CARD_BASE = 'group relative flex min-h-[9.5rem] flex-1 flex-col overflow-hidden rounded-2xl bg-cover bg-center text-center shadow-[0_24px_64px_rgba(0,0,0,0.45)] transition-transform duration-300 active:scale-[0.995] anim-up sm:min-h-0 sm:rounded-3xl';
-
-function ModeCard({ kind, icon: Icon, title, count, unit, locked, delay, onClick, comingSoon }) {
-  return (
-    <button
-      type="button"
-      aria-disabled={!!locked}
-      onClick={onClick}
-      className={`${CARD_BASE} [background-image:var(--bg-wide)] md:[background-image:var(--bg-tall)] ${locked ? 'cursor-not-allowed' : 'hover:brightness-[1.04] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-[-2px] focus-visible:outline-white'}`}
-      style={{ animationDelay: `${delay}ms`, '--bg-tall': `url("${modeArt(kind)}")`, '--bg-wide': `url("${modeArtWide(kind)}")` }}
-    >
-      <div className={`absolute inset-0 bg-gradient-to-t ${locked ? 'from-black via-black/70 to-black/20' : 'from-black via-black/55 to-transparent group-hover:via-black/45'}`} aria-hidden="true" />
-      {locked && (
-        <div className="absolute right-3 top-3 z-20 flex items-center gap-1 rounded-full bg-black/50 px-2.5 py-1 text-[10px] font-bold text-white backdrop-blur-sm sm:text-xs">
-          <Lock size={12} />
-          {comingSoon}
-        </div>
-      )}
-      <div className="relative z-10 flex h-full w-full flex-col items-center px-4 py-5 sm:px-5 sm:py-6 md:px-6 md:py-7 lg:px-7">
-        <div className="flex flex-1 flex-col items-center justify-center">
-          <div className={`mb-3 inline-flex size-11 items-center justify-center rounded-xl text-white shadow-lg backdrop-blur-md sm:mb-4 sm:size-14 sm:rounded-2xl ${locked ? 'bg-white/15' : 'bg-black/40 group-hover:bg-black/50'}`}>
-            <Icon size={22} strokeWidth={2.25} className="sm:h-7 sm:w-7" />
-          </div>
-          <h3 className="font-display text-xl font-extrabold leading-tight text-white drop-shadow-[0_2px_10px_rgba(0,0,0,0.55)] sm:text-2xl md:text-[1.75rem] lg:text-3xl">{title}</h3>
-        </div>
-        {count && (
-          <div className="mt-auto flex w-full justify-center px-2 pb-3 pt-3 sm:px-3 sm:pb-5 sm:pt-6 md:pb-8 md:pt-10">
-            <span className="inline-flex min-h-8 max-w-[90%] items-baseline justify-center gap-1.5 rounded-full border border-white/70 bg-black/50 px-3.5 py-1.5 text-white shadow-[0_6px_20px_rgba(0,0,0,0.35)] backdrop-blur-md sm:min-h-10 sm:gap-2 sm:border-2 sm:px-5 sm:py-2 md:min-h-14 md:gap-2.5 md:px-8 md:py-3">
-              <span className="font-display text-lg font-extrabold leading-none tabular-nums tracking-tight drop-shadow-md sm:text-2xl md:text-3xl lg:text-4xl">{count}</span>
-              <span className="pb-px text-[11px] font-bold sm:pb-0.5 sm:text-sm md:text-base lg:text-lg">{unit}</span>
-            </span>
-          </div>
-        )}
-      </div>
-    </button>
-  );
-}
 
 function StatCard({ icon: Icon, bigIcon: BigIcon, title, value, unit, tint, iconBg, iconColor, minW }) {
   return (
@@ -115,7 +77,7 @@ function Tour({ step, setStep, onClose }) {
 
 export default function MapPage() {
   const { t } = useLang();
-  const { alert, setAlert, signIn } = useAlerts();
+  const { alert, setAlert } = useAlerts();
   const [params] = useSearchParams();
   const canvas = useRef(null);
   const seenNotice = useRef(false);
@@ -130,7 +92,7 @@ export default function MapPage() {
     const lng = Number(lngParam);
     return Number.isFinite(lat) && Number.isFinite(lng) ? { lat, lng } : null;
   }, [latParam, lngParam]);
-  const [mode, setMode] = useState(linked ? 'land' : null);
+  const [mode] = useState('land');
   const [area, setArea] = useState(null);
   const [areaOpen, setAreaOpen] = useState(false);
   const [statsOpen, setStatsOpen] = useState(true);
@@ -173,27 +135,16 @@ export default function MapPage() {
     setTourStep(0);
   };
 
-  const pickMode = (next) => {
-    if (next === 'lease') {
-      setAlert({ type: 'dev' });
-      return;
-    }
-    setMode(next);
-    setArea(null);
-    setAreaOpen(next === 'future');
-    setPanel(null);
-    setFilter(EMPTY_FILTER);
-    setTarget(null);
-    if (!seenNotice.current) {
-      seenNotice.current = true;
-      if (!alert) {
-        setAlert({ type: 'edu', after: next === 'land' && !seenTour.current ? openTour : null });
-      }
-    }
-  };
+  useEffect(() => {
+    // Deep links (?lat=&lng=) open on a listing and skip the first-visit notice.
+    if (seenNotice.current || linked) return;
+    seenNotice.current = true;
+    setAlert({ type: 'edu', after: !seenTour.current ? openTour : null });
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   const dataset = mode === 'future' ? projects : listings;
-  // Pins for the current mode after filtering. Empty until a mode is chosen, so none show behind the picker.
+  // Pins for the current mode after filtering.
   const points = useMemo(() => (mode ? applyFilter(dataset ?? [], filter) : []), [mode, dataset, filter]);
   const summary = useMemo(() => summarize(points), [points]);
 
@@ -240,10 +191,8 @@ export default function MapPage() {
   const legendItems = mode === 'future' ? PROJECT_LEGEND : LISTING_LEGEND;
   const chosen = mode === 'future' || mode === 'land';
   const ready = chosen && dataset !== null;
-  const countOf = (rows) => (rows ? rows.length.toLocaleString('en-US') : '—');
   const fmtCount = (n) => (ready ? n.toLocaleString('en-US') : '—');
   const fmtMillions = (baht) => (ready ? (baht / 1e6).toLocaleString('en-US', { maximumFractionDigits: 1 }) : '—');
-  const showModePicker = !chosen;
   const showAreaPicker = mode === 'future' && areaOpen;
 
   const stats = mode === 'future'
@@ -260,7 +209,7 @@ export default function MapPage() {
 
   return (
     <div className="fixed inset-0 flex flex-col overflow-hidden overscroll-none bg-surface-soft">
-      <Header tone="map" mode={mode} onSelectMode={pickMode} />
+      <Header tone="map" />
       <div className="h-[var(--nav-h)] shrink-0" aria-hidden="true" />
       <main className="relative flex min-h-0 flex-1 overflow-hidden overscroll-none">
         {chosen && panelOpen && (
@@ -329,7 +278,6 @@ export default function MapPage() {
                   {mode === 'future' && <RoundButton label={t('chooseArea')} active={areaOpen} onClick={() => setAreaOpen(true)}><MapPin size={18} /></RoundButton>}
                   {chosen && <RoundButton label={t('filters')} active={panel === 'filters'} onClick={() => setPanel(panel === 'filters' ? null : 'filters')}><Filter size={16} /></RoundButton>}
                   {chosen && <RoundButton label={t('priceEstimate')} active={panelOpen} onClick={() => setPanelOpen((v) => !v)}><TrendingUp size={16} /></RoundButton>}
-                  {chosen && <RoundButton label={t('sumPrices')} onClick={signIn}><Calculator size={16} /></RoundButton>}
                 </div>
                 {panel === 'layer' && (
                   <LayerPanel baseMap={baseMap} setBaseMap={setBaseMap} measuring={measuring} setMeasuring={setMeasuring} cityPlan={cityPlan} setCityPlan={setCityPlan} onClose={() => setPanel(null)} />
@@ -379,22 +327,6 @@ export default function MapPage() {
                 )}
               </div>
             </div>
-
-            {showModePicker && (
-              <div className="absolute inset-0 flex items-center justify-center overflow-hidden p-3 pb-[max(0.75rem,env(safe-area-inset-bottom))] sm:p-5 md:p-8" style={{ zIndex: 1200 }}>
-                <div className="absolute inset-0 bg-black/45 backdrop-blur-md" />
-                <div className="anim-fade relative z-10 flex w-full max-w-[min(100%,72rem)] flex-col gap-3 sm:gap-4">
-                  <div className="px-1 text-center sm:px-2">
-                    <h2 className="font-display text-lg font-bold text-white drop-shadow-md sm:text-2xl md:text-3xl">{t('selectMode')}</h2>
-                  </div>
-                  <div className="flex max-h-[min(calc(100dvh-var(--nav-h)-5.5rem),640px)] min-h-[min(68dvh,520px)] flex-col gap-2 sm:min-h-[min(62dvh,560px)] md:flex-row md:gap-2.5">
-                    <ModeCard kind="future" icon={Building2} title={t('future')} count={countOf(projects)} unit={t('projects')} delay={0} onClick={() => pickMode('future')} />
-                    <ModeCard kind="land" icon={House} title={t('land')} count={countOf(listings)} unit={t('listings')} delay={90} onClick={() => pickMode('land')} />
-                    <ModeCard kind="lease" icon={Tag} title={t('lease')} locked delay={180} comingSoon={t('comingSoon')} onClick={() => pickMode('lease')} />
-                  </div>
-                </div>
-              </div>
-            )}
 
             {showAreaPicker && (
               <div className="fixed inset-0 z-[9999] flex items-center justify-center p-3 pb-[max(0.75rem,env(safe-area-inset-bottom))] sm:p-5 md:p-8">

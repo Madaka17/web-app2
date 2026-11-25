@@ -1,6 +1,5 @@
 import { createContext, useCallback, useContext, useMemo, useState } from 'react';
 import { createPortal } from 'react-dom';
-import { useNavigate } from 'react-router-dom';
 import { Construction } from 'lucide-react';
 import { useLang } from '../i18n.jsx';
 
@@ -10,8 +9,7 @@ const AlertContext = createContext(null);
 export function AlertProvider({ children }) {
   const [alert, setAlert] = useState(null);
   const close = useCallback(() => setAlert(null), []);
-  const signIn = useCallback(() => setAlert({ type: 'signin' }), []);
-  const value = useMemo(() => ({ alert, setAlert, close, signIn }), [alert, close, signIn]);
+  const value = useMemo(() => ({ alert, setAlert, close }), [alert, close]);
   return <AlertContext.Provider value={value}>{children}</AlertContext.Provider>;
 }
 
@@ -54,7 +52,6 @@ function CenterCard({ children, label }) {
 export function AlertHost() {
   const { t } = useLang();
   const { alert, setAlert, close } = useAlerts();
-  const navigate = useNavigate();
   if (!alert) return null;
   let content = null;
   if (alert.type === 'edu') {
@@ -85,14 +82,6 @@ export function AlertHost() {
         <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-primary/10 text-primary"><Construction size={32} /></div>
         <p className="text-sm leading-relaxed text-ink-secondary">{t('devNotice')} 🙏</p>
         <button type="button" onClick={close} className="btn-primary btn-md mt-6 w-full">{t('gotIt')}</button>
-      </CenterCard>
-    );
-  } else if (alert.type === 'signin') {
-    content = (
-      <CenterCard label={t('signInTitle')}>
-        <h3 className="font-sans text-lg font-extrabold text-black">{t('signInTitle')}</h3>
-        <button type="button" onClick={() => { close(); navigate('/auth/login'); }} className="btn-primary btn-lg btn-pill mt-4 w-full">{t('signInCta')}</button>
-        <button type="button" onClick={close} className="btn-outline btn-lg btn-pill mt-2 w-full">{t('cancel')}</button>
       </CenterCard>
     );
   } else if (alert.type === 'sample') {

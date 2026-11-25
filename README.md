@@ -103,10 +103,9 @@ public site should move to a tile host it has agreed terms with.
 
 ## Template pages
 
-`/new-land`, `/news`, and the other template pages (`/contact`,
-`/privacy-policy`, `/terms-of-service`, `/auth/login`) still show the
-template's invented sample content. They are not real. Replace them before
-this site goes public.
+The `/privacy-policy` and `/terms-of-service` pages still show the template's
+invented sample content. It is not real. Replace it before this site goes
+public.
 
 ## Development
 
