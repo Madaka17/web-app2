@@ -68,7 +68,7 @@ export interface Calibration {
   n: number;
   q10: number;
   q90: number;
-  median_ratio: number;
+  median_actual_over_pred: number;
   MdAPE: number;
   within_20pct: number;
 }

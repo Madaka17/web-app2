@@ -307,7 +307,7 @@
       "n": 4883,
       "q10": 0.8309722210881796,
       "q90": 1.2424116808566426,
-      "median_ratio": 1.0101843345627923,
+      "median_actual_over_pred": 1.0101843345627923,
       "MdAPE": 9.739568558492206,
       "within_20pct": 80.33995494573009
     },
@@ -315,7 +315,7 @@
       "n": 652,
       "q10": 0.7182454021793987,
       "q90": 1.5099428002940767,
-      "median_ratio": 1.028731168045785,
+      "median_actual_over_pred": 1.028731168045785,
       "MdAPE": 17.73678082267961,
       "within_20pct": 55.3680981595092
     },
@@ -323,7 +323,7 @@
       "n": 218,
       "q10": 0.523872972657792,
       "q90": 2.1530951866144754,
-      "median_ratio": 0.9706802599136821,
+      "median_actual_over_pred": 0.9706802599136821,
       "MdAPE": 30.489654250704856,
       "within_20pct": 33.48623853211009
     },
@@ -331,7 +331,7 @@
       "n": 969,
       "q10": 0.6473108501736164,
       "q90": 1.5906727022620006,
-      "median_ratio": 0.9911142513685889,
+      "median_actual_over_pred": 0.9911142513685889,
       "MdAPE": 19.98642476681472,
       "within_20pct": 50.0515995872033
     },
@@ -339,7 +339,7 @@
       "n": 6722,
       "q10": 0.7938133345240088,
       "q90": 1.3130892732908215,
-      "median_ratio": 1.010024632238605,
+      "median_actual_over_pred": 1.010024632238605,
       "MdAPE": 11.791105439115661,
       "within_20pct": 72.03213329366261
     }
@@ -349,7 +349,7 @@
       "n": 6418,
       "q10": 0.6293870175442884,
       "q90": 1.5777143250624506,
-      "median_ratio": 1.0197235383277934,
+      "median_actual_over_pred": 1.0197235383277934,
       "MdAPE": 20.418768045233232,
       "within_20pct": 49.01838578996573
     },
@@ -357,7 +357,7 @@
       "n": 858,
       "q10": 0.7119985045792725,
       "q90": 1.585746703536253,
-      "median_ratio": 1.0540852274726438,
+      "median_actual_over_pred": 1.0540852274726438,
       "MdAPE": 19.956562187444213,
       "within_20pct": 50.23310023310024
     },
@@ -365,7 +365,7 @@
       "n": 218,
       "q10": 0.48381127906014304,
       "q90": 2.2947041283527247,
-      "median_ratio": 0.9427644105597249,
+      "median_actual_over_pred": 0.9427644105597249,
       "MdAPE": 31.13633097166916,
       "within_20pct": 33.94495412844037
     },
@@ -373,7 +373,7 @@
       "n": 1254,
       "q10": 0.6169023685187832,
       "q90": 1.7945121955580936,
-      "median_ratio": 1.0837079290734037,
+      "median_actual_over_pred": 1.0837079290734037,
       "MdAPE": 24.67671574485074,
       "within_20pct": 40.590111642743224
     },
@@ -381,7 +381,7 @@
       "n": 8748,
       "q10": 0.6337045714125578,
       "q90": 1.614795634582366,
-      "median_ratio": 1.0299108134885175,
+      "median_actual_over_pred": 1.0299108134885175,
       "MdAPE": 21.30345363709003,
       "within_20pct": 47.55372656607225
     }
@@ -472,7 +472,7 @@
       }
     }
   },
-  "calibration_note": "split conformal: bounds from the calibration fold, coverage measured on the test fold. Per property type: 'calibration' for a map click, 'calibration_dropdown' for the sub-district list alone; test_coverage scores the same intervals on the test fold.",
+  "calibration_note": "split conformal: bounds from the calibration fold, coverage measured on the test fold. Per property type: 'calibration' for a map click, 'calibration_dropdown' for the sub-district list alone; test_coverage scores the same intervals on the test fold. In 'calibration', median_actual_over_pred is actual/predicted on the calibration fold; in 'test_coverage', median_ratio is the IAAO ratio predicted/actual on the test fold.",
   "cv": {
     "spatial": {
       "folds": [

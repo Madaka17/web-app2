@@ -71,7 +71,7 @@ def fit_view(bundle: dict, cal) -> dict:
             "n": int(mask.sum()),
             "q10": lo,
             "q90": hi,
-            "median_ratio": float(np.median(ratio[mask])),
+            "median_actual_over_pred": float(np.median(ratio[mask])),
             "MdAPE": float(np.median(ape[mask])),
             "within_20pct": float(np.mean(ape[mask] <= 20) * 100),
         }
@@ -136,7 +136,9 @@ def main() -> None:
     m["calibration_note"] = (
         "split conformal: bounds from the calibration fold, coverage measured on the test fold. "
         "Per property type: 'calibration' for a map click, 'calibration_dropdown' for the "
-        "sub-district list alone; test_coverage scores the same intervals on the test fold."
+        "sub-district list alone; test_coverage scores the same intervals on the test fold. "
+        "In 'calibration', median_actual_over_pred is actual/predicted on the calibration fold; "
+        "in 'test_coverage', median_ratio is the IAAO ratio predicted/actual on the test fold."
     )
     Path("models/metrics.json").write_text(
         json.dumps(m, indent=2, ensure_ascii=False), encoding="utf-8")

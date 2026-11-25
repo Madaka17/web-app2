@@ -141,6 +141,11 @@ scores listings posted on or after that date (hipflat excluded, since its
 listings carry no posting date) and asks how it does on listings posted after
 training.
 
+CV rows are map-click rows only: listings without a pin are dropped (93,676 scored of
+a 108,078-row pool; temporal holdout 24,221). Each CV model also trains on fewer rows
+than the served model (about 80% of the pool per spatial fold, 86,462 rows; 55,644 rows
+for temporal), so the CV figures are slightly pessimistic.
+
 | test | rows | MdAPE | within ±20% | R² | median ratio | COD | PRD | coverage |
 |---|---|---|---|---|---|---|---|---|
 | spatial CV, pooled | 93,676 | 21.4% | 47.4% | 0.623 | 0.896 | 34.1 | 1.275 | 56.6% |
@@ -154,9 +159,9 @@ training.
 | temporal, ที่ดิน | 642 | 37.1% | 29.8% | — | — | — | — | 76.3% |
 | temporal, บ้านเดี่ยว | 4,204 | 21.1% | 47.7% | — | — | — | — | 79.0% |
 
-Spatial is much worse than the random test fold because same-project and nearby
-comparables, the strongest features, are missing for an unseen sub-district. The
-served range under-covers there (56.6% against 80%) because it was calibrated on
+Spatial is much worse than the random test fold, likely because same-project and nearby
+comparables, the strongest features, are missing for an unseen sub-district (no ablation was run to confirm this). The
+served range under-covers there (56.6% against 80%), likely because it was calibrated on
 known locations. On listings posted after training, coverage is also below 80%
 (73.5%).
 
@@ -171,7 +176,7 @@ not. The spatial pooled median ratio (0.896) is just below 0.90, and the tempora
 holdout's COD (21.6) and PRD (1.100) are outside their ranges.
 
 Asking prices are noisier than appraisals: the same unit is listed at very
-different prices by different agents, which caps how well any model can do.
+different prices by different agents, which likely limits how well any model can do.
 
 ## ค่าเสื่อม (building age)
 
@@ -266,7 +271,7 @@ exactly the Ultimate Class condos (Ritz-Carlton, Four Seasons, Scope at
 .venv/bin/python cv.py                # ~45 min, spatial + temporal CV
 .venv/bin/python build_location_map.py
 .venv/bin/python projects.py          # village/condo index and grades
-.venv/bin/python -m pytest test_pipeline.py -q
+.venv/bin/python -m pytest test_pipeline.py test_evaluation.py -q
 ```
 
 ## Files
