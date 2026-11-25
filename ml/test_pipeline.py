@@ -10,9 +10,10 @@ import pandas as pd
 import pytest
 
 from prepare_data import (
-    CATEGORICAL, FEATURES, MAX_VALUE, MIN_VALUE, TARGET, TEST_YEARS,
-    add_features, build_reference, build_training_frame, clean, split, to_price,
+    CATEGORICAL, FEATURES, FOLD_SEED, MAX_VALUE, MIN_VALUE, TARGET, TEST_YEARS,
+    add_features, assign_folds, build_reference, build_training_frame, clean, split, to_price,
 )
+from train_models import serve_rows
 
 HERE = Path(__file__).parent
 
@@ -48,6 +49,38 @@ def sample():
         "year": [2561, 2565, 2563, 2564, 2566, 2567, 2568, 2569],
         "parent_case_id": ["a", "b", "c", "d", "e", "f", "g", "h"],
     })
+
+
+@pytest.fixture(scope="module")
+def sample_years():
+    """1,000 rows across the two newest years; only `year` matters to assign_folds."""
+    years = [2569] * 900 + [2568] * 100
+    return pd.DataFrame({
+        "collateral_type": ["คอนโด"] * 1000,
+        "province": ["กรุงเทพมหานคร"] * 1000,
+        "district": ["คลองเตย"] * 1000,
+        "sub_district": ["คลองเตย"] * 1000,
+        "appraisal_value": [5e6] * 1000,
+        "area_sqm": [50.0] * 1000,
+        "n_units": [1] * 1000,
+        "year": years,
+        "parent_case_id": [str(i) for i in range(1000)],
+    })
+
+
+def test_cal_fold_leaves_test_rows_unchanged(sample_years):
+    fold = assign_folds(sample_years)
+    in_test_years = sample_years.year.isin(TEST_YEARS)
+    u = np.random.default_rng(FOLD_SEED).random(in_test_years.sum())
+    assert (fold[in_test_years].to_numpy() == "test").sum() == (u < 0.20).sum()
+    assert set(fold.unique()) <= {"fit", "val", "cal", "test"}
+    assert (fold == "cal").sum() == ((u >= 0.30) & (u < 0.40)).sum()
+
+
+def test_serve_rows_exclude_cal_and_test(sample_years):
+    train, test = split(sample_years)
+    served = serve_rows(train)
+    assert "cal" not in set(served.fold) and len(served) + (train.fold == "cal").sum() == len(train)
 
 
 class TestClean:

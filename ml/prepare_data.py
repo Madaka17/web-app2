@@ -115,8 +115,10 @@ PPSQM_FLOOR = {"คอนโด": 10_000.0, "บ้านเดี่ยว": 4_
 # listing is a 2569 snapshot of the same market, so holding out the whole year
 # would leave almost nothing to fit on; a 2569 fit row is still described only
 # by earlier years (build_training_frame), so it cannot look itself up.
+# "cal" is held out from every model as well and is used only to set the price
+# range (calibrate.py); "test" is scored once and never used to set anything.
 TEST_YEARS = (2569,)
-FOLD_FRACTIONS = {"test": 0.20, "val": 0.10}  # of TEST_YEARS rows; the rest fit
+FOLD_FRACTIONS = {"test": 0.20, "val": 0.10, "cal": 0.10}  # of TEST_YEARS rows; the rest fit
 FOLD_SEED = 42
 
 # Comparable lookups, narrowest first. Each is shrunk toward the next one out.
@@ -232,7 +234,7 @@ def load_raw() -> pd.DataFrame:
         if src == "hipflat":
             df["date_posted"] = df["date_posted"].fillna(SCRAPE_DATE)
         df["sub_district"] = df["sub_district"].fillna(NO_SUBDISTRICT)
-        parts.append(df.reindex(columns=cols))
+        parts.append(df.assign(source=src).reindex(columns=cols + ["source"]))
     df = pd.concat(parts, ignore_index=True)
     df = df[df["property_type"].isin(PROPERTY_TYPES)].dropna(subset=["date_posted"])
     # Coordinates outside Bangkok + ปริมณฑล are a mis-pinned map marker.
@@ -275,6 +277,9 @@ def load_raw() -> pd.DataFrame:
         "security": df["security"],
         "juristic": df["juristic"],
         "rent_like": _rent_like(df["title"]),
+        # Provenance and the parsed posting date: kept for reporting, not features.
+        "source": df["source"],
+        "posted": date[date.notna()],
         TARGET: df["price_thb"],
     })
 
@@ -343,15 +348,19 @@ def clean(df: pd.DataFrame, ppsqm_trim: tuple[float, float] = PPSQM_TRIM) -> tup
 
 
 def assign_folds(df: pd.DataFrame) -> pd.Series:
-    """'fit' / 'val' / 'test' per row. Older years are all 'fit'; TEST_YEARS
+    """'fit' / 'val' / 'cal' / 'test' per row. Older years are all 'fit'; TEST_YEARS
     rows are dealt out at random with a fixed seed so every script sees the
     same held-out set."""
     fold = pd.Series("fit", index=df.index)
     recent = df.index[df["year"].isin(TEST_YEARS)]
     u = pd.Series(np.random.default_rng(FOLD_SEED).random(len(recent)), index=recent)
-    fold[u.index[u < FOLD_FRACTIONS["test"]]] = "test"
-    fold[u.index[(u >= FOLD_FRACTIONS["test"])
-                 & (u < FOLD_FRACTIONS["test"] + FOLD_FRACTIONS["val"])]] = "val"
+    # Cumulative cut points over one draw: test, then val, then cal, then fit.
+    test_end = FOLD_FRACTIONS["test"]
+    val_end = test_end + FOLD_FRACTIONS["val"]
+    cal_end = val_end + FOLD_FRACTIONS["cal"]
+    fold[u.index[u < test_end]] = "test"
+    fold[u.index[(u >= test_end) & (u < val_end)]] = "val"
+    fold[u.index[(u >= val_end) & (u < cal_end)]] = "cal"
     return fold
 
 

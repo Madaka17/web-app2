@@ -2,8 +2,9 @@
 Train CatBoost, LightGBM and XGBoost on the scraped listings and blend them.
 
 Protocol, chosen so the reported numbers mean something (prepare_data.assign_folds):
-  fit    every year before 2569 plus 70% of 2569
+  fit    every year before 2569 plus 60% of 2569
   weight 10% of 2569          (validation - picks the ensemble weights)
+  cal    10% of 2569          (calibration - never trained on; calibrate.py sets the price range)
   score  20% of 2569          (test - touched only once, at the end)
 
 The target is log price per sqm (see prepare_data.log_ppsqm) and the loss is
@@ -170,6 +171,12 @@ def estate_view_scores(models: dict, weights: dict, rows: pd.DataFrame, ref: dic
     return scores
 
 
+def serve_rows(train: pd.DataFrame) -> pd.DataFrame:
+    """The rows the served model is fitted and referenced on: every training row
+    except the calibration fold, which is kept back to set the price range."""
+    return train[train.fold != "cal"]
+
+
 def app_views(rows: pd.DataFrame, ref: dict) -> dict[str, pd.DataFrame]:
     """The same held-out rows described three ways:
       click     what the app sends after a map click: pin, type, size, place -
@@ -291,9 +298,10 @@ def main() -> None:
     print("=" * 78)
 
     # --- refit on every training year for the artifact we actually serve ---
-    print("\nrefitting on fit + validation rows for serving...", flush=True)
-    serve_frame = build_training_frame(train_all)
-    serve_ref = build_reference(train_all)
+    print("\nrefitting on fit + validation rows (cal and test held out)...", flush=True)
+    served = serve_rows(train_all)
+    serve_frame = build_training_frame(served)
+    serve_ref = build_reference(served)
     y_all = log_ppsqm(serve_frame)
     X_all_raw = serve_frame[FEATURES]
     X_all_cat = as_categorical(X_all_raw, categories)
@@ -339,7 +347,8 @@ def main() -> None:
             "validation": f"{FOLD_FRACTIONS['val']:.0%} of {TEST_YEARS} rows, seed {FOLD_SEED}",
             "test": f"{FOLD_FRACTIONS['test']:.0%} of {TEST_YEARS} rows, seed {FOLD_SEED}",
             "test_years": sorted(int(y) for y in test.year.unique()),
-            "served_model_fit_years": sorted(int(y) for y in train_all.year.unique()),
+            "served_model_fit_years": sorted(int(y) for y in served.year.unique()),
+            "calibration": "10% of (2569,) rows, seed 42, never trained on; sets the price range",
         },
         "rows": {"fit": len(fit_frame), "validation": len(val_frame), "test": len(test_frame)},
         "views": view_scores,
