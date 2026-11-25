@@ -1,5 +1,5 @@
 import { useEffect, useId, useState } from 'react';
-import { AlertTriangle, Loader2, MapPin, TrendingUp, X } from 'lucide-react';
+import { AlertTriangle, ArrowDownRight, ArrowUpRight, CalendarClock, Home, Info, Layers, MapPin, Minus, Percent, Scale, Target, TrendingUp, X } from 'lucide-react';
 import { useLang } from '../i18n.jsx';
 import { LOCATIONS, findLocationPath } from '../lib/locations';
 import { AREA_MAX, AREA_MIN, DEFAULT_FORM, askingGap, gapApplies, isInCoverage, listingPropertyType, targetPatch, toPayload } from '../lib/priceForm';
@@ -111,12 +111,60 @@ function NumberField({ label, value, min, max, integer = false, optional = false
   );
 }
 
-function Section({ title, children }) {
+function Section({ title, icon: Icon, children }) {
   return (
     <section className="space-y-2.5">
-      <h3 className="text-xs font-bold tracking-wide text-ink-secondary">{title}</h3>
+      <h3 className="flex items-center gap-1.5 text-[11px] font-bold uppercase tracking-wider text-ink-muted">
+        {Icon && <Icon size={13} className="shrink-0 text-[#DC2626]" aria-hidden="true" />}
+        {title}
+      </h3>
       {children}
     </section>
+  );
+}
+
+// Same thresholds as the gap verdict: above +10%, below -10%, otherwise near.
+function gapColors(gap) {
+  if (gap == null) return { bg: null, text: '', pill: '', Arrow: null, border: 'border-l-line' };
+  if (gap > 10) return { bg: 'bg-[#DC2626]', text: 'text-[#DC2626]', pill: 'bg-red-50', Arrow: ArrowUpRight, border: 'border-l-[#DC2626]' };
+  if (gap < -10) return { bg: 'bg-emerald-600', text: 'text-[#16a34a]', pill: 'bg-emerald-50', Arrow: ArrowDownRight, border: 'border-l-emerald-600' };
+  return { bg: 'bg-amber-500', text: 'text-ink-secondary', pill: 'bg-amber-50', Arrow: Minus, border: 'border-l-amber-500' };
+}
+
+// Low / mid / high on a track. The domain is padded, and widened to include the asking price when given.
+function RangeBar({ low, mid, high, marker, markerClass = '' }) {
+  const { t } = useLang();
+  const fmtBaht = (value) => formatBaht(value, { million: t('mthb'), baht: t('thb') });
+  const pad = (high - low) * 0.15;
+  const lo = marker != null ? Math.min(low, marker) - pad : low - pad;
+  const hi = marker != null ? Math.max(high, marker) + pad : high + pad;
+  const span = hi - lo || 1;
+  const pct = (v) => clamp(((v - lo) / span) * 100, 0, 100);
+  const label = `${t('estimateRange')}: ${fmtBaht(low)} – ${fmtBaht(high)}`;
+  return (
+    <div role="img" aria-label={label} className="mt-3">
+      <p className="mb-1.5 text-center text-[11px] text-ink-secondary">{t('estimateRange')}</p>
+      <div className="relative h-2 w-full rounded-full bg-surface-soft">
+        <div
+          className="absolute inset-y-0 rounded-full bg-[#DC2626]/20"
+          style={{ left: `${pct(low)}%`, width: `${pct(high) - pct(low)}%` }}
+        />
+        <div
+          className="absolute inset-y-[-3px] w-[3px] -translate-x-1/2 rounded-sm bg-ink-primary"
+          style={{ left: `${pct(mid)}%` }}
+        />
+        {marker != null && (
+          <div
+            className={`absolute top-1/2 h-3 w-3 -translate-x-1/2 -translate-y-1/2 rounded-full ring-2 ring-white ${markerClass}`}
+            style={{ left: `${pct(marker)}%` }}
+          />
+        )}
+      </div>
+      <div className="mt-1.5 flex justify-between text-[11px] tabular-nums text-ink-muted">
+        <span>{fmtBaht(low)}</span>
+        <span>{fmtBaht(high)}</span>
+      </div>
+    </div>
   );
 }
 
@@ -175,6 +223,7 @@ export default function PricePanel({ target, onClearTarget, onClose }) {
   const gap = gapComparable ? askingGap(point.price, predicted) : null;
   const gapTone = gap == null ? '' : gap > 10 ? 'text-[#DC2626]' : gap < -10 ? 'text-[#16a34a]' : 'text-ink-secondary';
   const gapVerdict = gap == null ? '' : gap > 10 ? t('askingAbove') : gap < -10 ? t('askingBelow') : t('askingNear');
+  const gapStyle = gapColors(gap);
 
   // Cascading location picker, driven by the form's subdistrict.
   const path = findLocationPath(form.subdistrictId);
@@ -202,6 +251,7 @@ export default function PricePanel({ target, onClearTarget, onClose }) {
     : [];
   const weightSum = showResult ? result.contributions.reduce((s, m) => s + m.weight, 0) || 1 : 1;
   const healthLabel = health === 'ok' ? t('healthOk') : health === 'down' ? t('healthDown') : t('healthChecking');
+  const maxPpsqm = compRows.reduce((m, r) => Math.max(m, r.ppsqm), 0);
 
   return (
     <div className="flex min-h-0 flex-1 flex-col">
@@ -222,7 +272,7 @@ export default function PricePanel({ target, onClearTarget, onClose }) {
       </header>
 
       <div className="min-h-0 flex-1 space-y-6 overflow-y-auto overscroll-contain p-4">
-        <Section title={t('location')}>
+        <Section title={t('location')} icon={MapPin}>
           {target ? (
             <div className="flex items-start gap-2.5 rounded-lg border border-line p-3">
               <MapPin size={16} className="mt-0.5 shrink-0 text-[#DC2626]" aria-hidden="true" />
@@ -252,7 +302,7 @@ export default function PricePanel({ target, onClearTarget, onClose }) {
           )}
         </Section>
 
-        <Section title={t('propertyType')}>
+        <Section title={t('propertyType')} icon={Home}>
           <div role="group" aria-label={t('propertyType')} className="grid grid-cols-4 gap-1.5">
             {PROPERTY_TYPES.map(([key, labelKey]) => {
               const active = form.propertyType === key;
@@ -313,32 +363,37 @@ export default function PricePanel({ target, onClearTarget, onClose }) {
         )}
 
         {inCoverage && !failed && !result && running && (
-          <div role="status" className="flex items-center gap-2 text-sm text-ink-secondary">
-            <Loader2 size={16} className="animate-spin" aria-hidden="true" />
-            {t('calculating')}
+          <div role="status" className="space-y-3">
+            <p className="text-xs text-ink-secondary">{t('calculating')}</p>
+            <div aria-hidden="true" className="animate-pulse rounded-xl bg-surface-soft h-28" />
+            <div aria-hidden="true" className="animate-pulse rounded-xl bg-surface-soft h-16" />
           </div>
         )}
 
         {showResult && (
           <div aria-busy={running} className={`space-y-6 transition-opacity duration-200 ${running ? 'opacity-60' : 'opacity-100'}`}>
             <div className="space-y-2.5">
-              <div className="rounded-xl border border-line bg-white p-4">
-                <p className="font-display text-2xl font-extrabold leading-tight text-ink-primary">{fmtBaht(result.predictedPrice)}</p>
-                <p className="mt-2 text-xs text-ink-secondary">
-                  <span className="font-semibold text-ink-primary">{t('estimateRange')}:</span>{' '}
-                  {fmtBaht(result.lowerBound)} – {fmtBaht(result.upperBound)}
-                </p>
-                <div className="mt-3 grid grid-cols-2 gap-2 text-xs">
-                  <div className="rounded-lg bg-surface-soft p-2">
-                    <p className="text-ink-muted">{t('withinHit')}</p>
-                    <p className="font-display text-base font-bold text-ink-primary">{result.meta.within_20pct.toLocaleString('en-US', { maximumFractionDigits: 1 })}%</p>
+              <div className="rounded-2xl border border-line bg-gradient-to-br from-white to-red-50/40 p-4 shadow-sm">
+                <p className="text-[11px] font-semibold uppercase tracking-wider text-ink-muted">{t('priceEstimate')}</p>
+                <p className="font-display text-3xl font-extrabold text-ink-primary tabular-nums">{fmtBaht(result.predictedPrice)}</p>
+                <RangeBar
+                  low={result.lowerBound}
+                  mid={result.predictedPrice}
+                  high={result.upperBound}
+                  marker={isListing && resultIsCurrent && gap != null ? point.price : undefined}
+                  markerClass={gapStyle.bg ?? ''}
+                />
+                <div className="mt-4 grid grid-cols-2 gap-2 text-xs">
+                  <div className="rounded-xl bg-white/80 p-2.5 ring-1 ring-line">
+                    <p className="flex items-center gap-1.5 text-ink-muted"><Target size={13} className="shrink-0" aria-hidden="true" />{t('withinHit')}</p>
+                    <p className="mt-0.5 font-display text-lg font-bold tabular-nums text-ink-primary">{result.meta.within_20pct.toLocaleString('en-US', { maximumFractionDigits: 1 })}%</p>
                   </div>
-                  <div className="rounded-lg bg-surface-soft p-2">
-                    <p className="text-ink-muted">{t('medianError')}</p>
-                    <p className="font-display text-base font-bold text-ink-primary">{result.meta.median_abs_pct_error.toLocaleString('en-US', { maximumFractionDigits: 1 })}%</p>
+                  <div className="rounded-xl bg-white/80 p-2.5 ring-1 ring-line">
+                    <p className="flex items-center gap-1.5 text-ink-muted"><Percent size={13} className="shrink-0" aria-hidden="true" />{t('medianError')}</p>
+                    <p className="mt-0.5 font-display text-lg font-bold tabular-nums text-ink-primary">{result.meta.median_abs_pct_error.toLocaleString('en-US', { maximumFractionDigits: 1 })}%</p>
                   </div>
                 </div>
-                <dl className="mt-3 space-y-1 text-xs">
+                <dl className="mt-3 space-y-1 border-t border-line pt-3 text-xs">
                   <div className="flex gap-2"><dt className="shrink-0 text-ink-muted">{t('resolvedLocation')}</dt><dd className="min-w-0 text-ink-primary">{[result.meta.subdistrict, result.meta.district, result.meta.province].filter(Boolean).join(', ')}</dd></div>
                   {result.meta.project && (
                     <div className="flex gap-2"><dt className="shrink-0 text-ink-muted">{t('snappedProject')}</dt><dd className="min-w-0 text-ink-primary">{result.meta.project}</dd></div>
@@ -347,16 +402,19 @@ export default function PricePanel({ target, onClearTarget, onClose }) {
               </div>
 
               {isListing && resultIsCurrent && (
-                <div className="rounded-xl border border-line p-4">
+                <div className={`rounded-2xl border border-l-4 p-4 ${gapStyle.border}`}>
                   <div className="flex items-baseline justify-between gap-2">
                     <span className="text-xs font-medium text-ink-secondary">{t('askingPrice')}</span>
-                    <span className="font-display text-base font-bold text-ink-primary">{fmtBaht(point.price)}</span>
+                    <span className="font-display text-base font-bold tabular-nums text-ink-primary">{fmtBaht(point.price)}</span>
                   </div>
                   {gap != null && (
                     <>
-                      <div className="mt-2 flex items-baseline justify-between gap-2">
+                      <div className="mt-2 flex items-center justify-between gap-2">
                         <span className="text-xs text-ink-secondary">{t('askingVsEstimate')}</span>
-                        <span className={`font-display text-base font-bold ${gapTone}`}>{gap > 0 ? '+' : ''}{gap.toFixed(1)}%</span>
+                        <span className={`inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-sm font-bold tabular-nums ${gapStyle.pill} ${gapTone}`}>
+                          <gapStyle.Arrow size={14} aria-hidden="true" />
+                          {gap > 0 ? '+' : ''}{gap.toFixed(1)}%
+                        </span>
                       </div>
                       <p className={`mt-1 text-xs ${gapTone}`}>{gapVerdict}</p>
                     </>
@@ -367,16 +425,21 @@ export default function PricePanel({ target, onClearTarget, onClose }) {
               )}
             </div>
 
-            <Section title={t('comparables')}>
-              <ul className="divide-y divide-line rounded-xl border border-line">
+            <Section title={t('comparables')} icon={Scale}>
+              <ul className="divide-y divide-line rounded-2xl border border-line">
                 {compRows.map((row) => (
-                  <li key={row.label} className="flex items-baseline justify-between gap-2 px-3 py-2 text-xs">
-                    <span className="text-ink-secondary">{row.label}</span>
-                    <span className="text-right">
-                      <span className="font-display font-bold text-ink-primary">{Math.round(row.ppsqm).toLocaleString('en-US')}</span>{' '}
-                      <span className="text-ink-muted">{t('ppsqmUnit')}</span>
-                      {row.n != null && <span className="ml-2 text-ink-muted">{`${row.n.toLocaleString('en-US')} ${t('listings')}`}</span>}
-                    </span>
+                  <li key={row.label} className="px-3 py-2 text-xs">
+                    <div className="flex items-baseline justify-between gap-2">
+                      <span className="text-ink-secondary">{row.label}</span>
+                      <span className="text-right tabular-nums">
+                        <span className="font-display font-bold text-ink-primary">{Math.round(row.ppsqm).toLocaleString('en-US')}</span>{' '}
+                        <span className="text-ink-muted">{t('ppsqmUnit')}</span>
+                        {row.n != null && <span className="ml-2 text-ink-muted">{`${row.n.toLocaleString('en-US')} ${t('listings')}`}</span>}
+                      </span>
+                    </div>
+                    <div aria-hidden="true" className="mt-1.5 h-1 w-full overflow-hidden rounded-full bg-surface-soft">
+                      <div className="h-full rounded-full bg-[#DC2626]/25" style={{ width: `${maxPpsqm > 0 ? (row.ppsqm / maxPpsqm) * 100 : 0}%` }} />
+                    </div>
                   </li>
                 ))}
               </ul>
@@ -388,15 +451,15 @@ export default function PricePanel({ target, onClearTarget, onClose }) {
               )}
             </Section>
 
-            <Section title={t('models')}>
-              <div className="flex h-2.5 w-full overflow-hidden rounded-full bg-surface-soft" aria-hidden="true">
+            <Section title={t('models')} icon={Layers}>
+              <div className="flex h-2 w-full overflow-hidden rounded-full bg-surface-soft" aria-hidden="true">
                 {result.contributions.map((m) => (
                   <span key={m.name} style={{ width: `${(m.weight / weightSum) * 100}%`, background: m.color }} />
                 ))}
               </div>
-              <ul className="space-y-1.5 text-xs">
+              <ul className="text-xs">
                 {result.contributions.map((m) => (
-                  <li key={m.name} className="flex items-center gap-2">
+                  <li key={m.name} className="flex items-center gap-2 py-1">
                     <span className="h-2.5 w-2.5 shrink-0 rounded-sm" style={{ background: m.color }} aria-hidden="true" />
                     <span className="flex-1 text-ink-secondary">{m.name}</span>
                     <span className="tabular-nums text-ink-muted">{Math.round((m.weight / weightSum) * 100)}%</span>
@@ -406,52 +469,54 @@ export default function PricePanel({ target, onClearTarget, onClose }) {
               </ul>
             </Section>
 
-            <Section title={t('futureValue')}>
-              <div>
-                <div className="flex items-baseline justify-between">
-                  <label htmlFor="growth-rate" className="text-xs font-medium text-ink-primary">{t('growthRate')}</label>
-                  <span className="font-display text-sm font-bold text-ink-primary">{growth}%</span>
+            <Section title={t('futureValue')} icon={CalendarClock}>
+              <div className="space-y-3 rounded-2xl border border-line p-3">
+                <div>
+                  <div className="flex items-baseline justify-between">
+                    <label htmlFor="growth-rate" className="text-xs font-medium text-ink-primary">{t('growthRate')}</label>
+                    <span className="font-display text-sm font-bold text-ink-primary">{growth}%</span>
+                  </div>
+                  <input
+                    id="growth-rate"
+                    type="range"
+                    min={GROWTH_MIN_PCT}
+                    max={GROWTH_MAX_PCT}
+                    step={GROWTH_STEP_PCT}
+                    value={growth}
+                    onChange={(e) => setGrowth(Number(e.target.value))}
+                    className="mt-2 w-full accent-[#DC2626]"
+                  />
                 </div>
-                <input
-                  id="growth-rate"
-                  type="range"
-                  min={GROWTH_MIN_PCT}
-                  max={GROWTH_MAX_PCT}
-                  step={GROWTH_STEP_PCT}
-                  value={growth}
-                  onChange={(e) => setGrowth(Number(e.target.value))}
-                  className="mt-2 w-full accent-[#DC2626]"
-                />
-              </div>
-              <p className="text-[11px] text-ink-muted">{t('mthb')}</p>
-              <table className="w-full text-xs tabular-nums">
-                <thead>
-                  <tr className="text-left text-ink-muted">
-                    <th className="py-1 font-medium">{t('horizon')}</th>
-                    <th className="py-1 text-right font-medium">{t('estimateLow')}</th>
-                    <th className="py-1 text-right font-medium">{t('estimateMid')}</th>
-                    <th className="py-1 text-right font-medium">{t('estimateHigh')}</th>
-                  </tr>
-                </thead>
-                <tbody className="text-ink-primary">
-                  {HORIZONS_YEARS.map((years) => (
-                    <tr key={years} className="border-t border-line">
-                      <td className="py-1.5">{years}</td>
-                      <td className="py-1.5 text-right">{(compound(result.lowerBound, growth, years) / 1e6).toFixed(2)}</td>
-                      <td className="py-1.5 text-right font-semibold">{(compound(result.predictedPrice, growth, years) / 1e6).toFixed(2)}</td>
-                      <td className="py-1.5 text-right">{(compound(result.upperBound, growth, years) / 1e6).toFixed(2)}</td>
+                <p className="text-[11px] text-ink-muted">{t('mthb')}</p>
+                <table className="w-full text-xs tabular-nums">
+                  <thead>
+                    <tr className="bg-surface-soft text-ink-muted">
+                      <th className="rounded-l-md px-2 py-1.5 text-left font-medium">{t('horizon')}</th>
+                      <th className="py-1.5 text-right font-medium">{t('estimateLow')}</th>
+                      <th className="py-1.5 text-right font-medium">{t('estimateMid')}</th>
+                      <th className="rounded-r-md px-2 py-1.5 text-right font-medium">{t('estimateHigh')}</th>
                     </tr>
-                  ))}
-                </tbody>
-              </table>
-              <p className="text-[11px] leading-relaxed text-ink-muted">{t('futureNote')}</p>
+                  </thead>
+                  <tbody className="text-ink-primary">
+                    {HORIZONS_YEARS.map((years) => (
+                      <tr key={years} className="border-t border-line">
+                        <td className="px-2 py-1.5 text-left">{years}</td>
+                        <td className="py-1.5 text-right">{(compound(result.lowerBound, growth, years) / 1e6).toFixed(2)}</td>
+                        <td className="py-1.5 text-right font-semibold">{(compound(result.predictedPrice, growth, years) / 1e6).toFixed(2)}</td>
+                        <td className="px-2 py-1.5 text-right">{(compound(result.upperBound, growth, years) / 1e6).toFixed(2)}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+                <p className="text-[11px] leading-relaxed text-ink-muted">{t('futureNote')}</p>
+              </div>
             </Section>
           </div>
         )}
       </div>
 
       <footer className="shrink-0 border-t border-line bg-surface-soft px-4 py-2.5">
-        <p className="text-[11px] leading-relaxed text-ink-secondary">{t('priceNotice')}</p>
+        <p className="flex gap-1.5 text-[11px] leading-relaxed text-ink-secondary"><Info size={12} className="mt-0.5 shrink-0" aria-hidden="true" />{t('priceNotice')}</p>
       </footer>
     </div>
   );
