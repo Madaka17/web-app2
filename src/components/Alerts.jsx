@@ -84,13 +84,6 @@ export function AlertHost() {
         <button type="button" onClick={close} className="btn-primary btn-md mt-6 w-full">{t('gotIt')}</button>
       </CenterCard>
     );
-  } else if (alert.type === 'sample') {
-    content = (
-      <CenterCard label={t('sample')}>
-        <p className="text-sm leading-relaxed text-ink-secondary">{t('sample')}</p>
-        <button type="button" onClick={close} className="btn-primary btn-md mt-5 w-full">{t('gotIt')}</button>
-      </CenterCard>
-    );
   }
   return createPortal(content, document.body);
 }

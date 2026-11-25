@@ -52,8 +52,7 @@ export default function Header({ tone }) {
             </button>
           )}
 
-          <div className="flex min-w-0 flex-1 justify-center overflow-hidden px-0.5 sm:px-2 lg:px-2 xl:px-4">
-          </div>
+          <div className="min-w-0 flex-1" />
 
           <div className="flex shrink-0 items-center gap-1.5 sm:gap-2 lg:gap-2 xl:gap-4">
             <div className={`hidden items-center gap-0.5 rounded-pill p-0.5 text-xs font-semibold sm:flex ${red ? 'bg-white/15' : 'bg-surface-2'}`}>

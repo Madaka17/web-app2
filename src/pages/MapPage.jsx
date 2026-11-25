@@ -1,8 +1,8 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import {
-  Banknote, Building2, ChevronDown, ChevronUp, CircleHelp, Coins, Filter, House, Layers, ListChecks, LocateFixed,
-  LogOut, MapPin, Minus, Plus, ReceiptText, Search, TrendingUp, X,
+  Banknote, ChevronDown, ChevronUp, CircleHelp, Coins, Filter, Layers, ListChecks, LocateFixed,
+  LogOut, MapPin, Minus, Plus, Search, TrendingUp, X,
 } from 'lucide-react';
 import { BRAND, useLang, usePageMeta } from '../i18n.jsx';
 import Header from '../components/Header.jsx';
@@ -11,9 +11,8 @@ import { useAlerts } from '../components/Alerts.jsx';
 import MapCanvas from '../components/MapCanvas.jsx';
 import { FilterPanel, LayerPanel, legendLabelKey } from '../components/MapPanels.jsx';
 import PricePanel from '../components/PricePanel.jsx';
-import { areaArt } from '../art.js';
-import { AREAS, PLACE_LABELS } from '../data.js';
-import { EMPTY_FILTER, LISTING_LEGEND, PROJECT_LEGEND, applyFilter, findPoint, loadListings, loadProjects, summarize } from '../lib/mapData';
+import { PLACE_LABELS } from '../data.js';
+import { EMPTY_FILTER, LISTING_LEGEND, applyFilter, findPoint, loadListings, summarize } from '../lib/mapData';
 
 function StatCard({ icon: Icon, bigIcon: BigIcon, title, value, unit, tint, iconBg, iconColor, minW }) {
   return (
@@ -77,7 +76,7 @@ function Tour({ step, setStep, onClose }) {
 
 export default function MapPage() {
   const { t } = useLang();
-  const { alert, setAlert } = useAlerts();
+  const { setAlert } = useAlerts();
   const [params] = useSearchParams();
   const canvas = useRef(null);
   const seenNotice = useRef(false);
@@ -92,9 +91,6 @@ export default function MapPage() {
     const lng = Number(lngParam);
     return Number.isFinite(lat) && Number.isFinite(lng) ? { lat, lng } : null;
   }, [latParam, lngParam]);
-  const [mode] = useState('land');
-  const [area, setArea] = useState(null);
-  const [areaOpen, setAreaOpen] = useState(false);
   const [statsOpen, setStatsOpen] = useState(true);
   const [legendOpen, setLegendOpen] = useState(true);
   const [panel, setPanel] = useState(null);
@@ -105,7 +101,6 @@ export default function MapPage() {
   const [query, setQuery] = useState('');
   const [tourStep, setTourStep] = useState(null);
   const [listings, setListings] = useState(null);
-  const [projects, setProjects] = useState(null);
   const [loadError, setLoadError] = useState(false);
   const [filter, setFilter] = useState(EMPTY_FILTER);
   const [target, setTarget] = useState(null);
@@ -116,17 +111,19 @@ export default function MapPage() {
 
   usePageMeta(BRAND, 'สำรวจประกาศซื้อขายและขายฝากที่ดินบนแผนที่ (ตัวอย่าง)');
 
-  // Both data files load once. The map keeps working without them; it just shows no pins.
+  // The listing data loads once. The map keeps working without it; it just shows no pins.
   useEffect(() => {
     const controller = new AbortController();
-    // allSettled: one failing file leaves the other dataset usable.
-    Promise.allSettled([loadListings(controller.signal), loadProjects(controller.signal)])
-      .then(([listingResult, projectResult]) => {
+    loadListings(controller.signal).then(
+      (data) => {
         if (controller.signal.aborted) return;
-        if (listingResult.status === 'fulfilled') setListings(listingResult.value);
-        if (projectResult.status === 'fulfilled') setProjects(projectResult.value);
-        if (listingResult.status === 'rejected' || projectResult.status === 'rejected') setLoadError(true);
-      });
+        setListings(data);
+      },
+      () => {
+        if (controller.signal.aborted) return;
+        setLoadError(true);
+      },
+    );
     return () => controller.abort();
   }, []);
 
@@ -143,9 +140,8 @@ export default function MapPage() {
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  const dataset = mode === 'future' ? projects : listings;
-  // Pins for the current mode after filtering.
-  const points = useMemo(() => (mode ? applyFilter(dataset ?? [], filter) : []), [mode, dataset, filter]);
+  // Listing pins after filtering.
+  const points = useMemo(() => applyFilter(listings ?? [], filter), [listings, filter]);
   const summary = useMemo(() => summarize(points), [points]);
 
   const onPick = (lat, lng) => {
@@ -156,24 +152,6 @@ export default function MapPage() {
     setTarget({ lat: p.lat, lng: p.lng, source: p.kind, point: p });
     setPanelOpen(true);
   };
-
-  const chooseArea = (item) => {
-    setArea(item.key);
-    setAreaOpen(false);
-    canvas.current?.flyTo(item.center, item.zoom);
-  };
-
-  const closeArea = () => setAreaOpen(false);
-
-  // Close the choose-area layer with Esc. Alerts on top are left alone.
-  useEffect(() => {
-    if (!areaOpen) return undefined;
-    const onKey = (event) => {
-      if (event.key === 'Escape' && !alert) closeArea();
-    };
-    window.addEventListener('keydown', onKey);
-    return () => window.removeEventListener('keydown', onKey);
-  }, [areaOpen, alert]);
 
   const runSearch = (event) => {
     event.preventDefault();
@@ -188,31 +166,22 @@ export default function MapPage() {
     if (found) canvas.current?.flyTo([found.lat, found.lng], 15);
   };
 
-  const legendItems = mode === 'future' ? PROJECT_LEGEND : LISTING_LEGEND;
-  const chosen = mode === 'future' || mode === 'land';
-  const ready = chosen && dataset !== null;
+  const ready = listings !== null;
   const fmtCount = (n) => (ready ? n.toLocaleString('en-US') : '—');
   const fmtMillions = (baht) => (ready ? (baht / 1e6).toLocaleString('en-US', { maximumFractionDigits: 1 }) : '—');
-  const showAreaPicker = mode === 'future' && areaOpen;
 
-  const stats = mode === 'future'
-    ? [
-      { icon: ReceiptText, bigIcon: MapPin, title: t('totalProjects'), value: fmtCount(summary.count), unit: t('projects'), tint: '#df201c14', iconBg: '#df201c1a', iconColor: '#df201c', minW: 'xl:min-w-[160px]' },
-      { icon: House, bigIcon: House, title: t('villages'), value: fmtCount(summary.villages), unit: t('projects'), tint: '#ef6c0014', iconBg: 'transparent', iconColor: '#e65100', minW: 'xl:min-w-[190px]' },
-      { icon: Building2, bigIcon: Building2, title: t('condos'), value: fmtCount(summary.condos), unit: t('projects'), tint: '#2e7d3214', iconBg: 'transparent', iconColor: '#2e7d32', minW: 'xl:min-w-[160px]' },
-    ]
-    : [
-      { icon: ListChecks, bigIcon: MapPin, title: t('totalListings'), value: fmtCount(summary.count), unit: t('listings'), tint: '#df201c14', iconBg: '#df201c1a', iconColor: '#df201c', minW: 'xl:min-w-[160px]' },
-      { icon: Banknote, bigIcon: Coins, title: t('totalValue'), value: fmtMillions(summary.totalPrice), unit: t('mthb'), tint: '#ef6c0014', iconBg: 'transparent', iconColor: '#e65100', minW: 'xl:min-w-[190px]' },
-      { icon: TrendingUp, bigIcon: Coins, title: t('medianPrice'), value: fmtMillions(summary.medianPrice), unit: t('mthb'), tint: '#2e7d3214', iconBg: 'transparent', iconColor: '#2e7d32', minW: 'xl:min-w-[160px]' },
-    ];
+  const stats = [
+    { icon: ListChecks, bigIcon: MapPin, title: t('totalListings'), value: fmtCount(summary.count), unit: t('listings'), tint: '#df201c14', iconBg: '#df201c1a', iconColor: '#df201c', minW: 'xl:min-w-[160px]' },
+    { icon: Banknote, bigIcon: Coins, title: t('totalValue'), value: fmtMillions(summary.totalPrice), unit: t('mthb'), tint: '#ef6c0014', iconBg: 'transparent', iconColor: '#e65100', minW: 'xl:min-w-[190px]' },
+    { icon: TrendingUp, bigIcon: Coins, title: t('medianPrice'), value: fmtMillions(summary.medianPrice), unit: t('mthb'), tint: '#2e7d3214', iconBg: 'transparent', iconColor: '#2e7d32', minW: 'xl:min-w-[160px]' },
+  ];
 
   return (
     <div className="fixed inset-0 flex flex-col overflow-hidden overscroll-none bg-surface-soft">
       <Header tone="map" />
       <div className="h-[var(--nav-h)] shrink-0" aria-hidden="true" />
       <main className="relative flex min-h-0 flex-1 overflow-hidden overscroll-none">
-        {chosen && panelOpen && (
+        {panelOpen && (
           <aside aria-label={t('priceEstimate')} className="flex min-h-0 flex-col bg-white max-lg:fixed max-lg:inset-x-0 max-lg:bottom-0 max-lg:z-[1500] max-lg:max-h-[62dvh] max-lg:rounded-t-xl max-lg:shadow-lg lg:relative lg:w-[440px] xl:w-[500px] lg:shrink-0 lg:border-r lg:border-line">
             <PricePanel target={target} onClearTarget={() => setTarget(null)} onClose={() => setPanelOpen(false)} />
           </aside>
@@ -229,7 +198,7 @@ export default function MapPage() {
             )}
           />
           <div className="relative h-full w-full" data-tour="listing-map-stage">
-            <MapCanvas ref={canvas} mode={mode} points={points} baseMap={baseMap} cityPlan={cityPlan} measuring={measuring} focus={linked} target={target} onPick={onPick} onSelectPoint={onSelectPoint} />
+            <MapCanvas ref={canvas} points={points} baseMap={baseMap} cityPlan={cityPlan} measuring={measuring} focus={linked} target={target} onPick={onPick} onSelectPoint={onSelectPoint} />
 
             <div className="pointer-events-none absolute inset-x-0 top-3 z-[1200] flex flex-col items-center gap-2 px-3 max-lg:top-2 sm:top-4 md:max-lg:top-3">
               <div className="pointer-events-auto flex w-full max-w-[min(96vw,640px)] items-center justify-center gap-2 md:max-lg:max-w-[min(calc(100vw-1.5rem),34rem)] md:max-lg:gap-1.5 lg:max-w-[min(calc(100vw-12rem),36rem)] lg:gap-1.5 xl:max-w-[min(96vw,640px)] xl:gap-2">
@@ -250,12 +219,10 @@ export default function MapPage() {
                       <span className="whitespace-normal text-center text-[14px] font-bold leading-tight max-md:text-[14px] sm:whitespace-nowrap sm:text-[15px] md:max-lg:text-[14px] lg:text-[14px] xl:text-[15px]">{t('createAsset')}</span>
                     </button>
                   </div>
-                  {chosen && (
-                    <button type="button" onClick={openTour} data-tour="listing-tour-help" aria-label={t('usageGuide')} title={t('usageGuide')} className="flex h-auto min-h-10 shrink-0 items-center justify-center rounded-full border border-[#e6d200]/80 bg-[#FFEA00] px-3 py-2 text-[11px] font-bold leading-tight text-neutral-900 shadow-md transition-colors hover:bg-[#f5dc00] max-sm:h-10 max-sm:w-10 max-sm:px-0 xl:min-h-10 xl:px-3.5 xl:text-xs">
-                      <CircleHelp size={20} className="sm:hidden" />
-                      <span className="hidden sm:inline">{t('usageGuide')}</span>
-                    </button>
-                  )}
+                  <button type="button" onClick={openTour} data-tour="listing-tour-help" aria-label={t('usageGuide')} title={t('usageGuide')} className="flex h-auto min-h-10 shrink-0 items-center justify-center rounded-full border border-[#e6d200]/80 bg-[#FFEA00] px-3 py-2 text-[11px] font-bold leading-tight text-neutral-900 shadow-md transition-colors hover:bg-[#f5dc00] max-sm:h-10 max-sm:w-10 max-sm:px-0 xl:min-h-10 xl:px-3.5 xl:text-xs">
+                    <CircleHelp size={20} className="sm:hidden" />
+                    <span className="hidden sm:inline">{t('usageGuide')}</span>
+                  </button>
                 </div>
               </div>
               {loadError && (
@@ -275,14 +242,13 @@ export default function MapPage() {
               <div className="relative" style={{ zIndex: 1000 }}>
                 <div className="flex flex-col gap-2">
                   <RoundButton label={t('layer')} dot active={panel === 'layer'} onClick={() => setPanel(panel === 'layer' ? null : 'layer')}><Layers size={16} /></RoundButton>
-                  {mode === 'future' && <RoundButton label={t('chooseArea')} active={areaOpen} onClick={() => setAreaOpen(true)}><MapPin size={18} /></RoundButton>}
-                  {chosen && <RoundButton label={t('filters')} active={panel === 'filters'} onClick={() => setPanel(panel === 'filters' ? null : 'filters')}><Filter size={16} /></RoundButton>}
-                  {chosen && <RoundButton label={t('priceEstimate')} active={panelOpen} onClick={() => setPanelOpen((v) => !v)}><TrendingUp size={16} /></RoundButton>}
+                  <RoundButton label={t('filters')} active={panel === 'filters'} onClick={() => setPanel(panel === 'filters' ? null : 'filters')}><Filter size={16} /></RoundButton>
+                  <RoundButton label={t('priceEstimate')} active={panelOpen} onClick={() => setPanelOpen((v) => !v)}><TrendingUp size={16} /></RoundButton>
                 </div>
                 {panel === 'layer' && (
                   <LayerPanel baseMap={baseMap} setBaseMap={setBaseMap} measuring={measuring} setMeasuring={setMeasuring} cityPlan={cityPlan} setCityPlan={setCityPlan} onClose={() => setPanel(null)} />
                 )}
-                {panel === 'filters' && <FilterPanel mode={mode} value={filter} onClose={() => setPanel(null)} onApply={(next) => { setFilter(next); setPanel(null); }} />}
+                {panel === 'filters' && <FilterPanel value={filter} onClose={() => setPanel(null)} onApply={(next) => { setFilter(next); setPanel(null); }} />}
               </div>
             </div>
 
@@ -316,7 +282,7 @@ export default function MapPage() {
                 {legendOpen && (
                   <div className="max-h-[min(52vh,20rem)] overflow-y-auto overscroll-contain px-3 pb-2 pt-2 xl:px-4 xl:pb-3 xl:pt-3">
                     <ul className="space-y-0">
-                      {legendItems.map(([key, color]) => (
+                      {LISTING_LEGEND.map(([key, color]) => (
                         <li key={key} className="flex items-center gap-1.5 py-0.5">
                           <span className="inline-block h-3 w-3 shrink-0 rounded-full border border-white shadow" style={{ background: color }} aria-hidden="true" />
                           <span className="text-[11px] leading-snug text-gray-800">{t(legendLabelKey(key))}</span>
@@ -327,37 +293,6 @@ export default function MapPage() {
                 )}
               </div>
             </div>
-
-            {showAreaPicker && (
-              <div className="fixed inset-0 z-[9999] flex items-center justify-center p-3 pb-[max(0.75rem,env(safe-area-inset-bottom))] sm:p-5 md:p-8">
-                <div className="absolute inset-0 bg-black/55 backdrop-blur-md" aria-hidden="true" />
-                <div className="anim-fade relative z-10 flex w-full max-w-[min(100%,72rem)] flex-col gap-3 sm:gap-4">
-                  <div className="relative px-1 text-center sm:px-2">
-                    <button type="button" aria-label="Close" onClick={closeArea} className="absolute -top-0.5 right-0 z-20 flex h-8 w-8 items-center justify-center rounded-full bg-black/40 text-white transition-colors hover:bg-black/55 sm:right-1 sm:h-9 sm:w-9"><X size={16} /></button>
-                    <h2 className="mx-auto max-w-[min(100%,48rem)] whitespace-nowrap px-9 text-center font-display text-base font-bold leading-snug tracking-tight text-white drop-shadow-md sm:px-14 sm:text-xl md:text-2xl">{t('chooseAreaTitle')}</h2>
-                  </div>
-                  <div className="grid max-h-[min(calc(100dvh-var(--nav-h)-5.5rem),640px)] min-h-[min(62dvh,480px)] grid-cols-2 gap-2 sm:min-h-[min(58dvh,520px)] md:grid-cols-4 md:gap-2.5">
-                    {AREAS.map((item, index) => (
-                      <button
-                        key={item.key}
-                        type="button"
-                        onClick={() => chooseArea(item)}
-                        aria-pressed={area === item.key}
-                        className="anim-up group relative flex min-h-[11rem] flex-col overflow-hidden rounded-2xl bg-cover bg-center text-center shadow-[0_24px_64px_rgba(0,0,0,0.45)] transition-transform duration-300 hover:brightness-[1.04] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-[-2px] focus-visible:outline-white active:scale-[0.995] sm:min-h-0 sm:rounded-3xl"
-                        style={{ animationDelay: `${index * 80}ms`, backgroundImage: `url("${areaArt(item.art)}")` }}
-                      >
-                        <div className="absolute inset-0 bg-gradient-to-t from-black via-black/55 to-transparent transition-opacity duration-300 group-hover:via-black/45" aria-hidden="true" />
-                        <div className="relative z-10 flex h-full w-full flex-col items-center justify-center px-3 py-5 sm:px-4 sm:py-6 md:px-5 md:py-7">
-                          <div className="mb-3 inline-flex size-11 items-center justify-center rounded-xl bg-black/40 text-white shadow-lg backdrop-blur-md group-hover:bg-black/50 sm:mb-4 sm:size-14 sm:rounded-2xl"><MapPin size={22} /></div>
-                          <h3 className="font-display text-lg font-extrabold leading-tight text-white drop-shadow-[0_2px_10px_rgba(0,0,0,0.55)] sm:text-xl md:text-2xl lg:text-[1.65rem]">{item.name}</h3>
-                          <p className="mt-1.5 font-display text-[12px] font-semibold leading-snug text-white/95 drop-shadow-sm sm:mt-2 sm:text-sm md:text-[15px]">{item.th}</p>
-                        </div>
-                      </button>
-                    ))}
-                  </div>
-                </div>
-              </div>
-            )}
           </div>
         </div>
       </main>

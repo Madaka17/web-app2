@@ -81,7 +81,7 @@ function renderPoints(map, group, points, { onDot, clusterTitle }) {
   });
 }
 
-const MapCanvas = forwardRef(function MapCanvas({ mode, points, baseMap, cityPlan, measuring, focus, target, onPick, onSelectPoint }, ref) {
+const MapCanvas = forwardRef(function MapCanvas({ points, baseMap, cityPlan, measuring, focus, target, onPick, onSelectPoint }, ref) {
   const { t } = useLang();
   const box = useRef(null);
   const mapRef = useRef(null);
@@ -90,7 +90,6 @@ const MapCanvas = forwardRef(function MapCanvas({ mode, points, baseMap, cityPla
   const planRef = useRef(null);
   const targetRef = useRef(null);
   const pointsRef = useRef(points);
-  const modeRef = useRef(mode);
   const tRef = useRef(t);
   const callbacksRef = useRef({ onPick, onSelectPoint });
   const measureRef = useRef({ points: [], layer: null });
@@ -100,10 +99,8 @@ const MapCanvas = forwardRef(function MapCanvas({ mode, points, baseMap, cityPla
   const redraw = () => {
     const map = mapRef.current;
     if (!map || !groupRef.current) return;
-    // Points are empty until a mode is chosen; the original shows no markers then.
-    const current = modeRef.current ? pointsRef.current : [];
-    renderPoints(map, groupRef.current, current, {
-      clusterTitle: (n) => `${n} ${tRef.current(modeRef.current === 'future' ? 'projects' : 'listings')}`,
+    renderPoints(map, groupRef.current, pointsRef.current, {
+      clusterTitle: (n) => `${n} ${tRef.current('listings')}`,
       onDot: (point) => {
         // A standalone popup on the map is not owned by the marker, so the redraw that
         // follows the auto-pan (moveend -> clearLayers) does not remove it.
@@ -142,8 +139,7 @@ const MapCanvas = forwardRef(function MapCanvas({ mode, points, baseMap, cityPla
     map.on('moveend zoomend', redraw);
     map.on('click', (event) => {
       if (!measuringRef.current) {
-        // The mode picker covers the map until a mode is chosen, so a click picks nothing then.
-        if (modeRef.current) callbacksRef.current.onPick?.(event.latlng.lat, event.latlng.lng);
+        callbacksRef.current.onPick?.(event.latlng.lat, event.latlng.lng);
         return;
       }
       const m = measureRef.current;
@@ -168,11 +164,6 @@ const MapCanvas = forwardRef(function MapCanvas({ mode, points, baseMap, cityPla
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  // A popup from the previous mode would point at a pin that no longer shows.
-  useEffect(() => {
-    mapRef.current?.closePopup();
-  }, [mode]);
-
   useEffect(() => {
     const group = baseRef.current;
     if (!group) return;
@@ -182,11 +173,10 @@ const MapCanvas = forwardRef(function MapCanvas({ mode, points, baseMap, cityPla
 
   useEffect(() => {
     pointsRef.current = points;
-    modeRef.current = mode;
     tRef.current = t;
     redraw();
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [points, mode, t]);
+  }, [points, t]);
 
   useEffect(() => {
     const map = mapRef.current;

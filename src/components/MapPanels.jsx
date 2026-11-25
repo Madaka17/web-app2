@@ -1,9 +1,9 @@
 import { useState } from 'react';
 import { Car, ChevronDown, Filter, Map as MapIcon, Mountain, Ruler, Satellite, X } from 'lucide-react';
 import { useLang } from '../i18n.jsx';
-import { EMPTY_FILTER, LISTING_LEGEND, PROJECT_LEGEND } from '../lib/mapData';
+import { EMPTY_FILTER, LISTING_LEGEND } from '../lib/mapData';
 
-// The land type shares its legend key with the mode name, so it gets its own label.
+// The land type's legend key is 'land', so its label is stored under 'landType'.
 export function legendLabelKey(key) {
   return key === 'land' ? 'landType' : key;
 }
@@ -99,11 +99,10 @@ function RangeField({ label, value, onChange }) {
   );
 }
 
-export function FilterPanel({ mode, value, onApply, onClose }) {
+export function FilterPanel({ value, onApply, onClose }) {
   const { t } = useLang();
   const [form, setForm] = useState(value);
-  const legend = mode === 'future' ? PROJECT_LEGEND : LISTING_LEGEND;
-  const typeOptions = [['all', t('all')], ...legend.map(([key]) => [key, t(legendLabelKey(key))])];
+  const typeOptions = [['all', t('all')], ...LISTING_LEGEND.map(([key]) => [key, t(legendLabelKey(key))])];
   const setField = (key) => (v) => setForm((f) => ({ ...f, [key]: v }));
   const setRange = (minKey, maxKey) => ([min, max]) => setForm((f) => ({ ...f, [minKey]: min, [maxKey]: max }));
   return (
