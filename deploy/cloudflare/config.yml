@@ -1,0 +1,9 @@
+# Cloudflare Tunnel "openplot": https://openplot.bkksmartstreet.com -> vite preview on this machine (port 4173).
+# The credentials file is the tunnel's secret and stays in %USERPROFILE%\.cloudflared, outside the repo.
+tunnel: edbfa5cd-5870-478e-bae4-3e82d52f92e0
+credentials-file: C:\Users\user\.cloudflared\edbfa5cd-5870-478e-bae4-3e82d52f92e0.json
+
+ingress:
+  - hostname: openplot.bkksmartstreet.com
+    service: http://127.0.0.1:4173
+  - service: http_status:404

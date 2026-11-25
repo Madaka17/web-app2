@@ -63,4 +63,6 @@ export default defineConfig({
       '/api': 'http://127.0.0.1:3030',
     },
   },
+  // The Cloudflare tunnel forwards openplot.bkksmartstreet.com here; preview inherits server.proxy so /api works the same as in dev.
+  preview: { host: '127.0.0.1', port: 4173, strictPort: true },
 });

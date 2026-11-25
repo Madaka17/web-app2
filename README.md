@@ -49,6 +49,16 @@ To run the API on its own:
 cd ml && .venv/bin/python api.py     # Windows: .venv\Scripts\python api.py
 ```
 
+## Public site (Cloudflare Tunnel)
+
+The site is also served publicly at https://openplot.bkksmartstreet.com from this PC,
+through the Cloudflare Tunnel named `openplot`. The site is only up while this PC is on
+and the tunnel is running; if the PC is off, the site is down. To start it, run
+`deploy\start-public.cmd`. It builds the site and opens three windows: `openplot-api`
+(the model API), `openplot-web` (the preview server on port 4173) and `openplot-tunnel`
+(the tunnel). Keep all three open. The API takes about a minute to load the model, so
+price requests fail until it is ready.
+
 ### Python packages for the API
 
 The API (`ml/api.py`) and the data scripts need the packages in
