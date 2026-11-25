@@ -66,9 +66,11 @@ The target is log **price per sqm** and the loss is absolute error.
 ## Accuracy, measured honestly
 
 Almost every listing is a 2569 snapshot of one market, so the newest year is
-dealt out at random with a fixed seed (`prepare_data.assign_folds`): 70% of
-2569 plus all older years to fit, 10% to pick ensemble weights (by R²), 20%
-scored once at the end.
+dealt out at random with a fixed seed, 42 (`prepare_data.assign_folds`): 60% of
+2569 plus all older years go to fit; 10% go to validation, which picks the
+ensemble weights (by R²); 10% go to calibration, which sets the price range
+only and is never trained on; 20% go to test, scored once at the end. The
+served model is refit on fit + validation; calibration and test stay out of it.
 
 The same held-out rows are scored the three ways a price can be asked for
 (`train_models.app_views`), because a listing states facts the web form does
@@ -76,19 +78,18 @@ not know:
 
 | input | what the model gets | rows | R² | MdAPE | within ±20% |
 |---|---|---|---|---|---|
-| **map click** (headline) | pin, type, size; project snapped from the pin | 13,928 | **0.858** | **11.5%** | **71.7%** |
-| sub-district dropdown | type, size, sub-district - no pin | 17,808 | 0.763 | 22.2% | 45.8% |
-| full listing | everything the listing states | 17,808 | 0.851 | 12.7% | 67.9% |
+| **map click** (headline) | pin, type, size; project snapped from the pin | 13,928 | **0.857** | **11.7%** | **71.5%** |
+| sub-district dropdown | type, size, sub-district - no pin | 17,808 | 0.757 | 22.5% | 45.4% |
+| full listing | everything the listing states | 17,808 | 0.850 | 12.6% | 67.5% |
 
-Per model on the map-click view: CatBoost R² 0.854, LightGBM 0.858, XGBoost
-0.863, ensemble (0.8 / 0.1 / 0.1, picked on validation) 0.858. (The previous
+Per model on the map-click view: CatBoost R² 0.856, LightGBM 0.856, XGBoost
+0.847, ensemble (0.8 / 0.1 / 0.1, picked on validation) 0.857. (The previous
 2026-10-08 scrape gave 0.866; the data differs, the pipeline does not.)
 
-R² is measured on baht, so it is dominated by a handful of expensive rows: on
-validation the 20 worst rows (0.3%) carry 59% of the squared error, and some
-of them look like listing typos (a 1,200 sqm condo at a tenth of its project's
-rate). No row is dropped from the test set to raise it; MdAPE and the ±20%
-share are the steadier figures.
+R² is measured on baht, so it is dominated by a handful of expensive rows, and
+some of them look like listing typos (a 1,200 sqm condo at a tenth of its
+project's rate). No row is dropped from the test set to raise it; MdAPE and the
+±20% share are the steadier figures.
 
 The dropdown alone cannot reach the same accuracy: within one sub-district a
 condo can ask twice what the next one does, and only a pin says which.
@@ -99,14 +100,75 @@ sale feed ("13,000 บาทต่อเดือน", rent typed as price; `cle
 leave rooms/project blank were mostly the cheapest site's. Fit rows now have
 those facts blanked at random (`mask_optional`) so blank means "not told".
 
-By property type, map click (`calibrate.py`):
+### Test fold by property type (map click)
 
-| segment | n | MdAPE | within ±20% |
-|---|---|---|---|
-| คอนโด | 10,158 | 9.6% | 80.3% |
-| ทาวน์เฮ้าส์ | 1,385 | 17.2% | 55.3% |
-| บ้านเดี่ยว | 1,916 | 19.4% | 51.3% |
-| ที่ดิน | 469 | 34.1% | 33.7% |
+`calibrate.py` scores the test fold (`test_coverage` in `metrics.json`). Per-type
+R², MdAPE and ±20% on the test fold were not produced by the run, so they are
+marked —.
+
+| segment | n | R² | MdAPE | within ±20% | median ratio | COD | PRD |
+|---|---|---|---|---|---|---|---|
+| all (map click) | 13,928 | 0.857 | 11.7% | 71.5% | 0.992 | 19.1 | 1.083 |
+| คอนโด | 10,158 | — | — | — | 0.993 | 14.0 | 1.041 |
+| ทาวน์เฮ้าส์ | 1,385 | — | — | — | 0.977 | 24.0 | 1.096 |
+| ที่ดิน | 469 | — | — | — | 0.967 | 76.4 | 1.711 |
+| บ้านเดี่ยว | 1,916 | — | — | — | 0.993 | 29.5 | 1.139 |
+
+### Price range coverage on the test fold
+
+The price range is split conformal: its bounds are set from the calibration
+fold (the 10% never trained on), and then the same bounds are checked on the
+untouched test fold. A well-calibrated range should contain about 80% of the
+test listings.
+
+| segment | map click n | map click coverage | dropdown n | dropdown coverage |
+|---|---|---|---|---|
+| คอนโด | 10,158 | 80.0% | 13,039 | 79.5% |
+| ทาวน์เฮ้าส์ | 1,385 | 80.9% | 1,821 | 78.0% |
+| ที่ดิน | 469 | 77.6% | 469 | 80.4% |
+| บ้านเดี่ยว | 1,916 | 80.7% | 2,479 | 80.1% |
+| all | 13,928 | 79.5% | 17,808 | 79.4% |
+
+Nominal coverage is 80%.
+
+### Spatial and temporal checks
+
+Both are cross-validation runs (`cv.py`, written to `models/cv_metrics.json`).
+Spatial CV is GroupKFold by sub-district with 5 folds, scores pooled across the
+folds, and asks how the model does at a sub-district it has never seen in
+training. The temporal holdout trains on listings posted before 2026-08-05 and
+scores listings posted on or after that date (hipflat excluded, since its
+listings carry no posting date) and asks how it does on listings posted after
+training.
+
+| test | rows | MdAPE | within ±20% | R² | median ratio | COD | PRD | coverage |
+|---|---|---|---|---|---|---|---|---|
+| spatial CV, pooled | 93,676 | 21.4% | 47.4% | 0.623 | 0.896 | 34.1 | 1.275 | 56.6% |
+| spatial, คอนโด | 63,573 | 18.4% | 53.4% | — | — | — | — | 52.7% |
+| spatial, ทาวน์เฮ้าส์ | 11,961 | 22.4% | 45.4% | — | — | — | — | 71.1% |
+| spatial, ที่ดิน | 4,819 | 51.2% | 21.4% | — | — | — | — | 64.5% |
+| spatial, บ้านเดี่ยว | 13,323 | 34.1% | 30.2% | — | — | — | — | 59.1% |
+| temporal holdout | 24,221 | 14.3% | 63.8% | 0.832 | 0.996 | 21.6 | 1.100 | 73.5% |
+| temporal, คอนโด | 16,588 | 12.1% | 71.4% | — | — | — | — | 71.3% |
+| temporal, ทาวน์เฮ้าส์ | 2,787 | 19.6% | 50.8% | — | — | — | — | 77.4% |
+| temporal, ที่ดิน | 642 | 37.1% | 29.8% | — | — | — | — | 76.3% |
+| temporal, บ้านเดี่ยว | 4,204 | 21.1% | 47.7% | — | — | — | — | 79.0% |
+
+Spatial is much worse than the random test fold because same-project and nearby
+comparables, the strongest features, are missing for an unseen sub-district. The
+served range under-covers there (56.6% against 80%) because it was calibrated on
+known locations. On listings posted after training, coverage is also below 80%
+(73.5%).
+
+### IAAO reference ranges
+
+The IAAO reference ranges for residential assessment are a median ratio of 0.90
+to 1.10, a COD of 15 or less and a PRD of 0.98 to 1.03. On the map-click test
+fold every segment's median ratio is inside 0.90 to 1.10, but no segment's PRD
+is inside 0.98 to 1.03 (condos come closest at 1.041), and only condos meet the
+COD range (14.0); townhouses (24.0), detached houses (29.5) and land (76.4) do
+not. The spatial pooled median ratio (0.896) is just below 0.90, and the temporal
+holdout's COD (21.6) and PRD (1.100) are outside their ranges.
 
 Asking prices are noisier than appraisals: the same unit is listed at very
 different prices by different agents, which caps how well any model can do.
@@ -151,8 +213,8 @@ that column is a lower bound.
 
 `estate` is a model feature (blanked at random in fit rows like the other
 optional facts, so "not told" stays neutral) but the models barely use it
-(0.2% importance; held-out houses priced from a click with and without the
-flag: MdAPE 17.07% vs 17.03%). A house's comparables are mostly estate
+(0.5% importance; held-out houses priced from a click with and without the
+flag: MdAPE 18.27% vs 18.28%). A house's comparables are mostly estate
 listings, so a prediction already sits at estate level - held-out estate
 houses come in at actual/predicted 1.00, stated-outside ones at 0.82 (2026-10-08
 scrape) - and the few "outside" rows are too few for a tree to learn the gap.
@@ -200,7 +262,8 @@ exactly the Ultimate Class condos (Ritz-Carlton, Four Seasons, Scope at
 
 ```bash
 .venv/bin/python train_models.py      # ~15 min, writes models/ensemble.joblib
-.venv/bin/python calibrate.py         # intervals from held-out error
+.venv/bin/python calibrate.py         # price range from the calibration fold
+.venv/bin/python cv.py                # ~45 min, spatial + temporal CV
 .venv/bin/python build_location_map.py
 .venv/bin/python projects.py          # village/condo index and grades
 .venv/bin/python -m pytest test_pipeline.py -q
@@ -212,13 +275,15 @@ exactly the Ultimate Class condos (Ritz-Carlton, Four Seasons, Scope at
 |---|---|
 | `prepare_data.py` | load four sources, clean, fold split, comparable features |
 | `train_models.py` | trains the three models, picks weights, scores on test |
-| `calibrate.py` | prediction intervals from out-of-sample error |
+| `calibrate.py` | price range (split conformal) from the calibration fold, coverage on test |
+| `evaluation.py` | IAAO ratios (median ratio, COD, PRD), coverage, split-conformal bounds, CV splits |
+| `cv.py` | spatial (GroupKFold by sub-district) and temporal cross-validation → models/cv_metrics.json |
 | `build_location_map.py` | TIS-1099 subdistrict id → district/province |
 | `eval_breakdown.py` | accuracy by type, province, area, value band |
 | `estate.py` | in/out of a housing estate, premium, grade bands |
 | `projects.py` | project index and grades → models/projects.json |
 | `api.py` | Flask serving layer |
-| `test_pipeline.py` | 39 tests over cleaning, rent filter, splitting, features, project snap, estates, grades, bundle, API |
+| `test_pipeline.py` | tests over cleaning, rent filter, splitting, features, project snap, estates, grades, bundle, API (the full `pytest -q` run: 48 passed, 1 skipped) |
 
 ## Limits worth repeating
 
