@@ -68,20 +68,20 @@ def metrics(y_true: np.ndarray, y_pred: np.ndarray) -> dict:
     }
 
 
-def build_models() -> dict:
+def build_models(iterations: int = 2000) -> dict:
     return {
         "CatBoost": CatBoostRegressor(
-            iterations=2000, learning_rate=0.04, depth=10, l2_leaf_reg=3.0,
+            iterations=iterations, learning_rate=0.04, depth=10, l2_leaf_reg=3.0,
             loss_function="MAE", random_seed=SEED, verbose=False,
             cat_features=CATEGORICAL,
         ),
         "LightGBM": LGBMRegressor(
-            n_estimators=2000, learning_rate=0.04, num_leaves=127,
+            n_estimators=iterations, learning_rate=0.04, num_leaves=127,
             min_child_samples=30, subsample=0.9, colsample_bytree=0.9,
             objective="regression_l1", random_state=SEED, verbose=-1,
         ),
         "XGBoost": XGBRegressor(
-            n_estimators=2000, learning_rate=0.04, max_depth=10,
+            n_estimators=iterations, learning_rate=0.04, max_depth=10,
             subsample=0.9, colsample_bytree=0.9, min_child_weight=5,
             objective="reg:absoluteerror", random_state=SEED,
             enable_categorical=True, tree_method="hist",
@@ -348,9 +348,9 @@ def main() -> None:
             "test": f"{FOLD_FRACTIONS['test']:.0%} of {TEST_YEARS} rows, seed {FOLD_SEED}",
             "test_years": sorted(int(y) for y in test.year.unique()),
             "served_model_fit_years": sorted(int(y) for y in served.year.unique()),
-            "calibration": "10% of (2569,) rows, seed 42, never trained on; sets the price range",
+            "calibration": f"{FOLD_FRACTIONS['cal']:.0%} of {TEST_YEARS} rows, seed {FOLD_SEED}, never trained on; sets the price range",
         },
-        "rows": {"fit": len(fit_frame), "validation": len(val_frame), "test": len(test_frame)},
+        "rows": {"fit": len(fit_frame), "validation": len(val_frame), "calibration": int((train_all.fold == "cal").sum()), "test": len(test_frame)},
         "views": view_scores,
         "estate_views": estate_scores,
         "estate_premium": premium,

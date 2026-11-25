@@ -1,8 +1,9 @@
 from __future__ import annotations
 
 import numpy as np
+import pandas as pd
 
-from evaluation import conformal_ratio_bounds, coverage, iaao
+from evaluation import conformal_ratio_bounds, coverage, iaao, spatial_groups, temporal_split
 
 
 def test_iaao_perfect_prediction():
@@ -35,3 +36,21 @@ def test_conformal_bounds_tiny_sample_stay_inside_data():
     ratio = np.array([0.8, 1.0, 1.2])
     lo, hi = conformal_ratio_bounds(ratio)
     assert 0.8 <= lo <= hi <= 1.2
+
+
+def test_spatial_groups_split_unknown_subdistrict_by_district():
+    df = pd.DataFrame({"province": ["ก"] * 3, "district": ["A", "B", "A"],
+                       "sub_district": ["ไม่ระบุ", "ไม่ระบุ", "x"]})
+    g = spatial_groups(df)
+    assert g[0] != g[1] and g[0] != g[2]
+
+def test_spatial_groups_same_name_different_district():
+    df = pd.DataFrame({"province": ["ก", "ก"], "district": ["A", "B"], "sub_district": ["x", "x"]})
+    g = spatial_groups(df)
+    assert g[0] != g[1]
+
+def test_temporal_split_drops_hipflat_and_cuts_at_days():
+    posted = pd.to_datetime(["2026-01-01", "2026-09-01", "2026-10-30", "2026-10-30"], utc=True)
+    df = pd.DataFrame({"posted": posted, "source": ["baania", "ddproperty", "dotproperty", "hipflat"]})
+    train, hold = temporal_split(df, days=90)
+    assert list(train.source) == ["baania"] and list(hold.source) == ["ddproperty", "dotproperty"]

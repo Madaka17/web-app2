@@ -17,6 +17,9 @@ from __future__ import annotations
 import math
 
 import numpy as np
+import pandas as pd
+
+from prepare_data import NO_SUBDISTRICT
 
 
 def iaao(pred: np.ndarray, actual: np.ndarray) -> dict:
@@ -45,3 +48,27 @@ def conformal_ratio_bounds(ratio: np.ndarray, lo: float = 0.10, hi: float = 0.90
         float(np.quantile(ratio, lo_level, method="lower")),
         float(np.quantile(ratio, hi_level, method="higher")),
     )
+
+
+def spatial_groups(df: pd.DataFrame) -> np.ndarray:
+    """One key per row for spatial CV: province|district|sub_district.
+
+    A row with no known sub-district is grouped at district level instead, so all
+    of its unknown-sub-district neighbours fall in one fold rather than being
+    scattered by an arbitrary sub-district name.
+    """
+    sub = df["sub_district"]
+    unknown = sub.isna() | (sub == NO_SUBDISTRICT)
+    tail = sub.where(~unknown, "*").astype(str)
+    return (df["province"].astype(str) + "|" + df["district"].astype(str) + "|" + tail).to_numpy()
+
+
+def temporal_split(df: pd.DataFrame, days: int = 90) -> tuple[pd.DataFrame, pd.DataFrame]:
+    """Train on listings posted before the last `days` days, hold out the rest.
+
+    hipflat is dropped first: its posting dates are not reliable enough to place
+    listings in time.
+    """
+    df = df[df["source"] != "hipflat"]
+    cutoff = df["posted"].max() - pd.Timedelta(days=days)
+    return df[df["posted"] < cutoff], df[df["posted"] >= cutoff]
