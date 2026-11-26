@@ -50,6 +50,10 @@ const strings = {
     thinSample: 'Few listings in this district, so treat this figure with care.', models: 'Model blend',
     futureValue: 'Future value', growthRate: 'Annual growth', horizon: 'Years',
     healthOk: 'Price model online', healthDown: 'Price model unavailable', healthChecking: 'Checking price model',
+    decisionAccept: 'Accept estimate', decisionDefer: 'Refer to appraiser', decisionReject: 'Do not rely on estimate',
+    decisionAcceptHint: 'Models agree and comparables are plentiful', decisionDeferHint: 'Mixed signals; have an appraiser check it', decisionRejectHint: 'Models disagree or comparables are scarce',
+    decisionScore: 'Quality score (WQS)', decisionAgreement: 'Model agreement', decisionLocal: 'Sub-district comparables', decisionSize: 'Same-size comparables', decisionDistrict: 'District comparables',
+    colorByType: 'Type', colorByDecision: 'Reliability', decisionUnscored: 'Not scored',
   },
   th: {
     backToMap: 'กลับไปแผนที่',
@@ -89,6 +93,10 @@ const strings = {
     thinSample: 'ประกาศในเขตนี้มีน้อย ควรใช้ตัวเลขนี้ด้วยความระมัดระวัง', models: 'การผสมโมเดล',
     futureValue: 'มูลค่าในอนาคต', growthRate: 'อัตราเติบโตต่อปี', horizon: 'ปี',
     healthOk: 'โมเดลราคาพร้อมใช้งาน', healthDown: 'โมเดลราคาไม่พร้อมใช้งาน', healthChecking: 'กำลังตรวจสอบโมเดลราคา',
+    decisionAccept: 'ยอมรับราคาประเมิน', decisionDefer: 'ส่งผู้ประเมินตรวจ', decisionReject: 'ไม่ควรใช้ราคานี้',
+    decisionAcceptHint: 'โมเดลเห็นตรงกันและมีทรัพย์เทียบเคียงพอ', decisionDeferHint: 'สัญญาณปนกัน ควรให้ผู้ประเมินดูอีกครั้ง', decisionRejectHint: 'โมเดลเห็นต่างกันมากหรือทรัพย์เทียบเคียงน้อย',
+    decisionScore: 'คะแนนคุณภาพ (WQS)', decisionAgreement: 'โมเดลเห็นตรงกัน', decisionLocal: 'ทรัพย์ในตำบล', decisionSize: 'ทรัพย์ขนาดใกล้กัน', decisionDistrict: 'ทรัพย์ในอำเภอ',
+    colorByType: 'ประเภท', colorByDecision: 'ความน่าเชื่อถือ', decisionUnscored: 'ไม่ได้ประเมิน',
   },
   zh: {
     backToMap: '返回地图',
@@ -128,6 +136,10 @@ const strings = {
     thinSample: '该区房源较少，请谨慎参考此数字。', models: '模型组合',
     futureValue: '未来价值', growthRate: '年增长率', horizon: '年',
     healthOk: '价格模型在线', healthDown: '价格模型不可用', healthChecking: '正在检查价格模型',
+    decisionAccept: '接受估价', decisionDefer: '交由估价师复核', decisionReject: '不建议采用此估价',
+    decisionAcceptHint: '模型一致且可比样本充足', decisionDeferHint: '信号不一，建议估价师复核', decisionRejectHint: '模型分歧大或可比样本稀少',
+    decisionScore: '质量分 (WQS)', decisionAgreement: '模型一致性', decisionLocal: '街道可比样本', decisionSize: '同面积可比样本', decisionDistrict: '区可比样本',
+    colorByType: '类型', colorByDecision: '可靠性', decisionUnscored: '未评估',
   },
 };
 

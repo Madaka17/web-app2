@@ -1,5 +1,5 @@
 import { useEffect, useId, useState } from 'react';
-import { AlertTriangle, ArrowDownRight, ArrowUpRight, CalendarClock, Home, Info, Layers, MapPin, Minus, Percent, Scale, Target, TrendingUp, X } from 'lucide-react';
+import { AlertTriangle, ArrowDownRight, ArrowUpRight, CalendarClock, CheckCircle2, HelpCircle, Home, Info, Layers, MapPin, Minus, Percent, Scale, Target, TrendingUp, X, XCircle } from 'lucide-react';
 import { useLang } from '../i18n.jsx';
 import { LOCATIONS, findLocationPath } from '../lib/locations';
 import { AREA_MAX, AREA_MIN, DEFAULT_FORM, askingGap, gapApplies, isInCoverage, listingPropertyType, targetPatch, toPayload } from '../lib/priceForm';
@@ -107,6 +107,60 @@ function NumberField({ label, value, min, max, integer = false, optional = false
         className="h-10 w-full rounded-lg border border-line bg-white px-3 text-sm text-ink-primary outline-none focus:border-primary"
       />
       {hint && <span className="mt-1 block text-[11px] text-ink-muted">{hint}</span>}
+    </div>
+  );
+}
+
+const DECISION_STYLE = {
+  accept: { tint: 'bg-emerald-50 text-[#16a34a]', Icon: CheckCircle2, label: 'decisionAccept', hint: 'decisionAcceptHint' },
+  defer: { tint: 'bg-amber-50 text-amber-700', Icon: HelpCircle, label: 'decisionDefer', hint: 'decisionDeferHint' },
+  reject: { tint: 'bg-red-50 text-[#DC2626]', Icon: XCircle, label: 'decisionReject', hint: 'decisionRejectHint' },
+};
+
+const DECISION_COMPONENTS = [
+  ['agreement', 'decisionAgreement'],
+  ['local', 'decisionLocal'],
+  ['size', 'decisionSize'],
+  ['district', 'decisionDistrict'],
+];
+
+// Three-way reliability verdict on the estimate. Renders nothing without a decision.
+function DecisionBadge({ decision }) {
+  const { t } = useLang();
+  const style = decision ? DECISION_STYLE[decision.label] : null;
+  if (!style) return null;
+  const { Icon } = style;
+  const label = t(style.label);
+  const score = decision.score.toFixed(2);
+  return (
+    <div role="status" aria-label={`${label} ${t('decisionScore')} ${score}`} className="mt-2 space-y-1.5">
+      <div className="flex flex-wrap items-center gap-x-2 gap-y-1">
+        <span className={`inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-xs font-bold ${style.tint}`}>
+          <Icon size={14} aria-hidden="true" />
+          {label}
+        </span>
+        <span className="text-xs tabular-nums text-ink-secondary">{`${t('decisionScore')} ${score}`}</span>
+      </div>
+      <p className="text-[11px] text-ink-secondary">{t(style.hint)}</p>
+      <details className="text-xs">
+        <summary className="cursor-pointer text-ink-secondary">{t('decisionScore')}</summary>
+        <ul className="mt-2 space-y-1.5">
+          {DECISION_COMPONENTS.map(([key, labelKey]) => {
+            const v = decision.components[key];
+            return (
+              <li key={key}>
+                <div className="flex items-baseline justify-between gap-2">
+                  <span className="text-ink-secondary">{t(labelKey)}</span>
+                  <span className="tabular-nums text-ink-primary">{`${Math.round(v * 100)}%`}</span>
+                </div>
+                <div aria-hidden="true" className="mt-1 h-1 w-full overflow-hidden rounded-full bg-surface-soft">
+                  <div className="h-full rounded-full bg-[#DC2626]/25" style={{ width: `${v * 100}%` }} />
+                </div>
+              </li>
+            );
+          })}
+        </ul>
+      </details>
     </div>
   );
 }
@@ -376,6 +430,7 @@ export default function PricePanel({ target, onClearTarget, onClose }) {
               <div className="rounded-2xl border border-line bg-gradient-to-br from-white to-red-50/40 p-4 shadow-sm">
                 <p className="text-[11px] font-semibold uppercase tracking-wider text-ink-muted">{t('priceEstimate')}</p>
                 <p className="font-display text-3xl font-extrabold text-ink-primary tabular-nums">{fmtBaht(result.predictedPrice)}</p>
+                <DecisionBadge decision={result.decision} />
                 <RangeBar
                   low={result.lowerBound}
                   mid={result.predictedPrice}

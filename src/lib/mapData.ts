@@ -109,7 +109,7 @@ export const DECISION_LEGEND: [DecisionLabel, string][] = [
 ];
 
 /** Colour of a listing pin with no precomputed decision. */
-const UNSCORED_COLOR = "#9ca3af";
+export const UNSCORED_COLOR = "#9ca3af";
 
 export const PROJECT_LEGEND: [ProjectKind, string][] = [
   ["village", "#f97316"],

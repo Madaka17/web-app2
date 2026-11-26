@@ -12,7 +12,10 @@ import MapCanvas from '../components/MapCanvas.jsx';
 import { FilterPanel, LayerPanel, legendLabelKey } from '../components/MapPanels.jsx';
 import PricePanel from '../components/PricePanel.jsx';
 import { PLACE_LABELS } from '../data.js';
-import { EMPTY_FILTER, LISTING_LEGEND, applyFilter, findPoint, loadListings, summarize } from '../lib/mapData';
+import { DECISION_LEGEND, EMPTY_FILTER, LISTING_LEGEND, UNSCORED_COLOR, applyFilter, findPoint, loadListings, summarize } from '../lib/mapData';
+
+const DECISION_LABEL_KEY = { accept: 'decisionAccept', defer: 'decisionDefer', reject: 'decisionReject' };
+const COLOR_BY_OPTIONS = [['type', 'colorByType'], ['decision', 'colorByDecision']];
 
 function StatCard({ icon: Icon, bigIcon: BigIcon, title, value, unit, tint, iconBg, iconColor, minW }) {
   return (
@@ -93,6 +96,7 @@ export default function MapPage() {
   }, [latParam, lngParam]);
   const [statsOpen, setStatsOpen] = useState(true);
   const [legendOpen, setLegendOpen] = useState(true);
+  const [colorBy, setColorBy] = useState('type');
   const [panel, setPanel] = useState(null);
   const [baseMap, setBaseMap] = useState('hybrid');
   const [measuring, setMeasuring] = useState(false);
@@ -198,7 +202,7 @@ export default function MapPage() {
             )}
           />
           <div className="relative h-full w-full" data-tour="listing-map-stage">
-            <MapCanvas ref={canvas} points={points} baseMap={baseMap} cityPlan={cityPlan} measuring={measuring} focus={linked} target={target} onPick={onPick} onSelectPoint={onSelectPoint} />
+            <MapCanvas ref={canvas} points={points} baseMap={baseMap} cityPlan={cityPlan} measuring={measuring} focus={linked} target={target} onPick={onPick} onSelectPoint={onSelectPoint} colorBy={colorBy} />
 
             <div className="pointer-events-none absolute inset-x-0 top-3 z-[1200] flex flex-col items-center gap-2 px-3 max-lg:top-2 sm:top-4 md:max-lg:top-3">
               <div className="pointer-events-auto flex w-full max-w-[min(96vw,640px)] items-center justify-center gap-2 md:max-lg:max-w-[min(calc(100vw-1.5rem),34rem)] md:max-lg:gap-1.5 lg:max-w-[min(calc(100vw-12rem),36rem)] lg:gap-1.5 xl:max-w-[min(96vw,640px)] xl:gap-2">
@@ -281,13 +285,39 @@ export default function MapPage() {
                 </button>
                 {legendOpen && (
                   <div className="max-h-[min(52vh,20rem)] overflow-y-auto overscroll-contain px-3 pb-2 pt-2 xl:px-4 xl:pb-3 xl:pt-3">
+                    <div role="group" aria-label={t('legend')} className="mb-1.5 flex flex-wrap gap-1">
+                      {COLOR_BY_OPTIONS.map(([mode, labelKey]) => {
+                        const active = colorBy === mode;
+                        return (
+                          <button
+                            key={mode}
+                            type="button"
+                            aria-pressed={active}
+                            onClick={() => setColorBy(mode)}
+                            className={`rounded px-1.5 py-0.5 text-[10px] font-semibold transition-colors ${active ? 'bg-[#DC2626] text-white' : 'bg-surface-soft text-ink-secondary'}`}
+                          >
+                            {t(labelKey)}
+                          </button>
+                        );
+                      })}
+                    </div>
                     <ul className="space-y-0">
-                      {LISTING_LEGEND.map(([key, color]) => (
-                        <li key={key} className="flex items-center gap-1.5 py-0.5">
-                          <span className="inline-block h-3 w-3 shrink-0 rounded-full border border-white shadow" style={{ background: color }} aria-hidden="true" />
-                          <span className="text-[11px] leading-snug text-gray-800">{t(legendLabelKey(key))}</span>
-                        </li>
-                      ))}
+                      {colorBy === 'decision'
+                        ? [
+                          ...DECISION_LEGEND.map(([key, color]) => [key, color, DECISION_LABEL_KEY[key]]),
+                          ['unscored', UNSCORED_COLOR, 'decisionUnscored'],
+                        ].map(([key, color, labelKey]) => (
+                          <li key={key} className="flex items-center gap-1.5 py-0.5">
+                            <span className="inline-block h-3 w-3 shrink-0 rounded-full border border-white shadow" style={{ background: color }} aria-hidden="true" />
+                            <span className="text-[11px] leading-snug text-gray-800">{t(labelKey)}</span>
+                          </li>
+                        ))
+                        : LISTING_LEGEND.map(([key, color]) => (
+                          <li key={key} className="flex items-center gap-1.5 py-0.5">
+                            <span className="inline-block h-3 w-3 shrink-0 rounded-full border border-white shadow" style={{ background: color }} aria-hidden="true" />
+                            <span className="text-[11px] leading-snug text-gray-800">{t(legendLabelKey(key))}</span>
+                          </li>
+                        ))}
                     </ul>
                   </div>
                 )}

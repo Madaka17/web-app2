@@ -11,6 +11,7 @@ import {
   normalizeProject,
   safeHttpUrl,
   summarize,
+  UNSCORED_COLOR,
   type MapFilter,
   type MapListing,
   type MapProject,
@@ -275,6 +276,11 @@ describe("pinColor decision mode", () => {
     expect(pinColor(listing({ decision: "defer" }), "decision")).toBe("#f59e0b");
     expect(pinColor(listing({ decision: "reject" }), "decision")).toBe("#DC2626");
     expect(pinColor(listing({ decision: null }), "decision")).toBe("#9ca3af");
+  });
+
+  it("exports the unscored colour the legend shares with the pins", () => {
+    expect(UNSCORED_COLOR).toBe("#9ca3af");
+    expect(pinColor(listing({ decision: null }), "decision")).toBe(UNSCORED_COLOR);
   });
 
   it("keeps project colours in decision mode", () => {

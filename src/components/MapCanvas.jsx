@@ -51,7 +51,7 @@ const CLUSTER_CELL_PX = 48;
 const CLUSTER_MIN = 3;
 const CLUSTER_MAX_ZOOM = 17;
 
-function renderPoints(map, group, points, { onDot, clusterTitle }) {
+function renderPoints(map, group, points, { onDot, clusterTitle, colorBy }) {
   group.clearLayers();
   const zoom = map.getZoom();
   const bounds = map.getBounds().pad(0.25);
@@ -71,7 +71,7 @@ function renderPoints(map, group, points, { onDot, clusterTitle }) {
     }
     items.forEach((point) => {
       const marker = L.marker([point.lat, point.lng], {
-        icon: L.divIcon({ className: '', html: `<div class="map-dot" style="background:${pinColor(point)}"></div>`, iconSize: [18, 18] }),
+        icon: L.divIcon({ className: '', html: `<div class="map-dot" style="background:${pinColor(point, colorBy)}"></div>`, iconSize: [18, 18] }),
         title: point.kind === 'listing' ? point.title : point.name,
         keyboard: true,
       });
@@ -81,7 +81,7 @@ function renderPoints(map, group, points, { onDot, clusterTitle }) {
   });
 }
 
-const MapCanvas = forwardRef(function MapCanvas({ points, baseMap, cityPlan, measuring, focus, target, onPick, onSelectPoint }, ref) {
+const MapCanvas = forwardRef(function MapCanvas({ points, baseMap, cityPlan, measuring, focus, target, onPick, onSelectPoint, colorBy = 'type' }, ref) {
   const { t } = useLang();
   const box = useRef(null);
   const mapRef = useRef(null);
@@ -90,6 +90,7 @@ const MapCanvas = forwardRef(function MapCanvas({ points, baseMap, cityPlan, mea
   const planRef = useRef(null);
   const targetRef = useRef(null);
   const pointsRef = useRef(points);
+  const colorByRef = useRef(colorBy);
   const tRef = useRef(t);
   const callbacksRef = useRef({ onPick, onSelectPoint });
   const measureRef = useRef({ points: [], layer: null });
@@ -101,6 +102,7 @@ const MapCanvas = forwardRef(function MapCanvas({ points, baseMap, cityPlan, mea
     if (!map || !groupRef.current) return;
     renderPoints(map, groupRef.current, pointsRef.current, {
       clusterTitle: (n) => `${n} ${tRef.current('listings')}`,
+      colorBy: colorByRef.current,
       onDot: (point) => {
         // A standalone popup on the map is not owned by the marker, so the redraw that
         // follows the auto-pan (moveend -> clearLayers) does not remove it.
@@ -174,9 +176,10 @@ const MapCanvas = forwardRef(function MapCanvas({ points, baseMap, cityPlan, mea
   useEffect(() => {
     pointsRef.current = points;
     tRef.current = t;
+    colorByRef.current = colorBy;
     redraw();
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [points, t]);
+  }, [points, t, colorBy]);
 
   useEffect(() => {
     const map = mapRef.current;
