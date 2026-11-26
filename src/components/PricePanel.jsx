@@ -596,6 +596,16 @@ export default function PricePanel({ target, onClearTarget, onClose }) {
                 ))}
               </ul>
             </Section>
+
+            <details>
+              <summary className="cursor-pointer text-ink-secondary">{t('limitsTitle')}</summary>
+              <ul className="mt-2 space-y-1 text-xs text-ink-muted">
+                <li>{t('limitAsking')}</li>
+                <li>{t('limitSnapshot')}</li>
+                <li>{t('limitCoverage')}</li>
+                <li>{t('limitLand')}</li>
+              </ul>
+            </details>
           </div>
         )}
       </div>

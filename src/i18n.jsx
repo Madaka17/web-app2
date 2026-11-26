@@ -2,7 +2,7 @@ import { createContext, useCallback, useContext, useEffect, useMemo, useState } 
 
 export const BRAND = 'OpenPlot';
 
-const strings = {
+export const strings = {
   en: {
     backToMap: 'Back to map',
     search: 'Search', searchMap: 'Search the map',
@@ -39,6 +39,7 @@ const strings = {
     provinceLabel: 'Province', districtLabel: 'District', subdistrictLabel: 'Sub-district', rangeLabel: 'Range',
     moreDetails: 'More details', units: 'Units', yearLabel: 'Year (BE)', bedrooms: 'Bedrooms', bathrooms: 'Bathrooms',
     landLowAccuracy: 'Land estimates are far less accurate than other types. Use this figure as a rough reference only.',
+    limitsTitle: 'Limitations', limitAsking: 'Estimates are learned from asking prices, not completed sale prices.', limitSnapshot: 'Listings come from a single snapshot (4 Nov 2026).', limitCoverage: 'Covers Bangkok and its neighbouring provinces only, and only condos, houses, townhouses and land.', limitLand: 'Land has few listings and widely varying prices, so its estimates are weak.',
     buildingAge: 'Building age (years)', estate: 'Housing estate', estateUnknown: 'Not stated', estateIn: 'Inside an estate', estateOut: 'Outside an estate', estateUnmeasured: 'Too few listings outside estates to measure the price gap, so no adjustment was made',
     calculating: 'Calculating…', estimateRange: 'Likely range', estimateLow: 'Low', estimateMid: 'Estimate', estimateHigh: 'High',
     withinHit: 'Within 20% in tests', medianError: 'Typical error', resolvedLocation: 'Matched location', snappedProject: 'Nearby project',
@@ -82,6 +83,7 @@ const strings = {
     provinceLabel: 'จังหวัด', districtLabel: 'เขต/อำเภอ', subdistrictLabel: 'แขวง/ตำบล', rangeLabel: 'ช่วง',
     moreDetails: 'รายละเอียดเพิ่มเติม', units: 'จำนวนยูนิต', yearLabel: 'ปี พ.ศ.', bedrooms: 'ห้องนอน', bathrooms: 'ห้องน้ำ',
     landLowAccuracy: 'ที่ดินมีความแม่นยำต่ำกว่าประเภทอื่นมาก ใช้เป็นตัวเลขอ้างอิงเท่านั้น',
+    limitsTitle: 'ข้อจำกัด', limitAsking: 'ราคาประมาณการนี้มาจากราคาเสนอขาย ไม่ใช่ราคาซื้อขายจริง', limitSnapshot: 'ข้อมูลประกาศเก็บรอบเดียว (4 พ.ย. 2569)', limitCoverage: 'ครอบคลุมเฉพาะกรุงเทพฯ และปริมณฑล และเฉพาะคอนโด บ้านเดี่ยว ทาวน์เฮ้าส์ และที่ดิน', limitLand: 'ที่ดินมีข้อมูลน้อยและราคาแตกต่างกันมาก จึงแม่นยำต่ำ',
     buildingAge: 'อายุอาคาร (ปี)', estate: 'หมู่บ้านจัดสรร', estateUnknown: 'ไม่ระบุ', estateIn: 'ในหมู่บ้านจัดสรร', estateOut: 'นอกหมู่บ้านจัดสรร', estateUnmeasured: 'ยังวัดส่วนต่างราคาบ้านนอกหมู่บ้านไม่ได้ (ข้อมูลน้อยเกินไป) จึงไม่ได้ปรับราคา',
     calculating: 'กำลังคำนวณ…', estimateRange: 'ช่วงราคาที่เป็นไปได้', estimateLow: 'ต่ำ', estimateMid: 'ประมาณการ', estimateHigh: 'สูง',
     withinHit: 'ใกล้เคียงภายใน 20% ในการทดสอบ', medianError: 'ความคลาดเคลื่อนโดยทั่วไป', resolvedLocation: 'ทำเลที่จับคู่ได้', snappedProject: 'โครงการใกล้เคียง',
@@ -125,6 +127,7 @@ const strings = {
     provinceLabel: '府', districtLabel: '区', subdistrictLabel: '分区', rangeLabel: '范围',
     moreDetails: '更多信息', units: '户数', yearLabel: '年份（佛历）', bedrooms: '卧室', bathrooms: '浴室',
     landLowAccuracy: '土地估价的准确度远低于其他类型，仅供粗略参考。',
+    limitsTitle: '局限性', limitAsking: '估算基于挂牌价，而非实际成交价。', limitSnapshot: '房源数据来自单次采集（2026年11月4日）。', limitCoverage: '仅覆盖曼谷及周边府，且仅限公寓、独栋住宅、联排别墅和土地。', limitLand: '土地房源少且价格差异大，估算可靠性低。',
     buildingAge: '建筑年龄（年）', estate: '住宅小区', estateUnknown: '未说明', estateIn: '在小区内', estateOut: '在小区外', estateUnmeasured: '小区外房源过少，无法测量价差，因此未作调整',
     calculating: '计算中…', estimateRange: '可能区间', estimateLow: '低', estimateMid: '估算', estimateHigh: '高',
     withinHit: '测试中误差在20%以内', medianError: '典型误差', resolvedLocation: '匹配位置', snappedProject: '附近项目',
