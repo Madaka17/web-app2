@@ -35,15 +35,24 @@ GROUPS: dict[str, list[str]] = {
 }
 
 
-def shap_each(bundle: dict, featured: pd.DataFrame) -> dict[str, tuple[np.ndarray, np.ndarray]]:
-    """Per model: (phi n x F in FEATURES order, base n). Last native column is the base."""
+def shap_each_catboost(model, featured: pd.DataFrame, shap_mode: str = "Auto") -> np.ndarray:
+    """Raw CatBoost ShapValues (n x F+1). "NoPreCalc" skips the per-tree precompute
+    that pays off for big batches; it is exact, and faster for a few rows."""
+    return np.asarray(model.get_feature_importance(
+        Pool(featured[FEATURES], cat_features=CATEGORICAL),
+        type="ShapValues", shap_mode=shap_mode), dtype=float)
+
+
+def shap_each(bundle: dict, featured: pd.DataFrame,
+              shap_mode: str = "Auto") -> dict[str, tuple[np.ndarray, np.ndarray]]:
+    """Per model: (phi n x F in FEATURES order, base n). Last native column is the base.
+    `shap_mode` only affects CatBoost (see shap_each_catboost)."""
     X_raw = featured[FEATURES]
     X_cat = as_categorical(X_raw, bundle["categories"])
     out: dict[str, tuple[np.ndarray, np.ndarray]] = {}
     for name, model in bundle["models"].items():
         if name == "CatBoost":
-            raw = model.get_feature_importance(
-                Pool(X_raw, cat_features=CATEGORICAL), type="ShapValues")
+            raw = shap_each_catboost(model, featured, shap_mode)
         elif name == "LightGBM":
             raw = model.predict(X_cat, pred_contrib=True)
         elif name == "XGBoost":
@@ -56,12 +65,13 @@ def shap_each(bundle: dict, featured: pd.DataFrame) -> dict[str, tuple[np.ndarra
     return out
 
 
-def ensemble_shap(bundle: dict, featured: pd.DataFrame) -> tuple[np.ndarray, np.ndarray]:
+def ensemble_shap(bundle: dict, featured: pd.DataFrame,
+                  shap_mode: str = "Auto") -> tuple[np.ndarray, np.ndarray]:
     """Weighted blend: phi = sum_m w_m phi_m, base = sum_m w_m base_m."""
     weights = bundle["weights"]
     phi_total = 0.0
     base_total = 0.0
-    for name, (phi, base) in shap_each(bundle, featured).items():
+    for name, (phi, base) in shap_each(bundle, featured, shap_mode).items():
         w = float(weights[name])
         phi_total = phi_total + w * phi
         base_total = base_total + w * base

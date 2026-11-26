@@ -95,3 +95,10 @@ def test_unknown_location_is_finite(bundle, featured):
     assert np.isfinite(phi).all()
     assert np.isfinite(base).all()
     assert np.isfinite(group_shap(phi).to_numpy()).all()
+
+
+def test_nopreccalc_matches_auto_for_catboost(bundle, featured):
+    from explain import shap_each_catboost
+    auto = shap_each_catboost(bundle["models"]["CatBoost"], featured, shap_mode="Auto")
+    single = shap_each_catboost(bundle["models"]["CatBoost"], featured, shap_mode="NoPreCalc")
+    np.testing.assert_allclose(single, auto, atol=1e-6)

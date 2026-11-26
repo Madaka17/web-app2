@@ -165,7 +165,8 @@ def _explain(featured: pd.DataFrame, price: float, area: float) -> dict:
     """Why this price: the blend's SHAP, grouped by factor, in percent of the
     base. `other_pct` is what the geometric blend and the estate adjustment
     leave unexplained, so the parts multiply back to the final price."""
-    phi, base = ensemble_shap(BUNDLE, featured)
+    # One row: NoPreCalc is the exact single-point CatBoost path (explain.shap_each_catboost).
+    phi, base = ensemble_shap(BUNDLE, featured, shap_mode="NoPreCalc")
     phi_row, base_val = phi[0], float(base[0])
     groups = group_shap(phi).iloc[0]
     group_list = sorted(
