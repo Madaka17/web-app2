@@ -5,13 +5,17 @@ Never calls the network: urlopen is patched. Runs under pytest, or directly:
 """
 from __future__ import annotations
 
+import atexit
 import base64
 import http.client
 import io
 import json
+import shutil
+import tempfile
 import threading
 import time
 import urllib.error
+from pathlib import Path
 from unittest import mock
 
 import plan_reader as pr
@@ -258,7 +262,7 @@ def test_jobs_limit_per_ip_and_cache_is_free():
         calls.append(image)
         return clean(GOOD)
 
-    jobs = PlanJobs(reader=reader)
+    jobs = PlanJobs(reader=reader, cache_file=None)
     first = jobs.submit(b"img-0", "image/png", "1.1.1.1")
     assert wait(jobs, first["job_id"])["status"] == "done"
     # The same image again comes from the cache and does not count.
@@ -273,12 +277,69 @@ def test_jobs_limit_per_ip_and_cache_is_free():
 
 
 def test_jobs_site_wide_cap_and_errors():
-    jobs = PlanJobs(reader=lambda image, mime: (_ for _ in ()).throw(PlanError("budget")))
+    jobs = PlanJobs(reader=lambda image, mime: (_ for _ in ()).throw(PlanError("budget")), cache_file=None)
     job = wait(jobs, jobs.submit(b"a", "image/png", "1.1.1.1")["job_id"])
     assert job == {"job_id": job["job_id"], "status": "error", "code": "budget"}
     with mock.patch.object(pr, "PER_DAY", 1):
         raises("limit_day", jobs.submit, b"b", "image/png", "3.3.3.3")
     assert jobs.get("nope") is None
+
+
+def _counting_reader(calls):
+    def reader(image, mime):
+        calls.append(image)
+        return clean(GOOD)
+    return reader
+
+
+def _tmpdir() -> Path:
+    """A temp dir removed when the run ends (pytest does not inject tmp_path into defaulted args)."""
+    d = tempfile.mkdtemp()
+    atexit.register(shutil.rmtree, d, True)
+    return Path(d)
+
+
+def test_jobs_cache_survives_restart(tmp_path=None):
+    tmp_path = tmp_path or _tmpdir()
+    cache_file = tmp_path / "plan_reads.json"
+    calls = []
+    first = PlanJobs(reader=_counting_reader(calls), cache_file=cache_file)
+    done = wait(first, first.submit(b"plan", "image/png", "1.1.1.1")["job_id"])
+    assert done["status"] == "done"
+    # A new instance on the same file, as after an API restart.
+    second = PlanJobs(reader=_counting_reader(calls), cache_file=cache_file)
+    again = second.submit(b"plan", "image/png", "1.1.1.1")
+    assert again["status"] == "done" and again["result"] == done["result"]
+    assert len(calls) == 1
+
+
+def test_jobs_cache_file_bad_or_old_is_ignored(tmp_path=None):
+    tmp_path = tmp_path or _tmpdir()
+    cache_file = tmp_path / "plan_reads.json"
+    for text in ["{not json", json.dumps({"version": 999, "reads": [["abc", GOOD]]})]:
+        cache_file.write_text(text, encoding="utf-8")
+        calls = []
+        jobs = PlanJobs(reader=_counting_reader(calls), cache_file=cache_file)
+        assert jobs._cache == {}
+        assert wait(jobs, jobs.submit(b"plan", "image/png", "1.1.1.1")["job_id"])["status"] == "done"
+        assert len(calls) == 1
+
+
+def test_jobs_cache_keeps_newest(tmp_path=None):
+    tmp_path = tmp_path or _tmpdir()
+    cache_file = tmp_path / "plan_reads.json"
+    with mock.patch.object(pr, "CACHE_SIZE", 2):
+        jobs = PlanJobs(reader=_counting_reader([]), cache_file=cache_file)
+        for name in (b"img-0", b"img-1", b"img-2"):
+            wait(jobs, jobs.submit(name, "image/png", "1.1.1.1")["job_id"])
+        calls = []
+        jobs = PlanJobs(reader=_counting_reader(calls), cache_file=cache_file)
+        assert len(jobs._cache) == 2
+        for name in (b"img-1", b"img-2"):
+            assert jobs.submit(name, "image/png", "1.1.1.1")["status"] == "done"
+        assert calls == []
+        wait(jobs, jobs.submit(b"img-0", "image/png", "1.1.1.1")["job_id"])
+        assert len(calls) == 1
 
 
 if __name__ == "__main__":

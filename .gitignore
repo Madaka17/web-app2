@@ -27,6 +27,7 @@ ml/.venv/
 ml/__pycache__/
 ml/catboost_info/
 ml/.pytest_cache/
+ml/cache/
 
 Data/*.csv
 Data/*.json
