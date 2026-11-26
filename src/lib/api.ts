@@ -51,9 +51,32 @@ export interface Decision {
   beta: number | null;
 }
 
+/** One factor's share of the prediction (ml/explain.py, log price per sqm). */
+export interface ExplanationGroup {
+  key: string;
+  log: number;
+  pct: number;
+}
+
+export interface ExplanationFeature {
+  key: string;
+  label: string;
+  icon: string;
+  pct: number;
+}
+
+/** Why this price (ml/api.py _explain): base, factor shares, and the unexplained rest. */
+export interface Explanation {
+  base_price: number;
+  groups: ExplanationGroup[];
+  other_pct: number;
+  top_features: ExplanationFeature[];
+}
+
 export interface ApiPrediction extends PredictionResult {
   comparables: Comparables;
   decision?: Decision | null;
+  explanation?: Explanation | null;
   meta: PredictionMeta;
 }
 

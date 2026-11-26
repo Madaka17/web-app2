@@ -367,6 +367,60 @@ class TestApi:
         assert r.status_code == 200
         assert r.get_json()["decision"] is None
 
+    def test_predict_explains_itself(self, client):
+        import math
+        body = client.post("/api/predict", json={
+            "lat": 13.7245, "lng": 100.56, "area": 40, "propertyType": "condo",
+            "bedrooms": 1, "buildingAge": 5}).get_json()
+        ex = body["explanation"]
+        groups = ex["groups"]
+        assert {g["key"] for g in groups} == {
+            "location", "comparables", "size", "unit", "type_project", "time"}
+        assert len(groups) == 6
+        logs = [abs(g["log"]) for g in groups]
+        assert logs == sorted(logs, reverse=True)
+        assert len(ex["top_features"]) == 5
+        for g in groups:
+            assert all(math.isfinite(g[k]) for k in ("log", "pct"))
+        for f in ex["top_features"]:
+            assert f["label"] and f["icon"] and math.isfinite(f["pct"])
+        assert math.isfinite(ex["base_price"]) and math.isfinite(ex["other_pct"])
+        # base * the group effects * the unexplained rest rebuilds the price
+        rebuilt = ex["base_price"]
+        for g in groups:
+            rebuilt *= 1 + g["pct"] / 100
+        rebuilt *= 1 + ex["other_pct"] / 100
+        assert rebuilt == pytest.approx(body["predictedPrice"], rel=0.02)
+
+    def test_dropdown_explanation_is_finite(self, client):
+        import math
+        body = client.post("/api/predict", json={
+            "subdistrictId": "103301", "area": 120, "propertyType": "house"}).get_json()
+        ex = body["explanation"]
+        assert ex is not None
+        assert all(math.isfinite(g["log"]) and math.isfinite(g["pct"]) for g in ex["groups"])
+        assert all(math.isfinite(f["pct"]) for f in ex["top_features"])
+        assert math.isfinite(ex["other_pct"]) and math.isfinite(ex["base_price"])
+
+    def test_estate_out_lands_in_other(self, client, monkeypatch):
+        import api
+        # The scrape has no measured out-of-estate gap for a single house yet,
+        # so inject one to exercise the estate-adjustment path.
+        premiums = api.METRICS.setdefault("estate_premium", {})
+        monkeypatch.setitem(premiums, "บ้านเดี่ยว", {"vs_out": {"pct": 25.0}})
+        base = {"lat": 13.86, "lng": 100.67, "area": 160, "propertyType": "house"}
+        plain = client.post("/api/predict", json=base).get_json()["explanation"]
+        out = client.post("/api/predict", json={**base, "estate": "out"}).get_json()["explanation"]
+        # The model reads the estate flag, so each group moves a little (about
+        # 0.012 log at most); the 20% discount itself must land in other_pct.
+        by_key = lambda ex: {g["key"]: g["log"] for g in ex["groups"]}
+        for k, v in by_key(plain).items():
+            assert by_key(out)[k] == pytest.approx(v, abs=0.02)
+        factor = client.post(
+            "/api/predict", json={**base, "estate": "out"}).get_json()["meta"]["estate_adjustment"]["factor"]
+        ratio = (1 + out["other_pct"] / 100) / (1 + plain["other_pct"] / 100)
+        assert ratio == pytest.approx(factor, rel=0.01)
+
 
     def test_condo_search_and_grade_filter(self, client):
         body = client.get("/api/projects?kind=condo&grade=ultimate").get_json()

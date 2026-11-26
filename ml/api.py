@@ -31,6 +31,7 @@ from flask import Flask, jsonify, request
 from flask_cors import CORS
 
 from decision import components, decide, wqs
+from explain import ensemble_shap, group_shap
 from estate import ESTATE_TYPES, IN_ESTATE, OUT_ESTATE
 from prepare_data import CATEGORICAL, EARTH_M, FEATURES, GEO_RADII_M, _squash, add_features, to_price
 
@@ -158,6 +159,33 @@ def _optional_float(body: dict, key: str, lo: float, hi: float) -> float | None:
 
 app = Flask(__name__)
 CORS(app)
+
+
+def _explain(featured: pd.DataFrame, price: float, area: float) -> dict:
+    """Why this price: the blend's SHAP, grouped by factor, in percent of the
+    base. `other_pct` is what the geometric blend and the estate adjustment
+    leave unexplained, so the parts multiply back to the final price."""
+    phi, base = ensemble_shap(BUNDLE, featured)
+    phi_row, base_val = phi[0], float(base[0])
+    groups = group_shap(phi).iloc[0]
+    group_list = sorted(
+        ({"key": k, "log": round(float(v), 4), "pct": round((np.exp(v) - 1) * 100, 1)}
+         for k, v in groups.items()),
+        key=lambda g: -abs(g["log"]))
+    top = np.argsort(-np.abs(phi_row))[:5]
+    top_features = []
+    for i in top:
+        key = FEATURES[i]
+        label, icon = FEATURE_LABELS.get(key, (key, "MapPin"))
+        top_features.append({"key": key, "label": label, "icon": icon,
+                             "pct": round(float((np.exp(phi_row[i]) - 1) * 100), 1)})
+    other = (np.exp(np.log(price / area) - base_val - float(phi_row.sum())) - 1) * 100
+    return {
+        "base_price": round(float(np.exp(base_val) * area), -3),
+        "groups": group_list,
+        "other_pct": round(float(other), 1),
+        "top_features": top_features,
+    }
 
 
 def _predict_each(featured: pd.DataFrame) -> dict[str, float]:
@@ -406,6 +434,8 @@ def predict():
                     "components": {k: round(float(v), 3) for k, v in comp.iloc[0].items()},
                     "alpha": seg["alpha"], "beta": seg["beta"]}
 
+    explanation = _explain(featured, price, area)
+
     importance = list(METRICS["feature_importance"].items())[:FEATURES_SHOWN]
     features = [
         {"label": FEATURE_LABELS.get(k, (k, "MapPin"))[0],
@@ -429,6 +459,7 @@ def predict():
         "features": features,
         "comparables": comparables,
         "decision": decision,
+        "explanation": explanation,
         "meta": {
             "project": project,
             "estate": estate_used,
