@@ -30,6 +30,7 @@ import pandas as pd
 from flask import Flask, jsonify, request
 from flask_cors import CORS
 
+from decision import components, decide, wqs
 from estate import ESTATE_TYPES, IN_ESTATE, OUT_ESTATE
 from prepare_data import CATEGORICAL, EARTH_M, FEATURES, GEO_RADII_M, _squash, add_features, to_price
 
@@ -383,12 +384,27 @@ def predict():
 
     # A map click prices far more tightly than the dropdown alone; each has its
     # own measured interval (calibrate.py).
-    table = BUNDLE["calibration"] if lat is not None else BUNDLE["calibration_dropdown"]
+    view_key = "calibration" if lat is not None else "calibration_dropdown"
+    table = BUNDLE[view_key]
     calib = table.get(collateral_type, table["__default__"])
     snapped = f["project_key"]
     project = BUNDLE["project_names"].get(snapped, snapped) if isinstance(snapped, str) else None
     estate_used = {IN_ESTATE: "in", OUT_ESTATE: "out"}.get(float(f["estate"]))
     lower, upper = price * calib["q10"], price * calib["q90"]
+
+    # Three-way decision: the same view and segment fallback as the interval
+    # above, applied to the estate-adjusted per-model prices and blended price.
+    decision = None
+    thresholds = BUNDLE.get("decision", {}).get(view_key)
+    if thresholds is not None:
+        seg = thresholds.get(collateral_type, thresholds["__default__"])
+        comp = components({n: np.array([p]) for n, p in per_model.items()},
+                          np.array([price]), featured)
+        score = float(wqs(comp)[0])
+        label = decide(np.array([score]), seg["alpha"], seg["beta"])[0]
+        decision = {"label": str(label), "score": round(score, 3),
+                    "components": {k: round(float(v), 3) for k, v in comp.iloc[0].items()},
+                    "alpha": seg["alpha"], "beta": seg["beta"]}
 
     importance = list(METRICS["feature_importance"].items())[:FEATURES_SHOWN]
     features = [
@@ -412,6 +428,7 @@ def predict():
         ],
         "features": features,
         "comparables": comparables,
+        "decision": decision,
         "meta": {
             "project": project,
             "estate": estate_used,

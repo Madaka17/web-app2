@@ -338,6 +338,35 @@ class TestApi:
         r = client.post("/api/predict", json={"area": 120, "propertyType": "house", "project": "nope"})
         assert r.status_code == 400
 
+    def test_predict_returns_a_decision(self, client):
+        r = client.post("/api/predict", json={
+            "lat": 13.7245, "lng": 100.56, "area": 40, "propertyType": "condo",
+            "bedrooms": 1, "buildingAge": 5})
+        d = r.get_json()["decision"]
+        assert d["label"] in {"accept", "defer", "reject"}
+        assert 0.0 <= d["score"] <= 1.0
+        assert set(d["components"]) == {"agreement", "local", "size", "district"}
+
+    def test_dropdown_uses_dropdown_thresholds(self, client, bundle):
+        r = client.post("/api/predict", json={
+            "subdistrictId": "103301", "area": 120, "propertyType": "house"})
+        assert r.status_code == 200
+        body = r.get_json()
+        seg = body["meta"]["collateral_type"]
+        table = bundle["decision"]["calibration_dropdown"]
+        expected = table.get(seg, table["__default__"])
+        assert body["decision"]["alpha"] == expected["alpha"]
+        assert body["decision"]["beta"] == expected["beta"]
+
+    def test_missing_decision_table_gives_null(self, client, monkeypatch):
+        import api
+        slim = {k: v for k, v in api.BUNDLE.items() if k != "decision"}
+        monkeypatch.setattr(api, "BUNDLE", slim)
+        r = client.post("/api/predict", json={
+            "lat": 13.7245, "lng": 100.56, "area": 40, "propertyType": "condo"})
+        assert r.status_code == 200
+        assert r.get_json()["decision"] is None
+
 
     def test_condo_search_and_grade_filter(self, client):
         body = client.get("/api/projects?kind=condo&grade=ultimate").get_json()

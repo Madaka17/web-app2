@@ -40,8 +40,20 @@ export interface Comparables {
   vs_district_pct: number;
 }
 
+export type DecisionLabel = "accept" | "defer" | "reject";
+
+/** Three-way decision on a prediction (ml/decision.py). Null when the bundle has no thresholds. */
+export interface Decision {
+  label: DecisionLabel;
+  score: number;
+  components: { agreement: number; local: number; size: number; district: number };
+  alpha: number | null;
+  beta: number | null;
+}
+
 export interface ApiPrediction extends PredictionResult {
   comparables: Comparables;
+  decision?: Decision | null;
   meta: PredictionMeta;
 }
 
