@@ -310,7 +310,6 @@ export default function PricePanel({ target, onClearTarget, onClose }) {
     if (target) setForm((f) => ({ ...f, ...targetPatch(target) }));
   }, [target]);
 
-
   const inCoverage = !target || isInCoverage(target.lat, target.lng);
   const payload = inCoverage ? toPayload(form, target) : null;
   const { result, resultPayload, running, error } = usePrediction(payload);
