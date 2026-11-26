@@ -4,6 +4,7 @@ import { LangProvider } from './i18n.jsx';
 import { AlertProvider } from './components/Alerts.jsx';
 import CookieBanner from './components/CookieBanner.jsx';
 import MapPage from './pages/MapPage.jsx';
+import BuildCostPage from './pages/BuildCostPage.jsx';
 import { PrivacyPage, TermsPage } from './pages/DocPages.jsx';
 
 function ScrollToTop() {
@@ -24,6 +25,7 @@ export default function App() {
         <Routes>
           <Route path="/" element={<Navigate to="/map" replace />} />
           <Route path="/map" element={<MapPage />} />
+          <Route path="/build-cost" element={<BuildCostPage />} />
           <Route path="/privacy-policy" element={<PrivacyPage />} />
           <Route path="/terms-of-service" element={<TermsPage />} />
           <Route path="*" element={<Navigate to="/map" replace />} />
