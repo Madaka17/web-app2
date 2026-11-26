@@ -32,7 +32,11 @@ def _depth(values: np.ndarray) -> np.ndarray:
 def components(
     per_model: dict[str, np.ndarray], ensemble: np.ndarray, featured: pd.DataFrame
 ) -> pd.DataFrame:
-    stacked = np.vstack([np.asarray(p, dtype=float) for p in per_model.values()])
+    """Four score components per row, each in [0, 1].
+
+    `ensemble` must be positive and finite: the spread is divided by it.
+    """
+    stacked =np.vstack([np.asarray(p, dtype=float) for p in per_model.values()])
     ens = np.asarray(ensemble, dtype=float)
     spread = (stacked.max(axis=0) - stacked.min(axis=0)) / ens
     out = {"agreement": np.clip(1.0 - spread / SPREAD_FULL, 0.0, 1.0)}
@@ -54,6 +58,8 @@ def _within20(ape: np.ndarray, mask: np.ndarray) -> float:
 def fit_thresholds(score: np.ndarray, ape: np.ndarray) -> dict:
     score = np.asarray(score, dtype=float)
     ape = np.asarray(ape, dtype=float)
+    if len(score) == 0:
+        return {"alpha": None, "beta": None, "n": 0}
     candidates = np.unique(np.quantile(score, np.linspace(0.01, 0.99, 99)))
 
     alpha = None

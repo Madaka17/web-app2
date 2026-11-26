@@ -93,15 +93,17 @@ def test_fit_thresholds_accept_group_meets_target():
 
     assert result["n"] == 1001
     assert result["alpha"] is not None
-    # alpha lands near 0.375: the smallest cut where accepted within-20 reaches 80%
-    assert 0.3 < result["alpha"] < 0.45
+    # smallest cut where accepted within-20 reaches 80%: 0.38 (0.37 gives 79.4%)
+    assert abs(result["alpha"] - 0.38) < 1e-6
+    assert np.mean(ape[score >= 0.37] <= 20.0) * 100 < ACCEPT_HIT
 
     accepted = score >= result["alpha"]
     assert accepted.mean() >= MIN_SHARE
     assert np.mean(ape[accepted] <= 20.0) * 100 >= ACCEPT_HIT
 
+    # largest candidate below alpha that still holds >= 5% of rows
     assert result["beta"] is not None
-    assert result["beta"] < result["alpha"]
+    assert abs(result["beta"] - 0.37) < 1e-6
 
 
 def test_fit_thresholds_returns_none_when_target_unreachable():
@@ -161,3 +163,26 @@ def test_screening_omits_labels_not_present():
         np.array([100.0, 100.0]),
     )
     assert set(report) == {"accept"}
+
+
+def test_fit_thresholds_alpha_none_when_only_qualifying_group_is_under_share_gate():
+    # only the top 3% of rows are within 20%; any group holding >= 5% of rows
+    # has at most 60% within-20, so no candidate reaches 80% with the share gate met
+    score = np.linspace(0.0, 1.0, 1000)
+    ape = np.where(score >= 0.97, 5.0, 50.0)
+    result = fit_thresholds(score, ape)
+    assert result["alpha"] is None
+
+
+def test_fit_thresholds_beta_none_when_low_scores_are_accurate():
+    # every row is within 20%, so no low-score group can sit at or below 50% within-20
+    score = np.linspace(0.0, 1.0, 1000)
+    ape = np.full_like(score, 10.0)
+    result = fit_thresholds(score, ape)
+    assert result["alpha"] is not None
+    assert result["beta"] is None
+
+
+def test_fit_thresholds_empty_input_returns_none_thresholds():
+    result = fit_thresholds(np.array([]), np.array([]))
+    assert result == {"alpha": None, "beta": None, "n": 0}
