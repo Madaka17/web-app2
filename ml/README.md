@@ -209,9 +209,15 @@ targets are: the accept group holds within ±20% of the actual price at least
 of the segment's rows. A null `alpha` means that nothing is accepted.
 
 Thresholds are fitted once per app view, on all calibration rows of that view,
-not per property type. Per-type fitting was tried first and collapsed: each
-type's thresholds just re-labelled the type average (about 99% of condos were
-accepted and about 98% of land rejected), so it did not screen within a type.
+not per property type. In an earlier run with per-type thresholds (not kept in
+`metrics.json`), about 99% of condos were accepted and about 98% of land
+rejected: each type's thresholds just re-labelled the type average, so per-type
+fitting did not screen within a type.
+
+The thresholds were fitted on unadjusted predictions. The API's estate
+"outside" adjustment scales every model's price by the same factor, so the score
+(a spread ratio) is unchanged; label accuracy for estate-adjusted prices is not
+separately measured.
 
 | view | alpha (accept ≥) | beta (reject <) | calibration n | source |
 |---|---|---|---|---|
@@ -249,8 +255,8 @@ share of that segment's test rows.
 | บ้านเดี่ยว | reject | 914 | 47.7 | 25.4 | 41.1 |
 
 The per-type rows use the one pair above, so they show how the shared
-thresholds behave inside each type. The land accept group (12 rows) and the
-dropdown's one-row defer group in detached houses are too small to read.
+thresholds behave inside each type. The land accept group (12 rows) is too
+small to read.
 
 **Sub-district dropdown**
 
@@ -259,13 +265,15 @@ dropdown's one-row defer group in detached houses are too small to read.
 | all (`__default__`) | defer | 160 | 0.9 | 19.2 | 50.6 |
 | all (`__default__`) | reject | 17,648 | 99.1 | 21.9 | 46.2 |
 
-There is no accept row because alpha is null.
+There is no accept row because alpha is null. The dropdown's one-row defer group
+in detached houses is too small to read.
 
 On the map-click test fold the accept group is the most accurate (79.9% within
 ±20%, against 48.1% for reject), which suggests the score separates the listings
 the model prices well from those it prices poorly. The accept group sits just
-under the 80% target set on the calibration fold; this is likely sampling
-variation on one test fold, not a failed target.
+under the 80% target: this is consistent with the threshold being selected on
+the calibration fold (the lowest cut reaching 80% there) plus sampling variation
+on one test fold.
 
 **Limitation:** pins in `public/listings.json` are current listings, and some
 may overlap the training data. A pin's decision uses only model agreement and
