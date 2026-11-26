@@ -218,22 +218,23 @@ def stub_prices(monkeypatch):
     return {"weights": {"a": 0.5, "b": 0.5}}
 
 
-def test_fit_decision_has_every_segment_with_thresholds(stub_prices):
+def test_fit_decision_is_one_pair_for_the_whole_view(stub_prices):
     cal = _cal_frame()
     out = calibrate.fit_decision(stub_prices, cal)
-    assert set(out) == set(calibrate._masks(cal))
-    assert "__default__" in out and "คอนโด" in out
-    for seg in out.values():
-        assert set(seg) == {"alpha", "beta", "n"}
-        for k in ("alpha", "beta"):
-            assert seg[k] is None or 0.0 <= seg[k] <= 1.0
+    assert set(out) == {"__default__"}
+    seg = out["__default__"]
+    assert set(seg) == {"alpha", "beta", "n"}
+    assert seg["n"] == len(cal)
+    for k in ("alpha", "beta"):
+        assert seg[k] is None or 0.0 <= seg[k] <= 1.0
 
 
-def test_score_decision_reports_each_label_per_segment(stub_prices):
+def test_score_decision_screens_global_labels_per_type(stub_prices):
     cal, test = _cal_frame(), _cal_frame()
     decision = calibrate.fit_decision(stub_prices, cal)
     report = calibrate.score_decision(stub_prices, decision, test)
-    assert "__default__" in report
+    assert set(report) == set(calibrate._masks(test))
+    assert "__default__" in report and "คอนโด" in report
     for seg, labels in report.items():
         assert set(labels) <= {"accept", "defer", "reject"}
         for stats in labels.values():

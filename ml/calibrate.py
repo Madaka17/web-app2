@@ -110,34 +110,32 @@ def score_view(bundle: dict, calibration: dict, test) -> dict:
 
 
 def fit_decision(bundle: dict, cal) -> dict:
-    """Accept/reject thresholds per segment, fitted on the calibration fold."""
+    """One accept/reject threshold pair for the whole view, fitted on the
+    calibration fold. Per-type pairs collapse to the segment average, so the
+    single pair is the only one used."""
     per_model = predict_each(bundle, cal)
     ensemble = _blend(bundle, per_model)
     score = wqs(components(per_model, ensemble, cal))
     actual = cal[TARGET].to_numpy(dtype=float)
     ape = np.abs(ensemble - actual) / actual * 100
-    return {
-        key: fit_thresholds(score[mask], ape[mask])
-        for key, mask in _masks(cal).items()
-    }
+    return {"__default__": fit_thresholds(score, ape)}
 
 
 def score_decision(bundle: dict, decision: dict, test) -> dict:
-    """Label the test fold with each segment's thresholds and screen the labels.
-    Segments are the decision keys: a row falls in its property type's segment
-    when that key exists, and always in __default__."""
+    """Label every test row with the view's __default__ thresholds, then screen
+    those labels within each property type segment (and __default__ for all
+    rows), so the per-type tables show how the global labels distribute."""
     per_model = predict_each(bundle, test)
     pred = _blend(bundle, per_model)
     score = wqs(components(per_model, pred, test))
     actual = test[TARGET].to_numpy(dtype=float)
-    types = test["collateral_type"].to_numpy()
+    thresholds = decision["__default__"]
+    labels = decide(score, thresholds["alpha"], thresholds["beta"])
     report = {}
-    for key, thresholds in decision.items():
-        mask = np.ones(len(types), dtype=bool) if key == "__default__" else types == key
+    for key, mask in _masks(test).items():
         if not mask.any():
             continue
-        labels = decide(score[mask], thresholds["alpha"], thresholds["beta"])
-        report[key] = screening(labels, pred[mask], actual[mask])
+        report[key] = screening(labels[mask], pred[mask], actual[mask])
     return report
 
 
@@ -176,17 +174,19 @@ def main() -> None:
             print(f"{k[:42]:<44}{v['n']:>8,}{v['coverage_pct']:>8.1f}%"
                   f"{v['median_ratio']:>8.3f}{v['COD']:>8.2f}{v['PRD']:>8.3f}")
 
-    for key, thresholds in decision.items():
-        print(f"\n{key}: decision thresholds (fit on cal)")
-        print(f"{'segment':<34}{'alpha':>8}{'beta':>8}{'n':>8}")
-        print("-" * 58)
-        for k, v in thresholds.items():
-            a = "-" if v["alpha"] is None else f"{v['alpha']:.3f}"
-            b = "-" if v["beta"] is None else f"{v['beta']:.3f}"
-            print(f"{k[:32]:<34}{a:>8}{b:>8}{v['n']:>8,}")
-            for label, s in decision_test[key].get(k, {}).items():
-                print(f"    {label:<30}{s['n']:>8,} MdAPE {s['MdAPE']:>6.1f}%"
-                      f"  ±20% {s['within_20pct']:>6.1f}%  share {s['share_pct']:>5.1f}%")
+    for key in VIEWS:
+        v = decision[key]["__default__"]
+        a = "-" if v["alpha"] is None else f"{v['alpha']:.3f}"
+        b = "-" if v["beta"] is None else f"{v['beta']:.3f}"
+        print(f"\n{key}: one decision threshold pair per view (fit on cal)")
+        print(f"alpha {a}   beta {b}   cal n {v['n']:,}")
+        print(f"\n{key}: global labels screened on test, per segment")
+        print(f"{'segment':<34}{'label':<10}{'n':>8}{'share':>8}{'MdAPE':>9}{'±20%':>8}")
+        print("-" * 77)
+        for seg, labels in decision_test[key].items():
+            for label, s in labels.items():
+                print(f"{seg[:32]:<34}{label:<10}{s['n']:>8,}{s['share_pct']:>7.1f}%"
+                      f"{s['MdAPE']:>8.1f}%{s['within_20pct']:>7.1f}%")
 
     m = json.loads(Path("models/metrics.json").read_text(encoding="utf-8"))
     m.update(out)
