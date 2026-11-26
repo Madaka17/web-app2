@@ -31,9 +31,16 @@ MIN_ROWS = 200
 N_BOOT = 200
 SEED = 42
 NOTE = (
-    "Stability is measured as agreement across the three models and bootstrap rank "
-    "stability on the test fold. It is not measured across refitted CV folds "
-    "(re-running cv.py costs about 45 minutes). SHAP shows what each model used, "
+    "Stability is measured as agreement across the three models and bootstrap rank stabili"
+    "ty on the test fold. It is not measured across refitted CV folds (re-running cv.py co"
+    "sts about 45 minutes). The bootstrap resamples test rows with the three models held f"
+    "ixed, so it measures only the sampling noise of the mean |phi| over about 13.9k rows,"
+    " not variance from refitting (other training data, seeds, CV folds); its 1.000 retent"
+    "ion values are therefore weak evidence of stability. The three models were trained on"
+    " the same data with correlated learners, so their agreement is not independent eviden"
+    "ce either. pct_equiv is the typical size of each group's contribution to the model's "
+    "estimate, not a share of the price; groups are measured separately, so they are not c"
+    "apped at 100% and do not sum to anything meaningful. SHAP shows what the model used, "
     "not cause and effect."
 )
 

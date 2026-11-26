@@ -309,26 +309,33 @@ The 43 features fall into six groups:
 | time | year |
 
 A group's effect is its φ summed over members. The mean |φ_g| is in log
-units; `pct_equiv = (exp(mean |φ_g|) - 1) · 100` is the size of a typical
-move in price-per-sqm that the group causes, as a percentage. Percentages do not
-sum across groups, since the effects combine multiplicatively and absolute values
-do not cancel.
+units; `pct_equiv = (exp(mean |φ_g|) - 1) · 100` is the typical size of the
+group's contribution to the model's estimate, as a percentage.
+
+`pct_equiv` is a per-group typical magnitude, **not a share of the price**. Each
+group is measured on its own, so values are not capped at 100% and do not sum to
+anything meaningful. Land's 115.4% and 156.4% are above 100 for that reason. The
+`__default__` row sums to 95.8 (15.4 + 11.5 + 6.6 + 1.3 + 60.2 + 0.8), which is
+close to 100 only by coincidence.
 
 **Importance per segment.** Mean |φ_g| (log units, 3 dp) and pct_equiv (1 dp), on the
 test fold. Segments are `__default__` (all 13,928 rows) plus each property type
 with at least 200 rows.
 
-| segment | location | comparables | size | unit | type_project | time |
-|---|---|---|---|---|---|---|
-| __default__ | 0.143 (15.4%) | 0.109 (11.5%) | 0.064 (6.6%) | 0.013 (1.3%) | 0.471 (60.2%) | 0.008 (0.8%) |
-| คอนโด | 0.115 (12.1%) | 0.087 (9.1%) | 0.031 (3.2%) | 0.013 (1.3%) | 0.446 (56.2%) | 0.007 (0.7%) |
-| ทาวน์เฮ้าส์ | 0.204 (22.6%) | 0.165 (17.9%) | 0.120 (12.7%) | 0.014 (1.4%) | 0.607 (83.5%) | 0.010 (1.0%) |
-| ที่ดิน | 0.767 (115.4%) | 0.382 (46.5%) | 0.357 (43.0%) | 0.014 (1.4%) | 0.941 (156.4%) | 0.014 (1.4%) |
-| บ้านเดี่ยว | 0.099 (10.4%) | 0.118 (12.6%) | 0.122 (13.0%) | 0.013 (1.3%) | 0.391 (47.9%) | 0.011 (1.1%) |
+| segment | n | location | comparables | size | unit | type_project | time |
+|---|---|---|---|---|---|---|---|
+| __default__ | 13,928 | 0.143 (15.4%) | 0.109 (11.5%) | 0.064 (6.6%) | 0.013 (1.3%) | 0.471 (60.2%) | 0.008 (0.8%) |
+| คอนโด | 10,158 | 0.115 (12.1%) | 0.087 (9.1%) | 0.031 (3.2%) | 0.013 (1.3%) | 0.446 (56.2%) | 0.007 (0.7%) |
+| ทาวน์เฮ้าส์ | 1,385 | 0.204 (22.6%) | 0.165 (17.9%) | 0.120 (12.7%) | 0.014 (1.4%) | 0.607 (83.5%) | 0.010 (1.0%) |
+| ที่ดิน | 469 | 0.767 (115.4%) | 0.382 (46.5%) | 0.357 (43.0%) | 0.014 (1.4%) | 0.941 (156.4%) | 0.014 (1.4%) |
+| บ้านเดี่ยว | 1,916 | 0.099 (10.4%) | 0.118 (12.6%) | 0.122 (13.0%) | 0.013 (1.3%) | 0.391 (47.9%) | 0.011 (1.1%) |
+
+The n column is the test-fold row count per segment (`metrics.json` `test_coverage`,
+same click view and the same 200-row rule).
 
 Type_project dominates everywhere. Land (ที่ดิน) has the largest effects of
-any segment, which fits its thin comparables and its sensitivity to location
-and size.
+any segment, which may reflect its thin comparables and its sensitivity to
+location and size. That is a hypothesis about the model, not a tested result.
 
 **Model agreement.** Spearman rank correlation of the six `__default__` group
 importances, computed per model:
@@ -355,6 +362,14 @@ one rank change at most.
 | size | 4 | 1.000 | 4 | 4 |
 | unit | 5 | 1.000 | 5 | 5 |
 | time | 6 | 1.000 | 6 | 6 |
+
+**What the bootstrap does and does not show.** It resamples the test rows with
+the three models held fixed, so it measures only the sampling noise of the mean
+|φ_g| over about 13.9k rows. It says nothing about variance from refitting (other
+training data, seeds, CV folds). The 1.000 retention values are therefore weak
+evidence of stability. The three models were also trained on the same data with
+correlated learners, so their agreement (ρ 0.943 to 1.000) is not independent
+evidence either.
 
 **Stability ruling.** Stability is measured as agreement across the three
 models and bootstrap rank stability on the test fold. It is not measured across

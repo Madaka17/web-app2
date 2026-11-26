@@ -108,6 +108,8 @@ def test_shap_metrics_shape():
     import json
     from explain import GROUPS as G
     path = HERE / "models/shap_metrics.json"
+    if not path.exists():
+        pytest.skip("models/shap_metrics.json not generated yet (run shap_report.py)")
     m = json.loads(path.read_text(encoding="utf-8"))
     assert set(m["importance"]["__default__"]) == set(G)
     assert len(m["importance"]["__default__"]) == 6
