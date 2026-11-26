@@ -1,5 +1,5 @@
 import { useEffect, useId, useState } from 'react';
-import { AlertTriangle, ArrowDownRight, ArrowUpRight, CalendarClock, CheckCircle2, HelpCircle, Home, Info, Layers, MapPin, Minus, Percent, Scale, Target, TrendingUp, X, XCircle } from 'lucide-react';
+import { AlertTriangle, ArrowDownRight, ArrowUpRight, BarChart3, CalendarClock, CheckCircle2, HelpCircle, Home, Info, Layers, MapPin, Minus, Percent, Scale, Target, TrendingUp, X, XCircle } from 'lucide-react';
 import { useLang } from '../i18n.jsx';
 import { LOCATIONS, findLocationPath } from '../lib/locations';
 import { AREA_MAX, AREA_MIN, DEFAULT_FORM, askingGap, gapApplies, isInCoverage, listingPropertyType, targetPatch, toPayload } from '../lib/priceForm';
@@ -7,6 +7,8 @@ import { DEFAULT_GROWTH_PCT, GROWTH_MAX_PCT, GROWTH_MIN_PCT, GROWTH_STEP_PCT, HO
 import { formatBaht } from '../lib/prediction';
 import { getHealth } from '../lib/api';
 import { usePrediction } from '../lib/usePrediction.js';
+import { useExplanation } from '../lib/useExplanation.js';
+import { barWidth, groupLabelKey, signedPct } from '../lib/explanation';
 import { YEAR_MAX, YEAR_MIN } from '../lib/defaults';
 
 const PROPERTY_TYPES = [
@@ -234,6 +236,68 @@ function SelectField({ label, value, onChange, children }) {
   );
 }
 
+// Why this price: the base, each factor's share, and the unexplained rest. Hidden on error or when there is nothing to show.
+function ExplanationSection({ data, loading }) {
+  const { t } = useLang();
+  const fmtBaht = (value) => formatBaht(value, { million: t('mthb'), baht: t('thb') });
+  if (loading) {
+    return (
+      <Section title={t('explainTitle')} icon={BarChart3}>
+        <div aria-hidden="true" className="animate-pulse rounded-xl bg-surface-soft h-24" />
+      </Section>
+    );
+  }
+  if (!data) return null;
+  const maxAbs = Math.max(0, ...data.groups.map((g) => Math.abs(g.pct)));
+  return (
+    <Section title={t('explainTitle')} icon={BarChart3}>
+      <div className="space-y-3 rounded-2xl border border-line p-3 text-xs">
+        <p className="flex items-baseline justify-between gap-2">
+          <span className="min-w-0 text-ink-secondary">{t('explainBase')}</span>
+          <span className="shrink-0 font-display font-bold tabular-nums text-ink-primary">{fmtBaht(data.base_price)}</span>
+        </p>
+        <ul className="space-y-2.5">
+          {data.groups.map((g) => {
+            const labelKey = groupLabelKey(g.key);
+            const positive = g.pct >= 0;
+            return (
+              <li key={g.key}>
+                <div className="flex items-baseline justify-between gap-2">
+                  <span className="min-w-0 break-words text-ink-secondary">{labelKey ? t(labelKey) : g.key}</span>
+                  <span className="shrink-0 tabular-nums text-ink-primary">{signedPct(g.pct)}</span>
+                </div>
+                <div aria-hidden="true" className="relative mt-1 h-1.5 w-full rounded-full bg-surface-soft">
+                  <div className="absolute inset-y-0 left-1/2 w-px bg-line" />
+                  <div
+                    className={`absolute inset-y-0 rounded-full ${positive ? 'left-1/2 bg-[#DC2626]/60' : 'right-1/2 bg-ink-muted/50'}`}
+                    style={{ width: `${barWidth(g.pct, maxAbs)}%` }}
+                  />
+                </div>
+              </li>
+            );
+          })}
+        </ul>
+        <p className="flex items-baseline justify-between gap-2 text-ink-muted">
+          <span className="min-w-0">{t('explainOther')}</span>
+          <span className="shrink-0 tabular-nums">{signedPct(data.other_pct)}</span>
+        </p>
+        <details>
+          <summary className="cursor-pointer text-ink-secondary">{t('explainDetail')}</summary>
+          <ul className="mt-2 space-y-1">
+            {data.top_features.map((f) => (
+              <li key={f.key} className="flex items-baseline justify-between gap-2">
+                <span className="min-w-0 break-words text-ink-secondary">{f.label}</span>
+                <span className="shrink-0 tabular-nums text-ink-primary">{signedPct(f.pct)}</span>
+              </li>
+            ))}
+          </ul>
+        </details>
+        <p className="text-[11px] leading-relaxed text-ink-muted">{t('explainNote')}</p>
+      </div>
+    </Section>
+  );
+}
+
 export default function PricePanel({ target, onClearTarget, onClose }) {
   const { t } = useLang();
   // Baht amounts use the active language's unit labels.
@@ -269,6 +333,8 @@ export default function PricePanel({ target, onClearTarget, onClose }) {
   const showResult = inCoverage && !failed && Boolean(result);
   // The stale result belongs to the current target only when its lat and lng match.
   const resultIsCurrent = Boolean(resultPayload) && resultPayload.lat === payload?.lat && resultPayload.lng === payload?.lng;
+  // The explanation is fetched only for the result on screen, after its prediction has settled.
+  const explained = useExplanation(resultIsCurrent ? resultPayload : null);
   const predicted = showResult ? result.predictedPrice : 0;
   const isListing = target?.source === 'listing' && point?.kind === 'listing';
   const priced = isListing && point.group !== 'other';
@@ -505,6 +571,8 @@ export default function PricePanel({ target, onClearTarget, onClose }) {
                 </p>
               )}
             </Section>
+
+            <ExplanationSection data={explained.explanation} loading={explained.loading} />
 
             <Section title={t('models')} icon={Layers}>
               <div className="flex h-2 w-full overflow-hidden rounded-full bg-surface-soft" aria-hidden="true">
