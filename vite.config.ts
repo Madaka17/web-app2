@@ -2,7 +2,7 @@ import { defineConfig, type Plugin } from 'vite';
 import react from '@vitejs/plugin-react';
 import { fileURLToPath, URL } from 'node:url';
 import { spawn, type ChildProcess } from 'node:child_process';
-import { existsSync } from 'node:fs';
+import { existsSync, realpathSync } from 'node:fs';
 
 // `npm run dev` also starts the Flask model API (ml/api.py) on 127.0.0.1:3030,
 // so the app never shows "ต่อกับ Model API ไม่ได้" just because it was not started.
@@ -38,6 +38,10 @@ function modelApi(): Plugin {
 
 // https://vitejs.dev/config/
 export default defineConfig({
+  // The repo folder as the disk spells it. On Windows, building from a path whose
+  // case differs (c:\users vs C:\Users) made Rollup bundle src/i18n.jsx and
+  // react-router twice, so useLang() found no provider and the site rendered blank.
+  root: realpathSync.native(fileURLToPath(new URL('.', import.meta.url))),
   plugins: [react(), modelApi()],
   resolve: {
     alias: {
