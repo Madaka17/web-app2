@@ -31,8 +31,8 @@ from flask import Flask, jsonify, request
 from flask_cors import CORS
 
 from decision import components, decide, wqs
-from explain import ensemble_shap, group_shap
 from estate import ESTATE_TYPES, IN_ESTATE, OUT_ESTATE
+from explain import ensemble_shap, group_shap
 from prepare_data import CATEGORICAL, EARTH_M, FEATURES, GEO_RADII_M, _squash, add_features, to_price
 
 HERE = Path(__file__).parent
@@ -391,8 +391,9 @@ def _priced(body: dict):
     # type, and the pooled figure is too uncertain to apply.
     estate_adjustment = None
     premium = METRICS.get("estate_premium", {}).get(collateral_type)
-    estate_unmeasured = estate_raw == "out" and not (premium and premium.get("vs_out"))
-    if estate_raw == "out" and premium and premium.get("vs_out"):
+    has_gap = bool(premium and premium.get("vs_out"))
+    estate_unmeasured = estate_raw == "out" and not has_gap
+    if estate_raw == "out" and has_gap:
         factor = 1 / (1 + premium["vs_out"]["pct"] / 100)
         price *= factor
         per_model = {n: p * factor for n, p in per_model.items()}

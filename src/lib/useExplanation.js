@@ -35,8 +35,16 @@ export function useExplanation(payload) {
     return () => controller.abort();
   }, [key]);
 
-  // Until the effect catches up with a new body, the stored explanation belongs to the old one.
-  if (key !== null && state.key !== key) {
+  return selectExplanationState(state, key);
+}
+
+/**
+ * What the hook returns for the current key. A null key is the empty state at once.
+ * Until the effect catches up with a new body, the stored explanation belongs to the old one.
+ */
+export function selectExplanationState(state, key) {
+  if (key === null) return EMPTY;
+  if (state.key !== key) {
     return { explanation: null, loading: true, error: null };
   }
   return state;

@@ -346,6 +346,14 @@ class TestApi:
             "lat": 13.7245, "lng": 100.56, "area": 40, "propertyType": "condo", "estate": "in"})
         assert r.get_json()["meta"]["estate"] is None
 
+    def test_estate_out_is_not_flagged_unmeasured_for_a_condo(self, client):
+        # A condo has no estate flag, so "out" is dropped and nothing is unmeasured.
+        r = client.post("/api/predict", json={
+            "lat": 13.7245, "lng": 100.56, "area": 40, "propertyType": "condo", "estate": "out"})
+        meta = r.get_json()["meta"]
+        assert meta["estate"] is None
+        assert meta["estate_unmeasured"] is False
+
     def test_rejects_an_unknown_village(self, client):
         r = client.post("/api/predict", json={"area": 120, "propertyType": "house", "project": "nope"})
         assert r.status_code == 400
@@ -422,6 +430,15 @@ class TestApi:
         assert all(math.isfinite(g["log"]) and math.isfinite(g["pct"]) for g in ex["groups"])
         assert all(math.isfinite(f["pct"]) for f in ex["top_features"])
         assert math.isfinite(ex["other_pct"]) and math.isfinite(ex["base_price"])
+
+    def test_estate_out_with_measured_gap_is_not_unmeasured(self, client, monkeypatch):
+        import api
+        premiums = {**api.METRICS.get("estate_premium", {}), "บ้านเดี่ยว": {"vs_out": {"pct": 25.0}}}
+        monkeypatch.setitem(api.METRICS, "estate_premium", premiums)
+        base = {"lat": 13.86, "lng": 100.67, "area": 160, "propertyType": "house"}
+        out = client.post("/api/predict", json={**base, "estate": "out"}).get_json()
+        assert out["meta"]["estate_adjustment"] is not None
+        assert out["meta"]["estate_unmeasured"] is False
 
     def test_estate_out_lands_in_other(self, client, monkeypatch):
         import api
