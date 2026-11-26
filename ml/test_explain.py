@@ -102,3 +102,16 @@ def test_nopreccalc_matches_auto_for_catboost(bundle, featured):
     auto = shap_each_catboost(bundle["models"]["CatBoost"], featured, shap_mode="Auto")
     single = shap_each_catboost(bundle["models"]["CatBoost"], featured, shap_mode="NoPreCalc")
     np.testing.assert_allclose(single, auto, atol=1e-6)
+
+
+def test_shap_metrics_shape():
+    import json
+    from explain import GROUPS as G
+    path = HERE / "models/shap_metrics.json"
+    m = json.loads(path.read_text(encoding="utf-8"))
+    assert set(m["importance"]["__default__"]) == set(G)
+    assert len(m["importance"]["__default__"]) == 6
+    for rho in m["model_agreement"].values():
+        assert -1.0 <= rho <= 1.0
+    for stats in m["bootstrap"].values():
+        assert 0.0 <= stats["share_same_rank"] <= 1.0

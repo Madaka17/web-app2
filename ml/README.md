@@ -287,6 +287,88 @@ API in-process and writes `public/decisions.json`. The last run printed accept
 533, defer 365, reject 1,005 and skipped 207 (pins the API could not score).
 Re-run it after retraining or refreshing the listings.
 
+## Explaining each estimate (SHAP)
+
+`ml/shap_report.py` explains the served blend on the test fold's click view
+(13,928 rows, the app's map-click input) and writes `models/shap_metrics.json`
+and `metrics.json["shap"]`.
+
+**Method.** Each of the three models (CatBoost, LightGBM, XGBoost) gives its
+native SHAP values, in log price-per-sqm (the model target), so
+base + Σφ reproduces each model's prediction exactly. The served ensemble
+blends them with the bundle weights 0.8 / 0.1 / 0.1 in log price-per-sqm.
+The 43 features fall into six groups:
+
+| group | features |
+|---|---|
+| location | province, district, sub_district, province_ppsqm, district_ppsqm, dt_ppsqm, dt_n, dt_iqr, sd_ppsqm, sd_n, latitude, longitude, transit_m, geo1_ppsqm, geo1_n, geo2_ppsqm, geo2_n, knn_ppsqm, knn_dist_m |
+| comparables | band_ppsqm, band_n, comp_ppsqm, comp_n, comp_age, comp_gap, comp2_ppsqm, comp2_n, nn_ppsqm, nn_dist |
+| size | area_sqm, log_area, area_per_unit, n_units |
+| unit | bedrooms, bathrooms, building_age |
+| type_project | collateral_type, type_ppsqm, prov_type_ppsqm, estate, proj_ppsqm, proj_n |
+| time | year |
+
+A group's effect is its φ summed over members. The mean |φ_g| is in log
+units; `pct_equiv = (exp(mean |φ_g|) - 1) · 100` is the size of a typical
+move in price-per-sqm that the group causes, as a percentage. Percentages do not
+sum across groups, since the effects combine multiplicatively and absolute values
+do not cancel.
+
+**Importance per segment.** Mean |φ_g| (log units, 3 dp) and pct_equiv (1 dp), on the
+test fold. Segments are `__default__` (all 13,928 rows) plus each property type
+with at least 200 rows.
+
+| segment | location | comparables | size | unit | type_project | time |
+|---|---|---|---|---|---|---|
+| __default__ | 0.143 (15.4%) | 0.109 (11.5%) | 0.064 (6.6%) | 0.013 (1.3%) | 0.471 (60.2%) | 0.008 (0.8%) |
+| คอนโด | 0.115 (12.1%) | 0.087 (9.1%) | 0.031 (3.2%) | 0.013 (1.3%) | 0.446 (56.2%) | 0.007 (0.7%) |
+| ทาวน์เฮ้าส์ | 0.204 (22.6%) | 0.165 (17.9%) | 0.120 (12.7%) | 0.014 (1.4%) | 0.607 (83.5%) | 0.010 (1.0%) |
+| ที่ดิน | 0.767 (115.4%) | 0.382 (46.5%) | 0.357 (43.0%) | 0.014 (1.4%) | 0.941 (156.4%) | 0.014 (1.4%) |
+| บ้านเดี่ยว | 0.099 (10.4%) | 0.118 (12.6%) | 0.122 (13.0%) | 0.013 (1.3%) | 0.391 (47.9%) | 0.011 (1.1%) |
+
+Type_project dominates everywhere. Land (ที่ดิน) has the largest effects of
+any segment, which fits its thin comparables and its sensitivity to location
+and size.
+
+**Model agreement.** Spearman rank correlation of the six `__default__` group
+importances, computed per model:
+
+| pair | ρ |
+|---|---|
+| CatBoost – LightGBM | 0.943 |
+| CatBoost – XGBoost | 1.000 |
+| LightGBM – XGBoost | 0.943 |
+
+With six groups, a single adjacent swap moves ρ to 0.943, so these values mark
+one rank change at most.
+
+**Bootstrap stability.** 200 resamples of the test rows with replacement
+(seed 42). `rank` is the group's position on the full sample (1 = largest mean |φ|).
+`share same rank` is the share of resamples in which the group keeps that rank.
+`p05`–`p95` is its rank's 5th to 95th percentile.
+
+| group | rank | share same rank | p05 | p95 |
+|---|---|---|---|---|
+| type_project | 1 | 1.000 | 1 | 1 |
+| location | 2 | 1.000 | 2 | 2 |
+| comparables | 3 | 1.000 | 3 | 3 |
+| size | 4 | 1.000 | 4 | 4 |
+| unit | 5 | 1.000 | 5 | 5 |
+| time | 6 | 1.000 | 6 | 6 |
+
+**Stability ruling.** Stability is measured as agreement across the three
+models and bootstrap rank stability on the test fold. It is not measured across
+refitted CV folds, because re-running `cv.py` costs about 45 minutes.
+
+**Serving the explanation.** The panel's explanation comes from `POST /api/explain`,
+which runs CatBoost SHAP on the single property (about 2 s). The batch numbers above
+use the same per-model SHAP, computed once for all rows.
+
+**Reading it.** SHAP shows what the model used to reach its estimate, and how
+much each factor moved it relative to the average. It does not show cause and
+effect: a large location term means the model leaned on location for that
+listing, not that location caused the price.
+
 ## ค่าเสื่อม (building age)
 
 `train_models.depreciation_curve` measures it instead of assuming a rate: each

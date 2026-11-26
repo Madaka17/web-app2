@@ -860,5 +860,194 @@
       }
     }
   },
-  "decision_note": "Accept/reject thresholds are fit on the calibration fold (accept: within-20% >= 80%, reject: <= 50%, each group >= 5% of rows) and screened on the test fold; defer is the rest."
+  "decision_note": "Accept/reject thresholds are fit on the calibration fold (accept: within-20% >= 80%, reject: <= 50%, each group >= 5% of rows) and screened on the test fold; defer is the rest.",
+  "shap": {
+    "n": 13928,
+    "groups": [
+      "location",
+      "comparables",
+      "size",
+      "unit",
+      "type_project",
+      "time"
+    ],
+    "importance": {
+      "__default__": {
+        "location": {
+          "mean_abs": 0.14327795698791432,
+          "pct_equiv": 15.405053349931075
+        },
+        "comparables": {
+          "mean_abs": 0.10902825189675552,
+          "pct_equiv": 11.519385623808386
+        },
+        "size": {
+          "mean_abs": 0.06371739990331282,
+          "pct_equiv": 6.579116351309766
+        },
+        "unit": {
+          "mean_abs": 0.013352832114438171,
+          "pct_equiv": 1.3442379302803564
+        },
+        "type_project": {
+          "mean_abs": 0.47119479399408604,
+          "pct_equiv": 60.19069991469577
+        },
+        "time": {
+          "mean_abs": 0.00830144022353262,
+          "pct_equiv": 0.8335992724084695
+        }
+      },
+      "คอนโด": {
+        "location": {
+          "mean_abs": 0.11463904142404123,
+          "pct_equiv": 12.146856080977209
+        },
+        "comparables": {
+          "mean_abs": 0.087091398766873,
+          "pct_equiv": 9.099639088625944
+        },
+        "size": {
+          "mean_abs": 0.03147313445289138,
+          "pct_equiv": 3.1973650686497823
+        },
+        "unit": {
+          "mean_abs": 0.013353207849977723,
+          "pct_equiv": 1.3442760089194206
+        },
+        "type_project": {
+          "mean_abs": 0.4460735827917599,
+          "pct_equiv": 56.2166410870435
+        },
+        "time": {
+          "mean_abs": 0.007223094404842693,
+          "pct_equiv": 0.7249243873344469
+        }
+      },
+      "ทาวน์เฮ้าส์": {
+        "location": {
+          "mean_abs": 0.20357517396466182,
+          "pct_equiv": 22.577730071727075
+        },
+        "comparables": {
+          "mean_abs": 0.16457374843078154,
+          "pct_equiv": 17.889050767079674
+        },
+        "size": {
+          "mean_abs": 0.1198533360844037,
+          "pct_equiv": 12.733150060210786
+        },
+        "unit": {
+          "mean_abs": 0.014332439816799717,
+          "pct_equiv": 1.443564168777911
+        },
+        "type_project": {
+          "mean_abs": 0.6068517997739143,
+          "pct_equiv": 83.46464630817904
+        },
+        "time": {
+          "mean_abs": 0.010222312820144946,
+          "pct_equiv": 1.0274739146999723
+        }
+      },
+      "ที่ดิน": {
+        "location": {
+          "mean_abs": 0.7671161900625986,
+          "pct_equiv": 115.35468704697087
+        },
+        "comparables": {
+          "mean_abs": 0.38183847404878823,
+          "pct_equiv": 46.49754344703081
+        },
+        "size": {
+          "mean_abs": 0.3573858790996457,
+          "pct_equiv": 42.9587411336019
+        },
+        "unit": {
+          "mean_abs": 0.013859875496479284,
+          "pct_equiv": 1.395636885079643
+        },
+        "type_project": {
+          "mean_abs": 0.9414871983113952,
+          "pct_equiv": 156.37914508065077
+        },
+        "time": {
+          "mean_abs": 0.013830477289396752,
+          "pct_equiv": 1.3926560789646159
+        }
+      },
+      "บ้านเดี่ยว": {
+        "location": {
+          "mean_abs": 0.09882196923895145,
+          "pct_equiv": 10.386975929094922
+        },
+        "comparables": {
+          "mean_abs": 0.11839988404938054,
+          "pct_equiv": 12.569416851847826
+        },
+        "size": {
+          "mean_abs": 0.12220302625586309,
+          "pct_equiv": 12.998349481126525
+        },
+        "unit": {
+          "mean_abs": 0.012518606260806297,
+          "pct_equiv": 1.2597292014665529
+        },
+        "type_project": {
+          "mean_abs": 0.39119958144886674,
+          "pct_equiv": 47.875361575284025
+        },
+        "time": {
+          "mean_abs": 0.011276549772621394,
+          "pct_equiv": 1.1340369724031518
+        }
+      }
+    },
+    "model_agreement": {
+      "CatBoost-LightGBM": 0.942857142857143,
+      "CatBoost-XGBoost": 1.0,
+      "LightGBM-XGBoost": 0.942857142857143
+    },
+    "bootstrap": {
+      "location": {
+        "rank": 2,
+        "share_same_rank": 1.0,
+        "rank_p05": 2.0,
+        "rank_p95": 2.0
+      },
+      "comparables": {
+        "rank": 3,
+        "share_same_rank": 1.0,
+        "rank_p05": 3.0,
+        "rank_p95": 3.0
+      },
+      "size": {
+        "rank": 4,
+        "share_same_rank": 1.0,
+        "rank_p05": 4.0,
+        "rank_p95": 4.0
+      },
+      "unit": {
+        "rank": 5,
+        "share_same_rank": 1.0,
+        "rank_p05": 5.0,
+        "rank_p95": 5.0
+      },
+      "type_project": {
+        "rank": 1,
+        "share_same_rank": 1.0,
+        "rank_p05": 1.0,
+        "rank_p95": 1.0
+      },
+      "time": {
+        "rank": 6,
+        "share_same_rank": 1.0,
+        "rank_p05": 6.0,
+        "rank_p95": 6.0
+      }
+    },
+    "bootstrap_resamples": 200,
+    "seed": 42,
+    "note": "Stability is measured as agreement across the three models and bootstrap rank stability on the test fold. It is not measured across refitted CV folds (re-running cv.py costs about 45 minutes). SHAP shows what each model used, not cause and effect."
+  }
 }
