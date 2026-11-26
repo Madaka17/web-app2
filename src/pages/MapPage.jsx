@@ -1,8 +1,8 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import {
-  Banknote, ChevronDown, ChevronUp, CircleHelp, Coins, Filter, Layers, ListChecks, LocateFixed,
-  LogOut, MapPin, Minus, Plus, Search, TrendingUp, X,
+  Banknote, ChevronDown, ChevronUp, Coins, Filter, Layers, ListChecks, LocateFixed,
+  LogOut, MapPin, Minus, Plus, Search, TrendingUp,
 } from 'lucide-react';
 import { BRAND, useLang, usePageMeta } from '../i18n.jsx';
 import Header from '../components/Header.jsx';
@@ -53,37 +53,12 @@ function RoundButton({ label, onClick, children, active, dot }) {
 
 const ROUND_PLAIN = 'flex h-10 w-10 items-center justify-center rounded-full bg-white text-ink-secondary shadow-md ring-1 ring-black/[0.06] transition-all duration-200 hover:text-blue-600 hover:shadow-lg active:scale-90 active:bg-blue-50';
 
-const TOUR_STEPS = ['t1', 't2', 't3', 't4'];
-
-function Tour({ step, setStep, onClose }) {
-  const { t } = useLang();
-  const descriptions = { t2: 'd2' };
-  const description = descriptions[TOUR_STEPS[step]];
-  return (
-    <div className="fixed inset-0 z-[3000] flex items-center justify-center bg-black/30 p-4">
-      <div role="dialog" aria-label={t(TOUR_STEPS[step])} className="relative w-[420px] max-w-[calc(100vw-2rem)] rounded-[10px] bg-white p-6 shadow-[0_1px_10px_#0006]" style={{ fontFamily: '"Helvetica Neue", Arial, Helvetica, sans-serif', color: '#2d2d2d' }}>
-        <button type="button" aria-label="Close" onClick={onClose} className="absolute right-4 top-4 text-[#2d2d2d]"><X size={14} /></button>
-        <h3 className="text-center text-[28px] font-extrabold leading-tight tracking-tight" style={{ color: '#2d2d2d' }}>{t(TOUR_STEPS[step])}</h3>
-        {description && <p className="mt-2 text-center text-xl leading-snug">{t(description)}</p>}
-        <div className="mt-4 flex items-center justify-between">
-          <span className="text-base text-[#555]">{step + 1} / {TOUR_STEPS.length}</span>
-          <div className="flex gap-1">
-            <button type="button" disabled={step === 0} onClick={() => setStep(step - 1)} className="min-h-11 rounded border border-[#ccc] bg-white px-4 text-base disabled:opacity-40">{t('back')}</button>
-            <button type="button" onClick={() => (step === TOUR_STEPS.length - 1 ? onClose() : setStep(step + 1))} className="min-h-11 rounded border border-[#ccc] bg-white px-4 text-base">{step === TOUR_STEPS.length - 1 ? t('gotIt') : t('next')}</button>
-          </div>
-        </div>
-      </div>
-    </div>
-  );
-}
-
 export default function MapPage() {
   const { t } = useLang();
   const { setAlert } = useAlerts();
   const [params] = useSearchParams();
   const canvas = useRef(null);
   const seenNotice = useRef(false);
-  const seenTour = useRef(false);
 
   // Keyed on the param strings so a re-render with the same link keeps one object; a non-numeric link is ignored.
   const latParam = params.get('lat');
@@ -103,7 +78,6 @@ export default function MapPage() {
   const [cityPlan, setCityPlan] = useState(false);
   const [selecting, setSelecting] = useState(false);
   const [query, setQuery] = useState('');
-  const [tourStep, setTourStep] = useState(null);
   const [listings, setListings] = useState(null);
   const [loadError, setLoadError] = useState(false);
   const [filter, setFilter] = useState(EMPTY_FILTER);
@@ -131,16 +105,11 @@ export default function MapPage() {
     return () => controller.abort();
   }, []);
 
-  const openTour = () => {
-    seenTour.current = true;
-    setTourStep(0);
-  };
-
   useEffect(() => {
     // Deep links (?lat=&lng=) open on a listing and skip the first-visit notice.
     if (seenNotice.current || linked) return;
     seenNotice.current = true;
-    setAlert({ type: 'edu', after: !seenTour.current ? openTour : null });
+    setAlert({ type: 'edu' });
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
@@ -201,7 +170,7 @@ export default function MapPage() {
               </>
             )}
           />
-          <div className="relative h-full w-full" data-tour="listing-map-stage">
+          <div className="relative h-full w-full">
             <MapCanvas ref={canvas} points={points} baseMap={baseMap} cityPlan={cityPlan} measuring={measuring} focus={linked} target={target} onPick={onPick} onSelectPoint={onSelectPoint} colorBy={colorBy} />
 
             <div className="pointer-events-none absolute inset-x-0 top-3 z-[1200] flex flex-col items-center gap-2 px-3 max-lg:top-2 sm:top-4 md:max-lg:top-3">
@@ -223,16 +192,12 @@ export default function MapPage() {
                       <span className="whitespace-normal text-center text-[14px] font-bold leading-tight max-md:text-[14px] sm:whitespace-nowrap sm:text-[15px] md:max-lg:text-[14px] lg:text-[14px] xl:text-[15px]">{t('createAsset')}</span>
                     </button>
                   </div>
-                  <button type="button" onClick={openTour} data-tour="listing-tour-help" aria-label={t('usageGuide')} title={t('usageGuide')} className="flex h-auto min-h-10 shrink-0 items-center justify-center rounded-full border border-[#e6d200]/80 bg-[#FFEA00] px-3 py-2 text-[11px] font-bold leading-tight text-neutral-900 shadow-md transition-colors hover:bg-[#f5dc00] max-sm:h-10 max-sm:w-10 max-sm:px-0 xl:min-h-10 xl:px-3.5 xl:text-xs">
-                    <CircleHelp size={20} className="sm:hidden" />
-                    <span className="hidden sm:inline">{t('usageGuide')}</span>
-                  </button>
                 </div>
               </div>
               {loadError && (
                 <p role="alert" className="pointer-events-auto rounded-lg border border-[#DC2626]/30 bg-white/95 px-3 py-1.5 text-xs font-semibold text-[#DC2626] shadow-md">{t('dataLoadError')}</p>
               )}
-              {(selecting || tourStep !== null) && (
+              {selecting && (
                 <div className="pointer-events-auto flex w-full max-w-[520px] items-center gap-2 rounded-xl border border-line bg-white/95 p-3 shadow-md">
                   <button type="button" onClick={() => setSelecting(false)} className="inline-flex shrink-0 items-center gap-1.5 rounded-lg border border-line bg-white px-3 py-2 text-xs font-semibold text-ink-primary hover:bg-surface-2">
                     <LogOut size={14} /> {t('exitSelect')}
@@ -326,7 +291,6 @@ export default function MapPage() {
           </div>
         </div>
       </main>
-      {tourStep !== null && <Tour step={tourStep} setStep={setTourStep} onClose={() => setTourStep(null)} />}
     </div>
   );
 }
