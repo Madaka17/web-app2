@@ -1,8 +1,12 @@
 // Pure data layer for the OpenPlot map: loads, normalises, filters, clusters
 // and summarises the listing and project pins. No React, no DOM.
 
+import type { DecisionLabel } from "./api";
+export type { DecisionLabel };
+
 export type TypeGroup = "condo" | "house" | "townhome" | "land" | "other";
 export type ProjectKind = "village" | "condo";
+export type ColorBy = "type" | "decision";
 
 /** One row of public/listings.json, as written by Data/build_map_listings.py. */
 export interface RawListing {
@@ -58,6 +62,7 @@ export interface MapListing {
   lat: number;
   lng: number;
   image: string;
+  decision: DecisionLabel | null;
 }
 
 export interface MapProject {
@@ -97,6 +102,15 @@ export const LISTING_LEGEND: [TypeGroup, string][] = [
   ["other", "#a21caf"],
 ];
 
+export const DECISION_LEGEND: [DecisionLabel, string][] = [
+  ["accept", "#16a34a"],
+  ["defer", "#f59e0b"],
+  ["reject", "#DC2626"],
+];
+
+/** Colour of a listing pin with no precomputed decision. */
+const UNSCORED_COLOR = "#9ca3af";
+
 export const PROJECT_LEGEND: [ProjectKind, string][] = [
   ["village", "#f97316"],
   ["condo", "#22d3ee"],
@@ -117,7 +131,7 @@ function groupOf(rawType: string): TypeGroup {
   return GROUP_BY_RAW_TYPE[rawType] ?? "other";
 }
 
-export function normalizeListing(raw: RawListing): MapListing {
+export function normalizeListing(raw: RawListing, decisions: Record<string, DecisionLabel> = {}): MapListing {
   const area = raw.area_sqm ?? (raw.land_sqwa != null ? raw.land_sqwa * SQM_PER_SQWA : null);
   return {
     kind: "listing",
@@ -136,6 +150,7 @@ export function normalizeListing(raw: RawListing): MapListing {
     lat: raw.latitude,
     lng: raw.longitude,
     image: raw.image_url,
+    decision: decisions[raw.listing_id] ?? null,
   };
 }
 
@@ -164,9 +179,21 @@ async function loadJson<T>(path: string, signal?: AbortSignal): Promise<T> {
   return (await res.json()) as T;
 }
 
+/** Precomputed decisions keyed by listing id. A failed fetch gives an empty map. */
+async function loadDecisions(signal?: AbortSignal): Promise<Record<string, DecisionLabel>> {
+  try {
+    return await loadJson<Record<string, DecisionLabel>>("/decisions.json", signal);
+  } catch {
+    return {};
+  }
+}
+
 export async function loadListings(signal?: AbortSignal): Promise<MapListing[]> {
-  const rows = await loadJson<RawListing[]>("/listings.json", signal);
-  return rows.map(normalizeListing);
+  const [rows, decisions] = await Promise.all([
+    loadJson<RawListing[]>("/listings.json", signal),
+    loadDecisions(signal),
+  ]);
+  return rows.map((raw) => normalizeListing(raw, decisions));
 }
 
 export async function loadProjects(signal?: AbortSignal): Promise<MapProject[]> {
@@ -174,7 +201,11 @@ export async function loadProjects(signal?: AbortSignal): Promise<MapProject[]> 
   return rows.map(normalizeProject);
 }
 
-export function pinColor(p: MapPoint): string {
+export function pinColor(p: MapPoint, colorBy: ColorBy = "type"): string {
+  if (colorBy === "decision" && p.kind === "listing") {
+    if (p.decision === null) return UNSCORED_COLOR;
+    return DECISION_LEGEND.find(([d]) => d === p.decision)?.[1] ?? UNSCORED_COLOR;
+  }
   if (p.kind === "listing") {
     return LISTING_LEGEND.find(([g]) => g === p.group)?.[1] ?? LISTING_LEGEND[LISTING_LEGEND.length - 1][1];
   }

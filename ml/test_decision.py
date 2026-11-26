@@ -239,3 +239,38 @@ def test_score_decision_screens_global_labels_per_type(stub_prices):
         assert set(labels) <= {"accept", "defer", "reject"}
         for stats in labels.values():
             assert set(stats) == {"n", "share_pct", "MdAPE", "within_20pct"}
+
+
+from score_listings import body_for  # noqa: E402
+
+
+def _row(**over) -> dict:
+    row = {
+        "listing_id": "L1",
+        "property_type": "คอนโด",
+        "bedrooms": 2,
+        "bathrooms": None,
+        "area_sqm": 50.0,
+        "land_sqwa": None,
+        "latitude": 13.7,
+        "longitude": 100.6,
+    }
+    row.update(over)
+    return row
+
+
+def test_body_for_skips_unpriceable_rows():
+    assert body_for(_row(property_type="สำนักงาน")) is None
+    assert body_for(_row(area_sqm=None, land_sqwa=None)) is None
+    assert body_for(_row(latitude=15.0)) is None
+
+    body = body_for(_row(area_sqm=5.0))
+    assert body is not None
+    assert body["propertyType"] == "condo"
+    assert body["area"] == 10
+    assert body["nUnits"] == 1
+    assert body["year"] == 2569
+    assert body["bedrooms"] == 2
+    assert "bathrooms" not in body
+    assert body["lat"] == 13.7
+    assert body["lng"] == 100.6

@@ -1,11 +1,13 @@
-import { describe, it, expect } from "vitest";
+import { describe, it, expect, vi, afterEach } from "vitest";
 import {
   EMPTY_FILTER,
   applyFilter,
   clusterByCell,
   escapeHtml,
   findPoint,
+  loadListings,
   normalizeListing,
+  pinColor,
   normalizeProject,
   safeHttpUrl,
   summarize,
@@ -260,5 +262,69 @@ describe("safeHttpUrl", () => {
 
   it("rejects a non-URL", () => {
     expect(safeHttpUrl("not a url")).toBeNull();
+  });
+});
+
+describe("pinColor decision mode", () => {
+  afterEach(() => {
+    vi.unstubAllGlobals();
+  });
+
+  it("colours a listing by its decision label and gray when unscored", () => {
+    expect(pinColor(listing({ decision: "accept" }), "decision")).toBe("#16a34a");
+    expect(pinColor(listing({ decision: "defer" }), "decision")).toBe("#f59e0b");
+    expect(pinColor(listing({ decision: "reject" }), "decision")).toBe("#DC2626");
+    expect(pinColor(listing({ decision: null }), "decision")).toBe("#9ca3af");
+  });
+
+  it("keeps project colours in decision mode", () => {
+    expect(pinColor(project({ projectKind: "village" }), "decision")).toBe("#f97316");
+    expect(pinColor(project({ projectKind: "condo" }), "decision")).toBe("#22d3ee");
+  });
+
+  it("leaves type mode unchanged", () => {
+    expect(pinColor(listing({ group: "condo", decision: "reject" }), "type")).toBe("#22d3ee");
+    expect(pinColor(listing({ group: "condo", decision: "reject" }))).toBe("#22d3ee");
+  });
+});
+
+describe("normalizeListing decision", () => {
+  it("gives decision null when no decisions are passed", () => {
+    expect(normalizeListing(rawListing()).decision).toBeNull();
+  });
+
+  it("takes the decision for the listing id from the decisions map", () => {
+    expect(normalizeListing(rawListing({ listing_id: "L9" }), { L9: "accept" }).decision).toBe("accept");
+  });
+});
+
+describe("loadListings decisions", () => {
+  afterEach(() => {
+    vi.unstubAllGlobals();
+  });
+
+  it("still returns listings when the decisions fetch is rejected", async () => {
+    vi.stubGlobal(
+      "fetch",
+      vi.fn(async (path: string) => {
+        if (path === "/decisions.json") throw new Error("network down");
+        return new Response(JSON.stringify([rawListing({ listing_id: "A" })]), { status: 200 });
+      }),
+    );
+    const rows = await loadListings();
+    expect(rows).toHaveLength(1);
+    expect(rows[0].decision).toBeNull();
+  });
+
+  it("applies decisions when the decisions fetch succeeds", async () => {
+    vi.stubGlobal(
+      "fetch",
+      vi.fn(async (path: string) => {
+        if (path === "/decisions.json") return new Response(JSON.stringify({ A: "defer" }), { status: 200 });
+        return new Response(JSON.stringify([rawListing({ listing_id: "A" })]), { status: 200 });
+      }),
+    );
+    const rows = await loadListings();
+    expect(rows[0].decision).toBe("defer");
   });
 });
