@@ -386,8 +386,12 @@ def _priced(body: dict):
     # few listings that say "outside" (278) cannot teach a tree much. So the
     # measured gap (estate.estate_premium, in vs stated outside, same type,
     # district and size) is applied here, like ค่าเสื่อม on the map.
+    # When no per-type gap is measured, the discount is skipped and the response
+    # says so (estate_unmeasured): too few "outside" listings to measure the gap per
+    # type, and the pooled figure is too uncertain to apply.
     estate_adjustment = None
     premium = METRICS.get("estate_premium", {}).get(collateral_type)
+    estate_unmeasured = estate_raw == "out" and not (premium and premium.get("vs_out"))
     if estate_raw == "out" and premium and premium.get("vs_out"):
         factor = 1 / (1 + premium["vs_out"]["pct"] / 100)
         price *= factor
@@ -399,7 +403,7 @@ def _priced(body: dict):
                   "collateral_type": collateral_type, "estate_project": estate_project,
                   "featured": featured, "per_model": per_model, "weights": weights,
                   "price": price, "premium": premium, "estate_adjustment": estate_adjustment,
-                  "body": body}
+                  "estate_unmeasured": estate_unmeasured, "body": body}
 
 
 @app.post("/api/predict")
@@ -411,6 +415,7 @@ def predict():
     collateral_type, estate_project = p["collateral_type"], p["estate_project"]
     featured, per_model, weights, price = p["featured"], p["per_model"], p["weights"], p["price"]
     premium, estate_adjustment, body = p["premium"], p["estate_adjustment"], p["body"]
+    estate_unmeasured = p["estate_unmeasured"]
 
     # The comparables the models were handed, back in baht per sqm, so the UI
     # can say what the district goes for and how far this estimate sits from it.
@@ -484,6 +489,7 @@ def predict():
             "estate": estate_used,
             "estate_premium": premium,
             "estate_adjustment": estate_adjustment,
+            "estate_unmeasured": estate_unmeasured,
             "location_from": ("project" if estate_project is not None and body.get("lat") in (None, "")
                               else "map" if lat is not None else "subdistrict"),
             "province": location["province"],

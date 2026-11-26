@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { explain } from "./api";
 
-const EMPTY = { explanation: null, loading: false, error: null };
+const EMPTY = { key: null, explanation: null, loading: false, error: null };
 
 /**
  * Per-property explanation for a request body, fetched after the prediction for
@@ -20,20 +20,24 @@ export function useExplanation(payload) {
     }
     const body = JSON.parse(key);
     const controller = new AbortController();
-    setState({ explanation: null, loading: true, error: null });
+    setState({ key, explanation: null, loading: true, error: null });
 
     explain(body, controller.signal)
       .then((explanation) => {
         if (controller.signal.aborted) return;
-        setState({ explanation, loading: false, error: null });
+        setState({ key, explanation, loading: false, error: null });
       })
       .catch((err) => {
         if (controller.signal.aborted || err?.name === "AbortError") return;
-        setState({ explanation: null, loading: false, error: err?.message ?? String(err) });
+        setState({ key, explanation: null, loading: false, error: err?.message ?? String(err) });
       });
 
     return () => controller.abort();
   }, [key]);
 
+  // Until the effect catches up with a new body, the stored explanation belongs to the old one.
+  if (key !== null && state.key !== key) {
+    return { explanation: null, loading: true, error: null };
+  }
   return state;
 }

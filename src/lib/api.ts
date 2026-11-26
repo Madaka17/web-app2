@@ -11,6 +11,8 @@ export interface PredictionMeta {
   estate_premium: EstatePremium | null;
   /** Measured discount applied when the house is stated to be outside an estate. */
   estate_adjustment: { factor: number; pct: number; basis: PremiumGap } | null;
+  /** Stated outside an estate, but no per-type gap is measured, so no discount was applied. */
+  estate_unmeasured: boolean;
   location_from: "map" | "subdistrict" | "project";
   province: string;
   district: string;

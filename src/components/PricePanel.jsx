@@ -237,9 +237,8 @@ function SelectField({ label, value, onChange, children }) {
 }
 
 // Why this price: the base, each factor's share, and the unexplained rest. Hidden on error or when there is nothing to show.
-function ExplanationSection({ data, loading }) {
+function ExplanationSection({ data, loading, fmtBaht }) {
   const { t } = useLang();
-  const fmtBaht = (value) => formatBaht(value, { million: t('mthb'), baht: t('thb') });
   if (loading) {
     return (
       <Section title={t('explainTitle')} icon={BarChart3}>
@@ -334,7 +333,7 @@ export default function PricePanel({ target, onClearTarget, onClose }) {
   // The stale result belongs to the current target only when its lat and lng match.
   const resultIsCurrent = Boolean(resultPayload) && resultPayload.lat === payload?.lat && resultPayload.lng === payload?.lng;
   // The explanation is fetched only for the result on screen, after its prediction has settled.
-  const explained = useExplanation(resultIsCurrent ? resultPayload : null);
+  const explained = useExplanation(showResult && resultIsCurrent ? resultPayload : null);
   const predicted = showResult ? result.predictedPrice : 0;
   const isListing = target?.source === 'listing' && point?.kind === 'listing';
   const priced = isListing && point.group !== 'other';
@@ -504,6 +503,12 @@ export default function PricePanel({ target, onClearTarget, onClose }) {
                   marker={isListing && resultIsCurrent && gap != null ? point.price : undefined}
                   markerClass={gapStyle.bg ?? ''}
                 />
+                {result.meta.estate_unmeasured && (
+                  <p className="mt-2 flex items-start gap-1.5 text-[11px] text-amber-700">
+                    <Info size={12} className="mt-0.5 shrink-0" aria-hidden="true" />
+                    <span>{t('estateUnmeasured')}</span>
+                  </p>
+                )}
                 <div className="mt-4 grid grid-cols-2 gap-2 text-xs">
                   <div className="rounded-xl bg-white/80 p-2.5 ring-1 ring-line">
                     <p className="flex items-center gap-1.5 text-ink-muted"><Target size={13} className="shrink-0" aria-hidden="true" />{t('withinHit')}</p>
@@ -572,7 +577,7 @@ export default function PricePanel({ target, onClearTarget, onClose }) {
               )}
             </Section>
 
-            <ExplanationSection data={explained.explanation} loading={explained.loading} />
+            <ExplanationSection data={explained.explanation} loading={explained.loading} fmtBaht={fmtBaht} />
 
             <Section title={t('models')} icon={Layers}>
               <div className="flex h-2 w-full overflow-hidden rounded-full bg-surface-soft" aria-hidden="true">

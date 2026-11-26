@@ -329,6 +329,18 @@ class TestApi:
         # The model's own response to the flag is small; the discount dominates.
         assert out["predictedPrice"] / plain["predictedPrice"] == pytest.approx(adj["factor"], abs=0.05)
 
+    def test_estate_out_without_measured_gap_is_flagged(self, client, monkeypatch):
+        import api
+        # Pin the data to "no measured gap for a single house" so the test does not
+        # depend on whichever scrape is currently served.
+        monkeypatch.setitem(api.METRICS, "estate_premium", {})
+        base = {"lat": 13.80, "lng": 100.70, "area": 150, "propertyType": "house"}
+        out = client.post("/api/predict", json={**base, "estate": "out"}).get_json()
+        assert out["meta"]["estate_adjustment"] is None
+        assert out["meta"]["estate_unmeasured"] is True
+        plain = client.post("/api/predict", json=base).get_json()
+        assert plain["meta"]["estate_unmeasured"] is False
+
     def test_estate_is_ignored_for_a_condo(self, client):
         r = client.post("/api/predict", json={
             "lat": 13.7245, "lng": 100.56, "area": 40, "propertyType": "condo", "estate": "in"})
@@ -378,7 +390,7 @@ class TestApi:
         assert client.post("/api/explain", json={
             "area": 5, "propertyType": "house", "subdistrictId": "103301"}).status_code == 400
 
-    def test_predict_explains_itself(self, client):
+    def test_explain_explains_the_price(self, client):
         import math
         req = {"lat": 13.7245, "lng": 100.56, "area": 40, "propertyType": "condo",
                "bedrooms": 1, "buildingAge": 5}
@@ -415,8 +427,8 @@ class TestApi:
         import api
         # The scrape has no measured out-of-estate gap for a single house yet,
         # so inject one to exercise the estate-adjustment path.
-        premiums = api.METRICS.setdefault("estate_premium", {})
-        monkeypatch.setitem(premiums, "บ้านเดี่ยว", {"vs_out": {"pct": 25.0}})
+        premiums = {**api.METRICS.get("estate_premium", {}), "บ้านเดี่ยว": {"vs_out": {"pct": 25.0}}}
+        monkeypatch.setitem(api.METRICS, "estate_premium", premiums)
         base = {"lat": 13.86, "lng": 100.67, "area": 160, "propertyType": "house"}
         plain = client.post("/api/explain", json=base).get_json()
         out = client.post("/api/explain", json={**base, "estate": "out"}).get_json()
