@@ -367,12 +367,23 @@ class TestApi:
         assert r.status_code == 200
         assert r.get_json()["decision"] is None
 
+    def test_predict_has_no_explanation(self, client):
+        body = client.post("/api/predict", json={
+            "lat": 13.7245, "lng": 100.56, "area": 40, "propertyType": "condo"}).get_json()
+        assert "explanation" not in body
+
+    def test_explain_rejects_bad_input(self, client):
+        assert client.post("/api/explain", json={
+            "area": 120, "propertyType": "spaceship"}).status_code == 400
+        assert client.post("/api/explain", json={
+            "area": 5, "propertyType": "house", "subdistrictId": "103301"}).status_code == 400
+
     def test_predict_explains_itself(self, client):
         import math
-        body = client.post("/api/predict", json={
-            "lat": 13.7245, "lng": 100.56, "area": 40, "propertyType": "condo",
-            "bedrooms": 1, "buildingAge": 5}).get_json()
-        ex = body["explanation"]
+        req = {"lat": 13.7245, "lng": 100.56, "area": 40, "propertyType": "condo",
+               "bedrooms": 1, "buildingAge": 5}
+        price = client.post("/api/predict", json=req).get_json()["predictedPrice"]
+        ex = client.post("/api/explain", json=req).get_json()
         groups = ex["groups"]
         assert {g["key"] for g in groups} == {
             "location", "comparables", "size", "unit", "type_project", "time"}
@@ -390,14 +401,12 @@ class TestApi:
         for g in groups:
             rebuilt *= 1 + g["pct"] / 100
         rebuilt *= 1 + ex["other_pct"] / 100
-        assert rebuilt == pytest.approx(body["predictedPrice"], rel=0.02)
+        assert rebuilt == pytest.approx(price, rel=0.02)
 
     def test_dropdown_explanation_is_finite(self, client):
         import math
-        body = client.post("/api/predict", json={
+        ex = client.post("/api/explain", json={
             "subdistrictId": "103301", "area": 120, "propertyType": "house"}).get_json()
-        ex = body["explanation"]
-        assert ex is not None
         assert all(math.isfinite(g["log"]) and math.isfinite(g["pct"]) for g in ex["groups"])
         assert all(math.isfinite(f["pct"]) for f in ex["top_features"])
         assert math.isfinite(ex["other_pct"]) and math.isfinite(ex["base_price"])
@@ -409,8 +418,8 @@ class TestApi:
         premiums = api.METRICS.setdefault("estate_premium", {})
         monkeypatch.setitem(premiums, "บ้านเดี่ยว", {"vs_out": {"pct": 25.0}})
         base = {"lat": 13.86, "lng": 100.67, "area": 160, "propertyType": "house"}
-        plain = client.post("/api/predict", json=base).get_json()["explanation"]
-        out = client.post("/api/predict", json={**base, "estate": "out"}).get_json()["explanation"]
+        plain = client.post("/api/explain", json=base).get_json()
+        out = client.post("/api/explain", json={**base, "estate": "out"}).get_json()
         # The model reads the estate flag, so each group moves a little (about
         # 0.012 log at most); the 20% discount itself must land in other_pct.
         by_key = lambda ex: {g["key"]: g["log"] for g in ex["groups"]}

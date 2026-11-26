@@ -291,16 +291,20 @@ def metrics():
     return jsonify(METRICS)
 
 
-@app.post("/api/predict")
-def predict():
-    body = request.get_json(silent=True) or {}
+def _error(msg: str):
+    return jsonify({"error": msg}), 400
 
+
+def _priced(body: dict):
+    """Validate a request, build its one-row feature frame and price it with the
+    estate adjustment. Returns (error response, None) or (None, context). Shared by
+    /api/predict and /api/explain, so both read a request identically."""
     try:
         area = float(body.get("area", 0))
     except (TypeError, ValueError):
-        return jsonify({"error": "area must be a number"}), 400
+        return _error("area must be a number"), None
     if not 10 <= area <= 20000:
-        return jsonify({"error": "area must be between 10 and 20000 sqm"}), 400
+        return _error("area must be between 10 and 20000 sqm"), None
 
     try:
         lat = _optional_float(body, "lat", -90, 90)
@@ -309,9 +313,9 @@ def predict():
         bathrooms = _optional_float(body, "bathrooms", 0, 20)
         building_age = _optional_float(body, "buildingAge", 0, 100)
     except (TypeError, ValueError) as e:
-        return jsonify({"error": str(e)}), 400
+        return _error(str(e)), None
     if (lat is None) != (lng is None):
-        return jsonify({"error": "lat and lng must be given together"}), 400
+        return _error("lat and lng must be given together"), None
 
     # A chosen หมู่บ้าน names the project outright; without a click its pin
     # stands in for the location.
@@ -320,14 +324,14 @@ def predict():
     if project_key is not None:
         estate_project = PROJECTS_BY_KEY.get(str(project_key))
         if estate_project is None:
-            return jsonify({"error": f"unknown project: {project_key}"}), 400
+            return _error(f"unknown project: {project_key}"), None
         if lat is None and estate_project["lat"] is not None:
             lat, lng = estate_project["lat"], estate_project["lng"]
     estate_raw = body.get("estate") or None
     if estate_project is not None:
         estate_raw = "in"
     if estate_raw is not None and estate_raw not in ESTATE_VALUES:
-        return jsonify({"error": "estate must be 'in', 'out' or omitted"}), 400
+        return _error("estate must be 'in', 'out' or omitted"), None
 
     # A map click is more precise than the dropdown, so it wins when both are sent.
     subdistrict_id = str(body.get("subdistrictId") or "")
@@ -336,11 +340,11 @@ def predict():
     else:
         location = LOCATIONS.get(subdistrict_id)
         if location is None:
-            return jsonify({"error": f"unknown subdistrictId: {subdistrict_id}"}), 400
+            return _error(f"unknown subdistrictId: {subdistrict_id}"), None
 
     key = str(body.get("propertyType", "condo"))
     if key not in PROPERTY_TYPES:
-        return jsonify({"error": f"propertyType must be one of {sorted(PROPERTY_TYPES)}"}), 400
+        return _error(f"propertyType must be one of {sorted(PROPERTY_TYPES)}"), None
     collateral_type = PROPERTY_TYPES[key]
     # Estates are a house and townhouse thing; for a condo or land it is ignored.
     if collateral_type not in ESTATE_TYPES:
@@ -350,9 +354,9 @@ def predict():
         n_units = max(1, min(4, int(body.get("nUnits", 1) or 1)))
         year = int(body.get("year", LATEST_YEAR))
     except (TypeError, ValueError):
-        return jsonify({"error": "nUnits and year must be integers"}), 400
+        return _error("nUnits and year must be integers"), None
     if not YEAR_MIN <= year <= YEAR_MAX:
-        return jsonify({"error": f"year must be between {YEAR_MIN} and {YEAR_MAX}"}), 400
+        return _error(f"year must be between {YEAR_MIN} and {YEAR_MAX}"), None
 
     frame = pd.DataFrame([{
         "collateral_type": collateral_type,
@@ -390,6 +394,23 @@ def predict():
         per_model = {n: p * factor for n, p in per_model.items()}
         estate_adjustment = {"factor": round(factor, 4), "pct": round((factor - 1) * 100, 1),
                              "basis": premium["vs_out"]}
+
+    return None, {"area": area, "lat": lat, "lng": lng, "location": location,
+                  "collateral_type": collateral_type, "estate_project": estate_project,
+                  "featured": featured, "per_model": per_model, "weights": weights,
+                  "price": price, "premium": premium, "estate_adjustment": estate_adjustment,
+                  "body": body}
+
+
+@app.post("/api/predict")
+def predict():
+    error, p = _priced(request.get_json(silent=True) or {})
+    if error is not None:
+        return error
+    area, lat, lng, location = p["area"], p["lat"], p["lng"], p["location"]
+    collateral_type, estate_project = p["collateral_type"], p["estate_project"]
+    featured, per_model, weights, price = p["featured"], p["per_model"], p["weights"], p["price"]
+    premium, estate_adjustment, body = p["premium"], p["estate_adjustment"], p["body"]
 
     # The comparables the models were handed, back in baht per sqm, so the UI
     # can say what the district goes for and how far this estimate sits from it.
@@ -435,8 +456,6 @@ def predict():
                     "components": {k: round(float(v), 3) for k, v in comp.iloc[0].items()},
                     "alpha": seg["alpha"], "beta": seg["beta"]}
 
-    explanation = _explain(featured, price, area)
-
     importance = list(METRICS["feature_importance"].items())[:FEATURES_SHOWN]
     features = [
         {"label": FEATURE_LABELS.get(k, (k, "MapPin"))[0],
@@ -460,7 +479,6 @@ def predict():
         "features": features,
         "comparables": comparables,
         "decision": decision,
-        "explanation": explanation,
         "meta": {
             "project": project,
             "estate": estate_used,
@@ -479,6 +497,14 @@ def predict():
             "source": "asking prices (dotproperty, ddproperty, hipflat, baania)",
         },
     })
+
+
+@app.post("/api/explain")
+def explain():
+    error, p = _priced(request.get_json(silent=True) or {})
+    if error is not None:
+        return error
+    return jsonify(_explain(p["featured"], p["price"], p["area"]))
 
 
 @app.get("/api/nearby")

@@ -76,7 +76,6 @@ export interface Explanation {
 export interface ApiPrediction extends PredictionResult {
   comparables: Comparables;
   decision?: Decision | null;
-  explanation?: Explanation | null;
   meta: PredictionMeta;
 }
 
@@ -187,6 +186,19 @@ export function predict(
   signal?: AbortSignal,
 ): Promise<ApiPrediction> {
   return request<ApiPrediction>("/api/predict", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(input),
+    signal,
+  });
+}
+
+/** Why this price, for the same request body as predict (ml/api.py /api/explain). */
+export function explain(
+  input: PredictionInput,
+  signal?: AbortSignal,
+): Promise<Explanation> {
+  return request<Explanation>("/api/explain", {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify(input),
