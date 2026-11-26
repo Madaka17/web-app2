@@ -73,12 +73,12 @@
 
 **Files:** Create `src/data/buildCost.json` and `src/lib/__tests__/buildCostData.test.ts`.
 
-- [ ] **Step 1: Get the latest Bangkok price table.**
+- [x] **Step 1: Get the latest Bangkok price table.**
   - Try `www.indexpr.moc.go.th` and `tpso.go.th` for the "ราคาสินค้าเฉลี่ยวัสดุก่อสร้าง จังหวัด กรุงเทพมหานคร" table of the latest published month.
   - Record the exact URL and month.
   - If the official site is unreachable, stop and report. Do not substitute the aggregator.
-- [ ] **Step 2: Write `prices`.** Each row has `id`, `name_th`, `unit_th`, `price` (ex-VAT baht), `source_url`, `month` and `province`. Use only items the options below need. Copy the official item wording.
-- [ ] **Step 3: Write `options`.** Use only items with a price from Step 2, and drop an option whose item is missing. The categories and starting options are:
+- [x] **Step 2: Write `prices`.** Each row has `id`, `name_th`, `unit_th`, `price` (ex-VAT baht), `source_url`, `month` and `province`. Use only items the options below need. Copy the official item wording.
+- [x] **Step 3: Write `options`.** Use only items with a price from Step 2, and drop an option whose item is missing. The categories and starting options are:
   - `wall`: อิฐมอญ, คอนกรีตบล็อก, and อิฐมวลเบา only if Bangkok lists it.
   - `plaster`: cement and sand mortar.
   - `paint`: interior and exterior topcoat with primer, at 2 grades if 2 brands are listed.
@@ -90,7 +90,7 @@
   - `window`: wooden window. Add glass only if a window option needs it.
   - `sanitary`: washbasin and faucet, and a toilet only if listed.
   - `structure`: ready-mix concrete 210 ksc and SD40 rebar, estimated from floor area. This category is not user-selectable.
-- [ ] **Step 4: Write `rules`.** Each rule has `id`, `value`, `unit` and `source`. Starting values:
+- [x] **Step 4: Write `rules`.** Each rule has `id`, `value`, `unit` and `source`. Starting values:
   - `brick_red_per_sqm` = 138, *unverified*, commonly quoted 130–140.
   - `block_per_sqm` = 12.5, from geometry: 1 / (0.20 × 0.40 m including the joint).
   - `aac_per_sqm` = 8.33, from geometry: 1 / (0.20 × 0.60).
@@ -101,22 +101,22 @@
   - `structure_concrete_m3_per_sqm` and `rebar_kg_per_m3`: *unverified*. Label these "ประมาณการคร่าว ๆ" on the page.
   - Waste factors per category, *unverified*: tiles 1.05, bricks and blocks 1.05, mortar 1.10, paint 1.00, gypsum 1.05, roof 1.05.
   - Defaults: `wall_height_m` = 2.8, `door_sqm` = 1.6, `window_sqm` = 1.1, `roof_overhang_m` = 1.0, and roof pitch 30° for tile and 15° for sheet.
-- [ ] **Step 5: Test the data.** In `buildCostData.test.ts`, assert:
+- [x] **Step 5: Test the data.** In `buildCostData.test.ts`, assert:
   - Every price has a positive `price`, an `http(s)` `source_url` and a `YYYY-MM` `month`.
   - Every option's item ids exist in `prices`.
   - Every rule has a non-empty `source`.
   - Run `npx vitest run src/lib/__tests__/buildCostData.test.ts` and expect PASS.
-- [ ] **Step 6: Commit** `feat: material prices and quantity rules for the build-cost page`.
+- [x] **Step 6: Commit** `feat: material prices and quantity rules for the build-cost page`.
 
 ### Task 2: Calculator (`src/lib/buildCost.ts`)
 
 **Files:** Create `src/lib/buildCost.ts` and `src/lib/__tests__/buildCost.test.ts`.
 
-- [ ] **Step 1: Types.**
+- [x] **Step 1: Types.**
   - `Plan` = `{ rooms: {name, type: 'living'|'bedroom'|'kitchen'|'bathroom'|'other', width_m, length_m}[], doors, windows, exterior_wall_m, interior_wall_m, wall_height_m }`.
   - `Selection` maps a category to an option id, plus `floorByRoom?: Record<index, optionId>`.
   - `Line` = `{ category, item_id, name_th, qty, unit_th, unit_price, total }`.
-- [ ] **Step 2: Quantities.**
+- [x] **Step 2: Quantities.**
   - `floorArea = Σ w×l`.
   - `openings = doors×door_sqm + windows×window_sqm`.
   - `extWall = exterior_wall_m × h − openings_on_exterior`. v1 puts all windows and 1 door on the exterior.
@@ -124,28 +124,28 @@
   - Paint and plaster area is `extWall×2 + intWall×2`. Exterior paint covers `extWall`; interior paint covers the rest.
   - `roofArea = (floorArea + exterior_wall_m×o + 4o²) / cos(pitch)`.
   - The bathroom wall tile covers the bathroom perimeter × 2.0 m − 1 door.
-- [ ] **Step 3: Lines.**
+- [x] **Step 3: Lines.**
   - `qty = ceil(rawQty × waste / packSize) × packSize` when the item sells in packs (bags, sheets, cans). Otherwise round to 2 dp.
   - `total = qty × unit_price`, rounded to the baht.
   - Return `{ lines, subtotal, vat: round(subtotal × 0.07), total, priceMonth }`.
-- [ ] **Step 4: Tests.**
+- [x] **Step 4: Tests.**
   - The worked example uses the 10 × 8 m test plan with the defaults. Assert the floor area is 80, the wall areas follow the formulas above by hand, and each line's qty and total equal hand-computed values. Put the hand computation in a comment.
   - Changing `wall` from อิฐมอญ to concrete block changes only the wall lines.
   - Clamp checks: zero doors, zero windows and a negative computed wall area each yield no NaN and no negative quantity.
   - Run `npx vitest run src/lib/__tests__/buildCost.test.ts` and expect PASS.
-- [ ] **Step 5: Commit** `feat: material quantity and cost calculator`.
+- [x] **Step 5: Commit** `feat: material quantity and cost calculator`.
 
 ### Task 3: Plan reader API (`ml/plan_reader.py` and endpoints)
 
 **Files:** Create `ml/plan_reader.py` and `ml/test_plan_reader.py`. Modify `ml/api.py`.
 
-- [ ] **Step 1: `plan_reader.py`.**
+- [x] **Step 1: `plan_reader.py`.**
   - `load_env()` reads `../.env` `KEY=VALUE` lines, skips `#` lines, and calls `os.environ.setdefault`.
   - `read_plan(image_bytes, mime) -> dict` builds the prompt. The prompt is the one from the scratchpad test, plus a `type` per room from the enum, plus `floors`.
   - It POSTs with `temperature: 0`, `max_tokens: 20000`, the User-Agent above and a 180 s timeout.
   - It extracts the first `{…}` from the reply, then calls `clean(raw) -> dict`, which clamps per Review Focus 3.
   - Errors raise `PlanError(code)` with code `config` (no key), `upstream` (non-200, including 402/429 from tokenme, mapped to `budget`), `timeout` or `unreadable`.
-- [ ] **Step 2: Endpoints in `api.py`.**
+- [x] **Step 2: Endpoints in `api.py`.**
   - `POST /api/plan/read`:
     - Takes `{image: base64, mime}`.
     - Validates the MIME type and the size. A bad image gets a 400.
@@ -155,13 +155,13 @@
   - `GET /api/plan/read/<job_id>` returns `pending`, `done` with `result`, or `error` with `code`.
   - Jobs and cache are in-memory dicts guarded by a lock. Cap the cache at 200 entries and expire jobs after 1 hour. Mark it `# shortcut: limits and cache reset on API restart, move to sqlite if abuse shows up`.
   - Add both endpoints to the module docstring.
-- [ ] **Step 3: Tests.**
+- [x] **Step 3: Tests.**
   - Monkeypatch `urllib.request.urlopen` and never call the network.
   - Cover: a valid reply parses and clamps; a reply wrapped in prose still parses; garbage gives `unreadable`; an HTTP 403 or 503 gives `upstream`; a 402 gives `budget`; a missing key gives `config`.
   - Cover the limit counter: the sixth read from one IP in a day gets 429, and a cached repeat is not counted.
   - Run `-m pytest test_plan_reader.py` and expect PASS.
-- [ ] **Step 4: One live smoke test** with the scratchpad plan image, run by the controller, who owns the key. Record the seconds taken and the parsed result in the task report. Do not commit the image.
-- [ ] **Step 5: Commit** `feat(api): async floor-plan reader with limits and cache`.
+- [x] **Step 4: One live smoke test** with the scratchpad plan image, run by the controller, who owns the key. Record the seconds taken and the parsed result in the task report. Do not commit the image.
+- [x] **Step 5: Commit** `feat(api): async floor-plan reader with limits and cache`.
 
 ### Task 4: Page (`/build-cost`)
 
@@ -169,32 +169,32 @@
 - Create `src/pages/BuildCostPage.jsx` and `src/lib/planApi.ts`.
 - Modify `src/App.jsx` (route), `src/components/Header.jsx` (one nav link next to the map), `src/i18n.jsx` (th, en, zh) and `src/pages/DocPages.jsx` (privacy: plan images go to tokenme for reading and are not stored by us).
 
-- [ ] **Step 1: `planApi.ts`.**
+- [x] **Step 1: `planApi.ts`.**
   - `downscale(file) -> {base64, mime}` uses canvas with a 1600 px long edge and JPEG 0.85.
   - `readPlan(file, onTick) -> Promise<Plan>` POSTs, then polls every 3 s for up to 240 s and maps error codes to i18n keys.
   - Abort on unmount with an `AbortController`.
-- [ ] **Step 2: Step 1 UI, upload.**
+- [x] **Step 2: Step 1 UI, upload.**
   - A drop zone or file input, with the note that PDF should be sent as a screenshot.
   - A "กรอกเอง" button that skips the model and starts with one empty room.
   - While reading, show elapsed seconds and "ใช้เวลาประมาณ 2 นาที".
-- [ ] **Step 3: Step 2 UI, review.**
+- [x] **Step 3: Step 2 UI, review.**
   - An editable rooms table (name, type select, width, length) with add and remove buttons.
   - Inputs for doors, windows, exterior and interior wall lengths and wall height.
   - Show the computed floor area live.
   - Show the `floors > 1` notice when it applies.
   - Highlight "ตรวจตัวเลขก่อน AI อ่านผิดได้".
-- [ ] **Step 4: Step 3 UI, materials.**
+- [x] **Step 4: Step 3 UI, materials.**
   - A preset row: ประหยัด / มาตรฐาน / พรีเมียม. It only sets defaults, and each preset maps to option ids in `buildCost.json`.
   - One card per category with its options and unit prices.
   - The floor option can be overridden per room. A bathroom is locked to ceramic.
-- [ ] **Step 5: Step 4 UI, result.**
+- [x] **Step 5: Step 4 UI, result.**
   - A lines table grouped by category, then subtotal, VAT 7% and total.
   - The price month and source link.
   - The "not included" list and "ประมาณการ ไม่ใช่ใบเสนอราคา".
   - A print button (`window.print()` with a print stylesheet hiding the controls) and a CSV download built in-page, UTF-8 with BOM so Excel shows Thai.
   - The result updates instantly as materials change.
-- [ ] **Step 6: Verify.** Run `npm run lint && npm test && npm run build`. Then the controller runs the app and walks through: upload the test plan, check the numbers, switch materials, compare the totals with Task 2's example, print preview and download the CSV.
-- [ ] **Step 7: Commit** `feat: build-cost page for floor-plan material estimates`.
+- [x] **Step 6: Verify.** Run `npm run lint && npm test && npm run build`. Then the controller runs the app and walks through: upload the test plan, check the numbers, switch materials, compare the totals with Task 2's example, print preview and download the CSV.
+- [x] **Step 7: Commit** `feat: build-cost page for floor-plan material estimates`.
 
 ## Open questions for later (not v1)
 

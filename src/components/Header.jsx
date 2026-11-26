@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { ChevronLeft } from 'lucide-react';
+import { Calculator, ChevronLeft } from 'lucide-react';
 import { BRAND, useLang } from '../i18n.jsx';
 import { Flag } from './Flags.jsx';
 import { AlertHost } from './Alerts.jsx';
@@ -53,6 +53,13 @@ export default function Header({ tone }) {
           )}
 
           <div className="min-w-0 flex-1" />
+
+          {tone === 'map' && (
+            <Link to="/build-cost" className="inline-flex h-9 shrink-0 items-center gap-1.5 rounded-full border border-line bg-white px-3 text-sm font-semibold text-ink-primary transition-colors hover:bg-surface-2 lg:h-8 lg:text-xs">
+              <Calculator size={16} className="shrink-0" />
+              <span className="hidden sm:inline">{t('bcNav')}</span>
+            </Link>
+          )}
 
           <div className="flex shrink-0 items-center gap-1.5 sm:gap-2 lg:gap-2 xl:gap-4">
             <div className={`hidden items-center gap-0.5 rounded-pill p-0.5 text-xs font-semibold sm:flex ${red ? 'bg-white/15' : 'bg-surface-2'}`}>
