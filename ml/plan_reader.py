@@ -16,6 +16,7 @@ from __future__ import annotations
 
 import base64
 import binascii
+import contextlib
 import hashlib
 import http.client
 import json
@@ -24,6 +25,7 @@ import math
 import os
 import re
 import socket
+import tempfile
 import threading
 import time
 import urllib.error
@@ -58,6 +60,9 @@ PER_IP_PER_DAY = 5
 PER_DAY = 200  # about $4 at ~$0.02 a read, under the account's $5 budget
 MAX_PENDING = 10
 CACHE_SIZE = 200
+# Bump CACHE_VERSION whenever PROMPT, clean() or the model changes, so stale reads are dropped.
+CACHE_FILE = Path(__file__).resolve().parent / "cache" / "plan_reads.json"
+CACHE_VERSION = 1
 JOB_TTL_S = 3600
 BANGKOK = timezone(timedelta(hours=7))
 
@@ -297,21 +302,63 @@ def read_plan(image: bytes, mime: str) -> dict:
 class PlanJobs:
     """Background reads with a per-IP and a site-wide daily cap and a result cache.
 
-    shortcut: limits, cache and jobs live in memory and reset on API restart; move to sqlite if abuse shows up.
+    shortcut: the cache persists to ml/cache/plan_reads.json, but limits and jobs still reset on restart; move to sqlite if abuse shows up.
     """
 
-    def __init__(self, reader=read_plan, workers: int = 2, now=time.time):
+    def __init__(self, reader=read_plan, workers: int = 2, now=time.time, cache_file: Path | None = CACHE_FILE):
         self._reader = reader
         self._now = now
         self._pool = ThreadPoolExecutor(max_workers=workers)
         self._lock = threading.Lock()
         self._jobs: dict[str, dict] = {}
         self._cache: OrderedDict[str, dict] = OrderedDict()
+        self._cache_file = cache_file  # None keeps the cache in memory only
+        self._load_cache()
         self._per_ip: dict[tuple[str, str], int] = {}
         self._per_day: dict[str, int] = {}
 
     def _day(self) -> str:
         return datetime.fromtimestamp(self._now(), BANGKOK).strftime("%Y-%m-%d")
+
+    def _load_cache(self) -> None:
+        """Fill the cache from disk. A missing file is silent; anything bad starts empty."""
+        if self._cache_file is None:
+            return
+        try:
+            data = json.loads(self._cache_file.read_text(encoding="utf-8"))
+            if not isinstance(data, dict) or data.get("version") != CACHE_VERSION:
+                raise ValueError(f"not version {CACHE_VERSION}")
+            if not isinstance(data.get("reads"), list):
+                raise ValueError("reads is not a list")
+            reads = [(digest, result) for digest, result in data["reads"]]
+            if not all(isinstance(d, str) and isinstance(r, dict) for d, r in reads):
+                raise ValueError("bad read entry")
+        except FileNotFoundError:
+            return
+        except (OSError, ValueError, TypeError) as e:
+            log.warning("plan cache %s ignored: %s", self._cache_file, e)
+            return
+        for digest, result in reads[-CACHE_SIZE:]:  # oldest first, so the newest stay
+            self._cache[digest] = result
+
+    def _save_cache(self) -> None:
+        """Write the whole cache atomically. Caller holds self._lock. A failure is logged, never raised."""
+        if self._cache_file is None:
+            return
+        body = json.dumps({"version": CACHE_VERSION, "reads": [[d, r] for d, r in self._cache.items()]},
+                          ensure_ascii=False)
+        tmp = None
+        try:
+            self._cache_file.parent.mkdir(parents=True, exist_ok=True)
+            fd, tmp = tempfile.mkstemp(dir=self._cache_file.parent, suffix=".tmp")
+            with os.fdopen(fd, "w", encoding="utf-8") as f:
+                f.write(body)
+            os.replace(tmp, self._cache_file)
+        except OSError as e:
+            log.warning("plan cache save to %s failed: %s", self._cache_file, e)
+            if tmp is not None:
+                with contextlib.suppress(OSError):
+                    os.unlink(tmp)
 
     def submit(self, image: bytes, mime: str, client: str) -> dict:
         digest = hashlib.sha256(image).hexdigest()
@@ -351,6 +398,7 @@ class PlanJobs:
                 self._cache[digest] = result
                 while len(self._cache) > CACHE_SIZE:
                     self._cache.popitem(last=False)
+                self._save_cache()  # under the lock so a slower write cannot overwrite a newer snapshot
         with self._lock:
             if job_id in self._jobs:
                 self._jobs[job_id].update(update)
