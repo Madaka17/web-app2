@@ -99,7 +99,6 @@ export const LISTING_LEGEND: [TypeGroup, string][] = [
   ["house", "#f97316"],
   ["townhome", "#facc15"],
   ["land", "#16a34a"],
-  ["other", "#a21caf"],
 ];
 
 export const DECISION_LEGEND: [DecisionLabel, string][] = [
@@ -188,12 +187,17 @@ async function loadDecisions(signal?: AbortSignal): Promise<Record<string, Decis
   }
 }
 
+/** Drops listing types the model was not trained on (group "other"). */
+export function residentialOnly(listings: MapListing[]): MapListing[] {
+  return listings.filter((l) => l.group !== "other");
+}
+
 export async function loadListings(signal?: AbortSignal): Promise<MapListing[]> {
   const [rows, decisions] = await Promise.all([
     loadJson<RawListing[]>("/listings.json", signal),
     loadDecisions(signal),
   ]);
-  return rows.map((raw) => normalizeListing(raw, decisions));
+  return residentialOnly(rows.map((raw) => normalizeListing(raw, decisions)));
 }
 
 export async function loadProjects(signal?: AbortSignal): Promise<MapProject[]> {
@@ -207,7 +211,7 @@ export function pinColor(p: MapPoint, colorBy: ColorBy = "type"): string {
     return DECISION_LEGEND.find(([d]) => d === p.decision)?.[1] ?? UNSCORED_COLOR;
   }
   if (p.kind === "listing") {
-    return LISTING_LEGEND.find(([g]) => g === p.group)?.[1] ?? LISTING_LEGEND[LISTING_LEGEND.length - 1][1];
+    return LISTING_LEGEND.find(([g]) => g === p.group)?.[1] ?? UNSCORED_COLOR;
   }
   return PROJECT_LEGEND.find(([k]) => k === p.projectKind)?.[1] ?? PROJECT_LEGEND[0][1];
 }

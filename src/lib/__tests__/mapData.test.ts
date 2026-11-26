@@ -9,6 +9,7 @@ import {
   normalizeListing,
   pinColor,
   normalizeProject,
+  residentialOnly,
   safeHttpUrl,
   summarize,
   UNSCORED_COLOR,
@@ -301,6 +302,17 @@ describe("normalizeListing decision", () => {
 
   it("takes the decision for the listing id from the decisions map", () => {
     expect(normalizeListing(rawListing({ listing_id: "L9" }), { L9: "accept" }).decision).toBe("accept");
+  });
+});
+
+describe("residentialOnly", () => {
+  it("drops listings the model was not trained on (group other)", () => {
+    const kept = residentialOnly([
+      listing({ id: "C", group: "condo" }),
+      listing({ id: "O", group: "other" }),
+      listing({ id: "H", group: "house" }),
+    ]);
+    expect(kept.map((l) => l.id)).toEqual(["C", "H"]);
   });
 });
 
