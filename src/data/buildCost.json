@@ -1,0 +1,210 @@
+{
+  "about": "Materials, options and quantity rules for the /build-cost page. Prices are not here: Data/fetch_material_prices.py writes them to materialPrices.json, keyed by the TPSO commodity code in items[].code.",
+  "vat_rate": 0.07,
+  "sources": {
+    "tpso": "https://index.tpso.go.th/construction-material-prices/prices-building-materials",
+    "rid": "http://water.rid.go.th/waterm/template/manager/mc/Doc/%C7%D4%C8%C7%A1%C3%C3%C1/%E0%A1%B3%B1%EC%B6%CD%B4%E1%BA%BA%A4%D3%B9%C7%B3.pdf",
+    "tpi_m210": "https://tpipolene.co.th/en/mortar/plastering/item/354-m210",
+    "captain_coverage": "https://www.homepro.co.th/p/1024757"
+  },
+  "items": {
+    "brick_red": { "code": "0205010101300000", "name_th": "อิฐมอญ 6x14x3 ซม.", "unit_th": "ถุง (100 ก้อน)", "factor": 1, "whole": true },
+    "cement_mixed": { "code": "1502040101400000", "name_th": "ปูนซีเมนต์ผสม (ก่อ ฉาบ เท)", "unit_th": "ถุง 50 กก.", "factor": 0.05, "whole": true },
+    "cement_hydraulic": { "code": "1501040200200000", "name_th": "ปูนซีเมนต์ไฮดรอลิก (งานโครงสร้าง)", "unit_th": "ถุง 50 กก.", "factor": 0.05, "whole": true },
+    "lime": { "code": null, "name_th": "ปูนขาว", "unit_th": "กก.", "factor": 1, "whole": false, "missing_price": "ไม่มีราคาส่วนกลางของ สนค." },
+    "sand_coarse": { "code": "1601010100100000", "name_th": "ทรายหยาบ", "unit_th": "ลบ.ม.", "factor": 1, "whole": false },
+    "sand_fine": { "code": "1601020100100000", "name_th": "ทรายละเอียด", "unit_th": "ลบ.ม.", "factor": 1, "whole": false },
+    "aac_75": { "code": "0201020104700000", "name_th": "อิฐมวลเบา 20x60x7.5 ซม.", "unit_th": "ตร.ม.", "factor": 1, "whole": false },
+    "aac_mortar": { "code": "1504010200200000", "name_th": "ปูนก่ออิฐมวลเบา", "unit_th": "ถุง 50 กก.", "factor": 0.05, "whole": true },
+    "aac_plaster": { "code": "1507010101000000", "name_th": "ปูนฉาบอิฐมวลเบา", "unit_th": "ถุง 50 กก.", "factor": 0.05, "whole": true },
+    "primer_std": { "code": "1210040100400000", "name_th": "สีรองพื้นปูนใหม่ (มาตรฐาน)", "unit_th": "ถัง 18.925 ลิตร", "factor": 1, "whole": true },
+    "paint_int_std": { "code": "1210020103000000", "name_th": "สีทาภายใน (มาตรฐาน)", "unit_th": "ถัง 18.925 ลิตร", "factor": 1, "whole": true },
+    "paint_ext_std": { "code": "1210010105300000", "name_th": "สีทาภายนอก (มาตรฐาน)", "unit_th": "ถัง 18.925 ลิตร", "factor": 1, "whole": true },
+    "primer_pre": { "code": "1210040100200000", "name_th": "สีรองพื้นปูนใหม่กันด่าง (พรีเมียม)", "unit_th": "ถัง 18.925 ลิตร", "factor": 1, "whole": true },
+    "paint_int_pre": { "code": "1210020102800000", "name_th": "สีทาภายใน (พรีเมียม)", "unit_th": "ถัง 18.925 ลิตร", "factor": 1, "whole": true },
+    "paint_ext_pre": { "code": "1210010101000000", "name_th": "สีทาภายนอก กันร้อน (พรีเมียม)", "unit_th": "ถัง 18.925 ลิตร", "factor": 1, "whole": true },
+    "tile_floor_30": { "code": "1004010301400000", "name_th": "กระเบื้องปูพื้น 30x30 ซม.", "unit_th": "กล่อง (0.99 ตร.ม.)", "factor": 1, "whole": true, "box_sqm": 0.99 },
+    "tile_floor_60": { "code": "1004010300400000", "name_th": "กระเบื้องปูพื้นแกรนิโต้ 60x60 ซม.", "unit_th": "กล่อง (1.44 ตร.ม.)", "factor": 1, "whole": true, "box_sqm": 1.44 },
+    "tile_floor_60p": { "code": "1004010300500000", "name_th": "กระเบื้องปูพื้น 60x60 ซม. (พรีเมียม)", "unit_th": "กล่อง (1.44 ตร.ม.)", "factor": 1, "whole": true, "box_sqm": 1.44 },
+    "tile_wall": { "code": "1004020106000000", "name_th": "กระเบื้องบุผนัง 25x40 ซม.", "unit_th": "กล่อง (1.00 ตร.ม.)", "factor": 1, "whole": true, "box_sqm": 1.0 },
+    "gypsum_9": { "code": "0906030100100000", "name_th": "แผ่นยิปซัม 120x240 ซม. หนา 9 มม.", "unit_th": "แผ่น", "factor": 1, "whole": true },
+    "roof_lonkhu": { "code": "0807010104300000", "name_th": "กระเบื้องลอนคู่ 50x120 ซม.", "unit_th": "แผ่น", "factor": 1, "whole": true },
+    "roof_concrete": { "code": "0801010103500000", "name_th": "กระเบื้องคอนกรีตมุงหลังคา 33x42 ซม.", "unit_th": "แผ่น", "factor": 1, "whole": true },
+    "door_hdf": { "code": "1411070100100000", "name_th": "บานประตู HDF ภายใน 80x200 ซม.", "unit_th": "บาน", "factor": 1, "whole": true },
+    "frame_campus": { "code": "1414050100400000", "name_th": "วงกบประตูไม้ 80x200 ซม.", "unit_th": "วง", "factor": 1, "whole": true },
+    "door_hardwood": { "code": "1411050101700000", "name_th": "บานประตูไม้เนื้อแข็ง 80x200 ซม.", "unit_th": "บาน", "factor": 1, "whole": true },
+    "frame_hardwood": { "code": "1414010100200000", "name_th": "วงกบประตูไม้เนื้อแข็ง 80x200 ซม.", "unit_th": "ชุด", "factor": 1, "whole": true },
+    "win_upvc": { "code": "1422010100200000", "name_th": "หน้าต่าง UPVC บานเลื่อน 100x110 ซม.", "unit_th": "ชุด", "factor": 1, "whole": true },
+    "win_alu": { "code": "1422010100600000", "name_th": "หน้าต่างอลูมิเนียมบานเลื่อน 120x110 ซม.", "unit_th": "บาน", "factor": 1, "whole": true },
+    "toilet_std": { "code": "2101020104800000", "name_th": "โถส้วมชักโครก มีถังพักน้ำ", "unit_th": "ชุด", "factor": 1, "whole": true },
+    "toilet_pre": { "code": "2101020105000000", "name_th": "โถส้วมชักโครก 4.8 ลิตร (พรีเมียม)", "unit_th": "ชุด", "factor": 1, "whole": true },
+    "basin_std": { "code": "2103010104100000", "name_th": "อ่างล้างหน้าแขวนผนัง", "unit_th": "ชิ้น", "factor": 1, "whole": true },
+    "basin_pre": { "code": "2103010103700000", "name_th": "อ่างล้างหน้าแขวนผนัง (พรีเมียม)", "unit_th": "ชิ้น", "factor": 1, "whole": true }
+  },
+  "rules": {
+    "rid_brick_count": { "value": 138, "unit": "แผ่น/ตร.ม.", "source": "rid", "note": "กรมชลประทาน ข้อ 9.1 ผนังก่ออิฐมอญครึ่งแผ่น (เผื่อเสียหายแล้ว) เอกสารไม่ระบุขนาดก้อน" },
+    "rid_brick_cement": { "value": 16, "unit": "กก./ตร.ม.", "source": "rid", "note": "ข้อ 9.1 ปูนซีเมนต์ผสม" },
+    "rid_brick_lime": { "value": 10.29, "unit": "กก./ตร.ม.", "source": "rid", "note": "ข้อ 9.1 ปูนขาว" },
+    "rid_brick_sand": { "value": 0.05, "unit": "ลบ.ม./ตร.ม.", "source": "rid", "note": "ข้อ 9.1 ทรายหยาบ" },
+    "rid_plaster_cement": { "value": 8.42, "unit": "กก./ตร.ม.", "source": "rid", "note": "ข้อ 11.1 งานปูนฉาบ" },
+    "rid_plaster_lime": { "value": 7.7, "unit": "กก./ตร.ม.", "source": "rid", "note": "ข้อ 11.1 ปูนขาว" },
+    "rid_plaster_sand": { "value": 0.03, "unit": "ลบ.ม./ตร.ม.", "source": "rid", "note": "ข้อ 11.1 ทรายละเอียด" },
+    "rid_floorbed_cement": { "value": 20, "unit": "กก./ตร.ม.", "source": "rid", "note": "ข้อ 10.1 ปูนทรายรองพื้นสำหรับปูวัสดุแผ่น หนา 5 ซม." },
+    "rid_floorbed_sand": { "value": 0.11, "unit": "ลบ.ม./ตร.ม.", "source": "rid", "note": "ข้อ 10.1 ทรายหยาบ" },
+    "rid_wallbed_cement": { "value": 12, "unit": "กก./ตร.ม.", "source": "rid", "note": "ข้อ 10.2 ปูนทรายรองพื้นผนังบุวัสดุแผ่น หนา 3 ซม. (ปูนซีเมนต์)" },
+    "rid_wallbed_sand": { "value": 0.07, "unit": "ลบ.ม./ตร.ม.", "source": "rid", "note": "ข้อ 10.2 ทรายหยาบ" },
+    "rid_roof_lonkhu_gable": { "value": 2.37, "unit": "แผ่น/ตร.ม.", "source": "rid", "note": "ตารางวัสดุมุงหลังคา ทรงจั่ว ลอนคู่ 0.50x1.20" },
+    "rid_roof_lonkhu_hip": { "value": 2.41, "unit": "แผ่น/ตร.ม.", "source": "rid", "note": "ทรงปั้นหยา ลอนคู่ 0.50x1.20" },
+    "rid_roof_concrete_gable": { "value": 10.5, "unit": "แผ่น/ตร.ม.", "source": "rid", "note": "ทรงจั่ว กระเบื้องคอนกรีต 0.33x0.425 (โมเนีย)" },
+    "rid_roof_concrete_hip": { "value": 12, "unit": "แผ่น/ตร.ม.", "source": "rid", "note": "ทรงปั้นหยา กระเบื้องคอนกรีต 0.33x0.425 (โมเนีย)" },
+    "aac_per_sqm": { "value": 1, "unit": "ตร.ม./ตร.ม.", "source": "tpso", "note": "สนค. ตั้งราคาอิฐมวลเบาเป็นต่อ ตร.ม. อยู่แล้ว" },
+    "tpi_m210_sqm_per_bag": { "value": 2.16, "unit": "ตร.ม./ถุง 50 กก.", "source": "tpi_m210", "note": "ฉาบหนา 15 มม. ตามหน้าสินค้า TPI M210" },
+    "paint_sqm_per_gallon": { "value": 30, "unit": "ตร.ม./แกลลอน/เที่ยว", "source": "captain_coverage", "verified": false, "note": "ค่าจากหน้าสินค้าสีกัปตัน 1 แกลลอน ตรวจฉลากของสีที่ซื้อจริง" },
+    "paint_bucket_gallons": { "value": 5, "unit": "แกลลอน/ถัง", "source": "tpso", "note": "18.925 ลิตร = 5 แกลลอน ตามชื่อสินค้า" },
+    "paint_top_coats": { "value": 2, "unit": "เที่ยว", "source": "captain_coverage", "verified": false, "note": "สีทับหน้า 2 เที่ยวตามวิธีใช้ทั่วไป" },
+    "primer_coats": { "value": 1, "unit": "เที่ยว", "source": "captain_coverage", "note": "สีรองพื้น 1 เที่ยว" },
+    "gypsum_sqm_per_sheet": { "value": 2.88, "unit": "ตร.ม./แผ่น", "source": "tpso", "note": "120x240 ซม. ตามชื่อสินค้า" },
+    "tile_waste": { "value": 1.05, "unit": "เท่า", "source": "rid", "verified": false, "note": "เอกสารกรมชลประทานไม่ระบุค่าเผื่อกระเบื้อง ใช้ 5% เป็นค่าตั้งต้น" },
+    "per_unit": { "value": 1, "unit": "ชิ้น/ชิ้น", "source": "tpso", "note": "นับตามจำนวน" }
+  },
+  "defaults": {
+    "wall_height_m": { "value": 2.8, "source": "rid", "verified": false, "note": "ค่าตั้งต้น ผู้ใช้แก้ได้" },
+    "door_sqm": { "value": 1.6, "source": "tpso", "note": "บานประตู 80x200 ซม. ตามรายการราคา" },
+    "window_sqm": { "value": 1.1, "source": "tpso", "note": "หน้าต่าง 100x110 ซม. ตามรายการราคา" },
+    "bath_tile_height_m": { "value": 2.0, "source": "rid", "verified": false, "note": "ค่าตั้งต้น ผู้ใช้แก้ได้" },
+    "roof_overhang_m": { "value": 1.0, "source": "rid", "verified": false, "note": "ค่าตั้งต้น ผู้ใช้แก้ได้" },
+    "roof_pitch_deg": { "value": 25, "source": "rid", "verified": false, "note": "ค่าตั้งต้น ผู้ใช้แก้ได้" }
+  },
+  "categories": [
+    {
+      "id": "wall", "label_th": "ผนังและงานฉาบ",
+      "options": [
+        { "id": "brick", "label_th": "อิฐมอญ ฉาบปูน", "lines": [
+          { "item": "brick_red", "basis": "wall", "rule": "rid_brick_count", "scale": 0.01 },
+          { "item": "cement_mixed", "basis": "wall", "rule": "rid_brick_cement", "scale": 0.02 },
+          { "item": "lime", "basis": "wall", "rule": "rid_brick_lime", "scale": 1 },
+          { "item": "sand_coarse", "basis": "wall", "rule": "rid_brick_sand", "scale": 1 },
+          { "item": "cement_mixed", "basis": "plaster", "rule": "rid_plaster_cement", "scale": 0.02 },
+          { "item": "lime", "basis": "plaster", "rule": "rid_plaster_lime", "scale": 1 },
+          { "item": "sand_fine", "basis": "plaster", "rule": "rid_plaster_sand", "scale": 1 }
+        ] },
+        { "id": "aac", "label_th": "อิฐมวลเบา ฉาบปูนมวลเบา", "lines": [
+          { "item": "aac_75", "basis": "wall", "rule": "aac_per_sqm", "scale": 1 },
+          { "item": "aac_mortar", "basis": "wall", "rule": null, "missing_qty": "ผู้ผลิตไม่ระบุปริมาณการใช้ต่อ ตร.ม." },
+          { "item": "aac_plaster", "basis": "plaster", "rule": "tpi_m210_sqm_per_bag", "invert": true }
+        ] }
+      ]
+    },
+    {
+      "id": "paint", "label_th": "สีทาผนัง",
+      "options": [
+        { "id": "std", "label_th": "มาตรฐาน", "lines": [
+          { "item": "primer_std", "basis": "primer", "rule": "paint_sqm_per_gallon", "invert": true, "pack": "paint_bucket_gallons", "coats": "primer_coats" },
+          { "item": "paint_int_std", "basis": "paint_int", "rule": "paint_sqm_per_gallon", "invert": true, "pack": "paint_bucket_gallons", "coats": "paint_top_coats" },
+          { "item": "paint_ext_std", "basis": "paint_ext", "rule": "paint_sqm_per_gallon", "invert": true, "pack": "paint_bucket_gallons", "coats": "paint_top_coats" }
+        ] },
+        { "id": "pre", "label_th": "พรีเมียม", "lines": [
+          { "item": "primer_pre", "basis": "primer", "rule": "paint_sqm_per_gallon", "invert": true, "pack": "paint_bucket_gallons", "coats": "primer_coats" },
+          { "item": "paint_int_pre", "basis": "paint_int", "rule": "paint_sqm_per_gallon", "invert": true, "pack": "paint_bucket_gallons", "coats": "paint_top_coats" },
+          { "item": "paint_ext_pre", "basis": "paint_ext", "rule": "paint_sqm_per_gallon", "invert": true, "pack": "paint_bucket_gallons", "coats": "paint_top_coats" }
+        ] }
+      ]
+    },
+    {
+      "id": "floor", "label_th": "พื้น (ยกเว้นห้องน้ำ)",
+      "options": [
+        { "id": "tile30", "label_th": "กระเบื้อง 30x30", "lines": [
+          { "item": "tile_floor_30", "basis": "floor_dry", "rule": "tile_waste", "box": true },
+          { "item": "cement_mixed", "basis": "floor_dry", "rule": "rid_floorbed_cement", "scale": 0.02 },
+          { "item": "sand_coarse", "basis": "floor_dry", "rule": "rid_floorbed_sand", "scale": 1 }
+        ] },
+        { "id": "tile60", "label_th": "แกรนิโต้ 60x60", "lines": [
+          { "item": "tile_floor_60", "basis": "floor_dry", "rule": "tile_waste", "box": true },
+          { "item": "cement_mixed", "basis": "floor_dry", "rule": "rid_floorbed_cement", "scale": 0.02 },
+          { "item": "sand_coarse", "basis": "floor_dry", "rule": "rid_floorbed_sand", "scale": 1 }
+        ] },
+        { "id": "tile60p", "label_th": "กระเบื้อง 60x60 พรีเมียม", "lines": [
+          { "item": "tile_floor_60p", "basis": "floor_dry", "rule": "tile_waste", "box": true },
+          { "item": "cement_mixed", "basis": "floor_dry", "rule": "rid_floorbed_cement", "scale": 0.02 },
+          { "item": "sand_coarse", "basis": "floor_dry", "rule": "rid_floorbed_sand", "scale": 1 }
+        ] }
+      ]
+    },
+    {
+      "id": "bath", "label_th": "ห้องน้ำ (กระเบื้องพื้นและผนัง)", "fixed": true,
+      "options": [
+        { "id": "tile", "label_th": "กระเบื้องพื้น 30x30 และบุผนัง 25x40", "lines": [
+          { "item": "tile_floor_30", "basis": "floor_bath", "rule": "tile_waste", "box": true },
+          { "item": "cement_mixed", "basis": "floor_bath", "rule": "rid_floorbed_cement", "scale": 0.02 },
+          { "item": "sand_coarse", "basis": "floor_bath", "rule": "rid_floorbed_sand", "scale": 1 },
+          { "item": "tile_wall", "basis": "bath_wall", "rule": "tile_waste", "box": true },
+          { "item": "cement_hydraulic", "basis": "bath_wall", "rule": "rid_wallbed_cement", "scale": 0.02 },
+          { "item": "sand_coarse", "basis": "bath_wall", "rule": "rid_wallbed_sand", "scale": 1 }
+        ] }
+      ]
+    },
+    {
+      "id": "ceiling", "label_th": "ฝ้าเพดาน",
+      "options": [
+        { "id": "gypsum", "label_th": "ยิปซัม 9 มม. (ไม่รวมโครงคร่าว)", "lines": [
+          { "item": "gypsum_9", "basis": "ceiling", "rule": "gypsum_sqm_per_sheet", "invert": true }
+        ] },
+        { "id": "none", "label_th": "ไม่ทำฝ้า", "lines": [] }
+      ]
+    },
+    {
+      "id": "roof", "label_th": "หลังคา (ไม่รวมโครงหลังคา)",
+      "options": [
+        { "id": "lonkhu", "label_th": "กระเบื้องลอนคู่", "lines": [
+          { "item": "roof_lonkhu", "basis": "roof", "rule": "rid_roof_lonkhu_{shape}", "scale": 1 }
+        ] },
+        { "id": "concrete", "label_th": "กระเบื้องคอนกรีต", "lines": [
+          { "item": "roof_concrete", "basis": "roof", "rule": "rid_roof_concrete_{shape}", "scale": 1 }
+        ] }
+      ]
+    },
+    {
+      "id": "door", "label_th": "ประตู",
+      "options": [
+        { "id": "hdf", "label_th": "บาน HDF + วงกบไม้", "lines": [
+          { "item": "door_hdf", "basis": "doors", "rule": "per_unit", "scale": 1 },
+          { "item": "frame_campus", "basis": "doors", "rule": "per_unit", "scale": 1 }
+        ] },
+        { "id": "hardwood", "label_th": "บานไม้เนื้อแข็ง + วงกบไม้เนื้อแข็ง", "lines": [
+          { "item": "door_hardwood", "basis": "doors", "rule": "per_unit", "scale": 1 },
+          { "item": "frame_hardwood", "basis": "doors", "rule": "per_unit", "scale": 1 }
+        ] }
+      ]
+    },
+    {
+      "id": "window", "label_th": "หน้าต่าง",
+      "options": [
+        { "id": "upvc", "label_th": "UPVC บานเลื่อน", "lines": [
+          { "item": "win_upvc", "basis": "windows", "rule": "per_unit", "scale": 1 }
+        ] },
+        { "id": "alu", "label_th": "อลูมิเนียมบานเลื่อน", "lines": [
+          { "item": "win_alu", "basis": "windows", "rule": "per_unit", "scale": 1 }
+        ] }
+      ]
+    },
+    {
+      "id": "sanitary", "label_th": "สุขภัณฑ์ (ต่อห้องน้ำ)",
+      "options": [
+        { "id": "std", "label_th": "มาตรฐาน", "lines": [
+          { "item": "toilet_std", "basis": "bathrooms", "rule": "per_unit", "scale": 1 },
+          { "item": "basin_std", "basis": "bathrooms", "rule": "per_unit", "scale": 1 }
+        ] },
+        { "id": "pre", "label_th": "พรีเมียม", "lines": [
+          { "item": "toilet_pre", "basis": "bathrooms", "rule": "per_unit", "scale": 1 },
+          { "item": "basin_pre", "basis": "bathrooms", "rule": "per_unit", "scale": 1 }
+        ] }
+      ]
+    }
+  ],
+  "presets": {
+    "economy": { "wall": "aac", "paint": "std", "floor": "tile30", "bath": "tile", "ceiling": "gypsum", "roof": "lonkhu", "door": "hdf", "window": "upvc", "sanitary": "std" },
+    "standard": { "wall": "aac", "paint": "std", "floor": "tile60", "bath": "tile", "ceiling": "gypsum", "roof": "concrete", "door": "hdf", "window": "alu", "sanitary": "std" },
+    "premium": { "wall": "aac", "paint": "pre", "floor": "tile60p", "bath": "tile", "ceiling": "gypsum", "roof": "concrete", "door": "hardwood", "window": "alu", "sanitary": "pre" }
+  },
+  "not_included_th": ["ค่าแรง", "งานโครงสร้าง (ฐานราก เสา คาน พื้น)", "โครงหลังคาและครอบหลังคา", "โครงคร่าวฝ้า", "ระบบไฟฟ้าและประปา", "ก๊อกน้ำและอุปกรณ์ห้องน้ำอื่น", "งานบิวท์อิน", "ค่าขนส่ง", "ค่าขออนุญาต"]
+}
