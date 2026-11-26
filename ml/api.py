@@ -15,6 +15,9 @@ the real appraisal data (Data real/appraisal_2561-2569.parquet).
     GET  /api/nearby   ?lat=&lng=&radius=1000|2000&type=condo&buildingAge=
                        what listings within the radius ask, per sqm, with an
                        optional building-age (ค่าเสื่อม) adjustment
+    POST /api/plan/read          {image: base64, mime} -> {job_id, status}; reads a floor
+                                 plan in the background (about 10 seconds)
+    GET  /api/plan/read/<job_id> {status: pending|done|error, result?, code?}
 
 Every input maps onto a column the training data has; the optional ones are
 treated as unknown when absent, exactly as unstated listings were in training.
@@ -22,6 +25,7 @@ treated as unknown when absent, exactly as unstated listings were in training.
 from __future__ import annotations
 
 import json
+import logging
 from pathlib import Path
 
 import joblib
@@ -33,6 +37,7 @@ from flask_cors import CORS
 from decision import components, decide, wqs
 from estate import ESTATE_TYPES, IN_ESTATE, OUT_ESTATE
 from explain import ensemble_shap, group_shap
+from plan_reader import PlanError, PlanJobs, decode_image, load_env
 from prepare_data import CATEGORICAL, EARTH_M, FEATURES, GEO_RADII_M, _squash, add_features, to_price
 
 HERE = Path(__file__).parent
@@ -581,5 +586,34 @@ def nearby():
     })
 
 
+load_env()
+PLAN_JOBS = PlanJobs()
+
+
+def _client_ip() -> str:
+    # The Cloudflare edge sets CF-Connecting-IP and overwrites any client value.
+    return request.headers.get("CF-Connecting-IP") or request.remote_addr or "unknown"
+
+
+@app.post("/api/plan/read")
+def plan_read():
+    body = request.get_json(silent=True) or {}
+    try:
+        image = decode_image(body.get("image"), body.get("mime"))
+        return jsonify(PLAN_JOBS.submit(image, body["mime"], _client_ip()))
+    except PlanError as e:
+        status = {"bad_image": 400, "limit_ip": 429, "limit_day": 429, "busy": 503}.get(e.code, 502)
+        return jsonify({"status": "error", "code": e.code}), status
+
+
+@app.get("/api/plan/read/<job_id>")
+def plan_read_status(job_id: str):
+    job = PLAN_JOBS.get(job_id)
+    if job is None:
+        return jsonify({"status": "error", "code": "not_found"}), 404
+    return jsonify(job)
+
+
 if __name__ == "__main__":
+    logging.basicConfig(level=logging.INFO, format="%(asctime)s %(levelname)s %(name)s: %(message)s")
     app.run(host="127.0.0.1", port=3030, debug=False)
