@@ -20,7 +20,7 @@ export default function CookieBanner() {
   return createPortal(
     <>
       <aside
-        className="cookie-consent-banner fixed z-[2100] bottom-[max(0.75rem,env(safe-area-inset-bottom))] right-[max(0.75rem,env(safe-area-inset-right))] w-[min(calc(100%-1.5rem),20rem)] rounded-xl border border-border/60 bg-white p-3.5 shadow-[0_12px_40px_-16px_rgba(0,0,0,0.35)] sm:bottom-6 sm:right-6 sm:w-[min(calc(100vw-3rem),22rem)] sm:p-4 md:w-[min(calc(100vw-3rem),24rem)] md:p-5"
+        className="cookie-consent-banner print:hidden fixed z-[2100] bottom-[max(0.75rem,env(safe-area-inset-bottom))] right-[max(0.75rem,env(safe-area-inset-right))] w-[min(calc(100%-1.5rem),20rem)] rounded-xl border border-border/60 bg-white p-3.5 shadow-[0_12px_40px_-16px_rgba(0,0,0,0.35)] sm:bottom-6 sm:right-6 sm:w-[min(calc(100vw-3rem),22rem)] sm:p-4 md:w-[min(calc(100vw-3rem),24rem)] md:p-5"
         role="region"
         aria-labelledby="cookie-title"
         aria-describedby="cookie-desc"
@@ -38,7 +38,7 @@ export default function CookieBanner() {
         </div>
       </aside>
       {details && (
-        <div className="fixed inset-0 z-[3200] flex items-center justify-center p-4">
+        <div className="fixed inset-0 z-[3200] flex print:hidden items-center justify-center p-4">
           <div className="absolute inset-0 bg-ink-primary/45 backdrop-blur-sm" aria-hidden="true" onClick={() => setDetails(false)} />
           <div role="dialog" aria-modal="true" aria-label={t('cookiePolicy')} className="relative w-full max-w-md rounded-2xl bg-white p-5">
             <h3 className="font-display text-lg font-bold">{t('cookiePolicy')}</h3>
