@@ -8,3 +8,10 @@ export function formatBaht(value: number, units: { million: string; baht: string
   }
   return `${value.toLocaleString("en-US")} ${units.baht}`;
 }
+
+/** The API's Thai type name for land. Land estimates are much less accurate. */
+const LAND_COLLATERAL = "ที่ดิน";
+
+export function isLandCollateral(collateralType: string | null | undefined): boolean {
+  return collateralType === LAND_COLLATERAL;
+}

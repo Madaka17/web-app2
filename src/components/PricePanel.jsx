@@ -3,7 +3,7 @@ import { AlertTriangle, ArrowDownRight, ArrowUpRight, BarChart3, CheckCircle2, H
 import { useLang } from '../i18n.jsx';
 import { LOCATIONS, findLocationPath } from '../lib/locations';
 import { AREA_MAX, AREA_MIN, DEFAULT_FORM, askingGap, gapApplies, isInCoverage, listingPropertyType, targetPatch, toPayload } from '../lib/priceForm';
-import { formatBaht } from '../lib/prediction';
+import { formatBaht, isLandCollateral } from '../lib/prediction';
 import { getHealth } from '../lib/api';
 import { usePrediction } from '../lib/usePrediction.js';
 import { useExplanation } from '../lib/useExplanation.js';
@@ -501,6 +501,12 @@ export default function PricePanel({ target, onClearTarget, onClose }) {
                   <p className="mt-2 flex items-start gap-1.5 text-[11px] text-amber-700">
                     <Info size={12} className="mt-0.5 shrink-0" aria-hidden="true" />
                     <span>{t('estateUnmeasured')}</span>
+                  </p>
+                )}
+                {isLandCollateral(result.meta.collateral_type) && (
+                  <p className="mt-2 flex items-start gap-1.5 text-[11px] text-amber-700">
+                    <AlertTriangle size={12} className="mt-0.5 shrink-0" aria-hidden="true" />
+                    <span>{t('landLowAccuracy')}</span>
                   </p>
                 )}
                 <div className="mt-4 grid grid-cols-2 gap-2 text-xs">
