@@ -386,3 +386,12 @@ class TestMetricsFile:
     def test_feature_importance_sums_to_one(self):
         m = json.loads((HERE / "models/metrics.json").read_text(encoding="utf-8"))
         assert sum(m["feature_importance"].values()) == pytest.approx(1.0, abs=1e-3)
+
+
+def test_bundle_carries_decision_thresholds_for_both_views(bundle):
+    for view in ("calibration", "calibration_dropdown"):
+        segments = bundle["decision"][view]
+        assert "__default__" in segments
+        for seg in segments.values():
+            for k in ("alpha", "beta"):
+                assert seg[k] is None or 0.0 <= seg[k] <= 1.0

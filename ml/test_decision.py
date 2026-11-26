@@ -3,6 +3,7 @@ from __future__ import annotations
 import json
 
 import numpy as np
+import pytest
 import pandas as pd
 
 from decision import (
@@ -186,3 +187,54 @@ def test_fit_thresholds_beta_none_when_low_scores_are_accurate():
 def test_fit_thresholds_empty_input_returns_none_thresholds():
     result = fit_thresholds(np.array([]), np.array([]))
     assert result == {"alpha": None, "beta": None, "n": 0}
+
+
+# --- calibrate.fit_decision / score_decision (stubbed per-model prices) ---
+
+import calibrate  # noqa: E402
+from prepare_data import TARGET  # noqa: E402
+
+
+def _cal_frame(n=400) -> pd.DataFrame:
+    """Two property types; actual = 100, the single model predicts 100 for the
+    first half (accurate, high depth) and 150 for the second (inaccurate, shallow)."""
+    half = n // 2
+    return pd.DataFrame({
+        "collateral_type": ["คอนโด"] * half + ["ที่ดิน"] * (n - half),
+        TARGET: [100.0] * n,
+        "area_sqm": [50.0] * n,
+        "sd_n": [30.0] * half + [0.0] * (n - half),
+        "band_n": [30.0] * half + [0.0] * (n - half),
+        "dt_n": [30.0] * half + [0.0] * (n - half),
+    })
+
+
+@pytest.fixture
+def stub_prices(monkeypatch):
+    def fake_each(bundle, featured):
+        pred = np.where(featured["sd_n"].to_numpy() > 0, 100.0, 150.0)
+        return {"a": pred, "b": pred}
+    monkeypatch.setattr(calibrate, "predict_each", fake_each)
+    return {"weights": {"a": 0.5, "b": 0.5}}
+
+
+def test_fit_decision_has_every_segment_with_thresholds(stub_prices):
+    cal = _cal_frame()
+    out = calibrate.fit_decision(stub_prices, cal)
+    assert set(out) == set(calibrate._masks(cal))
+    assert "__default__" in out and "คอนโด" in out
+    for seg in out.values():
+        assert set(seg) == {"alpha", "beta", "n"}
+        for k in ("alpha", "beta"):
+            assert seg[k] is None or 0.0 <= seg[k] <= 1.0
+
+
+def test_score_decision_reports_each_label_per_segment(stub_prices):
+    cal, test = _cal_frame(), _cal_frame()
+    decision = calibrate.fit_decision(stub_prices, cal)
+    report = calibrate.score_decision(stub_prices, decision, test)
+    assert "__default__" in report
+    for seg, labels in report.items():
+        assert set(labels) <= {"accept", "defer", "reject"}
+        for stats in labels.values():
+            assert set(stats) == {"n", "share_pct", "MdAPE", "within_20pct"}

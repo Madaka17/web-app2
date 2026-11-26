@@ -21,6 +21,7 @@ from pathlib import Path
 import joblib
 import numpy as np
 
+from decision import components, decide, fit_thresholds, screening, wqs
 from evaluation import conformal_ratio_bounds, coverage, iaao
 from prepare_data import FEATURES, TARGET, clean, load_raw, split, to_price
 from train_models import app_views, as_categorical
@@ -34,15 +35,24 @@ MIN_ROWS = 200
 VIEWS = {"calibration": "click", "calibration_dropdown": "dropdown"}
 
 
-def predict(bundle: dict, featured) -> np.ndarray:
-    """The served ensemble's blended price for each row of a featured view."""
+def predict_each(bundle: dict, featured) -> dict[str, np.ndarray]:
+    """Each served model's price for each row of a featured view."""
     area = featured["area_sqm"].to_numpy(dtype=float)
     X_raw = featured[FEATURES]
     X_cat = as_categorical(X_raw, bundle["categories"])
-    return sum(
-        bundle["weights"][n] * to_price(m.predict(X_raw if n == "CatBoost" else X_cat), area)
+    return {
+        n: to_price(m.predict(X_raw if n == "CatBoost" else X_cat), area)
         for n, m in bundle["models"].items()
-    )
+    }
+
+
+def _blend(bundle: dict, per_model: dict[str, np.ndarray]) -> np.ndarray:
+    return sum(bundle["weights"][n] * p for n, p in per_model.items())
+
+
+def predict(bundle: dict, featured) -> np.ndarray:
+    """The served ensemble's blended price for each row of a featured view."""
+    return _blend(bundle, predict_each(bundle, featured))
 
 
 def _masks(featured) -> dict[str, np.ndarray]:
@@ -99,6 +109,38 @@ def score_view(bundle: dict, calibration: dict, test) -> dict:
     return scores
 
 
+def fit_decision(bundle: dict, cal) -> dict:
+    """Accept/reject thresholds per segment, fitted on the calibration fold."""
+    per_model = predict_each(bundle, cal)
+    ensemble = _blend(bundle, per_model)
+    score = wqs(components(per_model, ensemble, cal))
+    actual = cal[TARGET].to_numpy(dtype=float)
+    ape = np.abs(ensemble - actual) / actual * 100
+    return {
+        key: fit_thresholds(score[mask], ape[mask])
+        for key, mask in _masks(cal).items()
+    }
+
+
+def score_decision(bundle: dict, decision: dict, test) -> dict:
+    """Label the test fold with each segment's thresholds and screen the labels.
+    Segments are the decision keys: a row falls in its property type's segment
+    when that key exists, and always in __default__."""
+    per_model = predict_each(bundle, test)
+    pred = _blend(bundle, per_model)
+    score = wqs(components(per_model, pred, test))
+    actual = test[TARGET].to_numpy(dtype=float)
+    types = test["collateral_type"].to_numpy()
+    report = {}
+    for key, thresholds in decision.items():
+        mask = np.ones(len(types), dtype=bool) if key == "__default__" else types == key
+        if not mask.any():
+            continue
+        labels = decide(score[mask], thresholds["alpha"], thresholds["beta"])
+        report[key] = screening(labels, pred[mask], actual[mask])
+    return report
+
+
 def main() -> None:
     bundle = joblib.load(BUNDLE)
     df, _ = clean(load_raw())
@@ -111,7 +153,11 @@ def main() -> None:
     out = {key: fit_view(bundle, cal_views[view]) for key, view in VIEWS.items()}
     coverage_out = {key: score_view(bundle, out[key], test_views[view])
                     for key, view in VIEWS.items()}
+    decision = {key: fit_decision(bundle, cal_views[view]) for key, view in VIEWS.items()}
+    decision_test = {key: score_decision(bundle, decision[key], test_views[view])
+                     for key, view in VIEWS.items()}
     bundle.update(out)
+    bundle["decision"] = decision
     joblib.dump(bundle, BUNDLE, compress=3)
 
     for key, calibration in out.items():
@@ -130,9 +176,27 @@ def main() -> None:
             print(f"{k[:42]:<44}{v['n']:>8,}{v['coverage_pct']:>8.1f}%"
                   f"{v['median_ratio']:>8.3f}{v['COD']:>8.2f}{v['PRD']:>8.3f}")
 
+    for key, thresholds in decision.items():
+        print(f"\n{key}: decision thresholds (fit on cal)")
+        print(f"{'segment':<34}{'alpha':>8}{'beta':>8}{'n':>8}")
+        print("-" * 58)
+        for k, v in thresholds.items():
+            a = "-" if v["alpha"] is None else f"{v['alpha']:.3f}"
+            b = "-" if v["beta"] is None else f"{v['beta']:.3f}"
+            print(f"{k[:32]:<34}{a:>8}{b:>8}{v['n']:>8,}")
+            for label, s in decision_test[key].get(k, {}).items():
+                print(f"    {label:<30}{s['n']:>8,} MdAPE {s['MdAPE']:>6.1f}%"
+                      f"  ±20% {s['within_20pct']:>6.1f}%  share {s['share_pct']:>5.1f}%")
+
     m = json.loads(Path("models/metrics.json").read_text(encoding="utf-8"))
     m.update(out)
     m["test_coverage"] = coverage_out
+    m["decision"] = decision
+    m["decision_test"] = decision_test
+    m["decision_note"] = (
+        "Accept/reject thresholds are fit on the calibration fold (accept: within-20% >= 80%, "
+        "reject: <= 50%, each group >= 5% of rows) and screened on the test fold; defer is the rest."
+    )
     m["calibration_note"] = (
         "split conformal: bounds from the calibration fold, coverage measured on the test fold. "
         "Per property type: 'calibration' for a map click, 'calibration_dropdown' for the "
