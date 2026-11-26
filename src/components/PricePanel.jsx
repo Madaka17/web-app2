@@ -1,9 +1,8 @@
 import { useEffect, useId, useState } from 'react';
-import { AlertTriangle, ArrowDownRight, ArrowUpRight, BarChart3, CalendarClock, CheckCircle2, HelpCircle, Home, Info, Layers, MapPin, Minus, Percent, Scale, Target, TrendingUp, X, XCircle } from 'lucide-react';
+import { AlertTriangle, ArrowDownRight, ArrowUpRight, BarChart3, CheckCircle2, HelpCircle, Home, Info, Layers, MapPin, Minus, Percent, Scale, Target, TrendingUp, X, XCircle } from 'lucide-react';
 import { useLang } from '../i18n.jsx';
 import { LOCATIONS, findLocationPath } from '../lib/locations';
 import { AREA_MAX, AREA_MIN, DEFAULT_FORM, askingGap, gapApplies, isInCoverage, listingPropertyType, targetPatch, toPayload } from '../lib/priceForm';
-import { DEFAULT_GROWTH_PCT, GROWTH_MAX_PCT, GROWTH_MIN_PCT, GROWTH_STEP_PCT, HORIZONS_YEARS, compound } from '../lib/growth';
 import { formatBaht } from '../lib/prediction';
 import { getHealth } from '../lib/api';
 import { usePrediction } from '../lib/usePrediction.js';
@@ -302,7 +301,6 @@ export default function PricePanel({ target, onClearTarget, onClose }) {
   // Baht amounts use the active language's unit labels.
   const fmtBaht = (value) => formatBaht(value, { million: t('mthb'), baht: t('thb') });
   const [form, setForm] = useState(DEFAULT_FORM);
-  const [growth, setGrowth] = useState(DEFAULT_GROWTH_PCT[DEFAULT_FORM.propertyType]);
   const health = useHealth();
 
   const patch = (fields) => setForm((f) => ({ ...f, ...fields }));
@@ -312,10 +310,6 @@ export default function PricePanel({ target, onClearTarget, onClose }) {
     if (target) setForm((f) => ({ ...f, ...targetPatch(target) }));
   }, [target]);
 
-  // Each property type starts from its own assumed growth rate.
-  useEffect(() => {
-    setGrowth(DEFAULT_GROWTH_PCT[form.propertyType]);
-  }, [form.propertyType]);
 
   const inCoverage = !target || isInCoverage(target.lat, target.lng);
   const payload = inCoverage ? toPayload(form, target) : null;
@@ -595,49 +589,6 @@ export default function PricePanel({ target, onClearTarget, onClose }) {
                   </li>
                 ))}
               </ul>
-            </Section>
-
-            <Section title={t('futureValue')} icon={CalendarClock}>
-              <div className="space-y-3 rounded-2xl border border-line p-3">
-                <div>
-                  <div className="flex items-baseline justify-between">
-                    <label htmlFor="growth-rate" className="text-xs font-medium text-ink-primary">{t('growthRate')}</label>
-                    <span className="font-display text-sm font-bold text-ink-primary">{growth}%</span>
-                  </div>
-                  <input
-                    id="growth-rate"
-                    type="range"
-                    min={GROWTH_MIN_PCT}
-                    max={GROWTH_MAX_PCT}
-                    step={GROWTH_STEP_PCT}
-                    value={growth}
-                    onChange={(e) => setGrowth(Number(e.target.value))}
-                    className="mt-2 w-full accent-[#DC2626]"
-                  />
-                </div>
-                <p className="text-[11px] text-ink-muted">{t('mthb')}</p>
-                <table className="w-full text-xs tabular-nums">
-                  <thead>
-                    <tr className="bg-surface-soft text-ink-muted">
-                      <th className="rounded-l-md px-2 py-1.5 text-left font-medium">{t('horizon')}</th>
-                      <th className="py-1.5 text-right font-medium">{t('estimateLow')}</th>
-                      <th className="py-1.5 text-right font-medium">{t('estimateMid')}</th>
-                      <th className="rounded-r-md px-2 py-1.5 text-right font-medium">{t('estimateHigh')}</th>
-                    </tr>
-                  </thead>
-                  <tbody className="text-ink-primary">
-                    {HORIZONS_YEARS.map((years) => (
-                      <tr key={years} className="border-t border-line">
-                        <td className="px-2 py-1.5 text-left">{years}</td>
-                        <td className="py-1.5 text-right">{(compound(result.lowerBound, growth, years) / 1e6).toFixed(2)}</td>
-                        <td className="py-1.5 text-right font-semibold">{(compound(result.predictedPrice, growth, years) / 1e6).toFixed(2)}</td>
-                        <td className="px-2 py-1.5 text-right">{(compound(result.upperBound, growth, years) / 1e6).toFixed(2)}</td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-                <p className="text-[11px] leading-relaxed text-ink-muted">{t('futureNote')}</p>
-              </div>
             </Section>
           </div>
         )}
