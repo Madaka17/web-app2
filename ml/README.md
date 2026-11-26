@@ -178,6 +178,107 @@ holdout's COD (21.6) and PRD (1.100) are outside their ranges.
 Asking prices are noisier than appraisals: the same unit is listed at very
 different prices by different agents, which likely limits how well any model can do.
 
+## Three-way decision (WQS-lite)
+
+A price range says how wide the uncertainty is; the decision says whether a
+listing's asking price can be relied on. Each prediction gets one label:
+`accept`, `defer` or `reject` (the same strings in the API, the JSON and the
+UI). Labels are computed by `ml/decision.py` and written with every prediction
+(`/api/predict`) and, for listing pins, to `public/decisions.json`.
+
+### Score
+
+Four components, each in [0, 1], averaged with equal weight:
+
+| component | formula |
+|---|---|
+| agreement | `clip(1 - spread / 0.30, 0, 1)`, where `spread = (max p_i - min p_i) / ensemble` over the three models |
+| local | `min(1, log1p(sd_n) / log1p(30))`: rows in the sub-district |
+| size | `min(1, log1p(band_n) / log1p(30))`: rows in the size band |
+| district | `min(1, log1p(dt_n) / log1p(30))`: rows in the district |
+
+`score = mean of the four`. A high score means the three models agree and the
+comparables are deep; it does not measure the model's own error directly.
+
+### Thresholds
+
+Two thresholds per view, fitted on the calibration fold (never trained on):
+accept when `score >= alpha`, reject when `score < beta`, defer otherwise. The
+targets are: the accept group holds within ±20% of the actual price at least
+80.0% of the time, the reject group at most 50.0%, and each group at least 5%
+of the segment's rows. A null `alpha` means that nothing is accepted.
+
+Thresholds are fitted once per app view, on all calibration rows of that view,
+not per property type. Per-type fitting was tried first and collapsed: each
+type's thresholds just re-labelled the type average (about 99% of condos were
+accepted and about 98% of land rejected), so it did not screen within a type.
+
+| view | alpha (accept ≥) | beta (reject <) | calibration n | source |
+|---|---|---|---|---|
+| map click (`calibration`) | 0.940 | 0.902 | 6,722 | `decision.calibration.__default__` |
+| sub-district dropdown (`calibration_dropdown`) | none | 0.994 | 8,748 | `decision.calibration_dropdown.__default__` |
+
+Dropdown: no group reaches 80% within ±20% on the calibration fold, so alpha is
+null and the dropdown never accepts; almost every listing is rejected. This is
+the honest result: without a map pin the estimate is too imprecise to rely on.
+
+### Test-fold screening
+
+The thresholds were set on the calibration fold; the table scores each label on
+the untouched test fold (`decision_test` in `metrics.json`). Share is the label's
+share of that segment's test rows.
+
+**Map click**
+
+| segment | label | n | share % | MdAPE % | within ±20% % |
+|---|---|---|---|---|---|
+| all (`__default__`) | accept | 8,586 | 61.6 | 9.6 | 79.9 |
+| all (`__default__`) | defer | 2,496 | 17.9 | 11.8 | 72.0 |
+| all (`__default__`) | reject | 2,846 | 20.4 | 20.9 | 48.1 |
+| คอนโด | accept | 7,585 | 74.7 | 9.1 | 82.6 |
+| คอนโด | defer | 1,692 | 16.7 | 10.5 | 78.1 |
+| คอนโด | reject | 881 | 8.7 | 14.5 | 63.1 |
+| ทาวน์เฮ้าส์ | accept | 455 | 32.9 | 16.5 | 59.3 |
+| ทาวน์เฮ้าส์ | defer | 329 | 23.8 | 16.3 | 60.2 |
+| ทาวน์เฮ้าส์ | reject | 601 | 43.4 | 20.4 | 49.3 |
+| ที่ดิน | accept | 12 | 2.6 | 3.0 | 83.3 |
+| ที่ดิน | defer | 7 | 1.5 | 30.7 | 42.9 |
+| ที่ดิน | reject | 450 | 95.9 | 34.3 | 31.6 |
+| บ้านเดี่ยว | accept | 534 | 27.9 | 16.0 | 59.6 |
+| บ้านเดี่ยว | defer | 468 | 24.4 | 15.7 | 58.8 |
+| บ้านเดี่ยว | reject | 914 | 47.7 | 25.4 | 41.1 |
+
+The per-type rows use the one pair above, so they show how the shared
+thresholds behave inside each type. The land accept group (12 rows) and the
+dropdown's one-row defer group in detached houses are too small to read.
+
+**Sub-district dropdown**
+
+| segment | label | n | share % | MdAPE % | within ±20% % |
+|---|---|---|---|---|---|
+| all (`__default__`) | defer | 160 | 0.9 | 19.2 | 50.6 |
+| all (`__default__`) | reject | 17,648 | 99.1 | 21.9 | 46.2 |
+
+There is no accept row because alpha is null.
+
+On the map-click test fold the accept group is the most accurate (79.9% within
+±20%, against 48.1% for reject), which suggests the score separates the listings
+the model prices well from those it prices poorly. The accept group sits just
+under the 80% target set on the calibration fold; this is likely sampling
+variation on one test fold, not a failed target.
+
+**Limitation:** pins in `public/listings.json` are current listings, and some
+may overlap the training data. A pin's decision uses only model agreement and
+comparable depth, not the pin's own error, so a pin that was in training can
+look more reliable than an unseen one.
+
+### Pin decisions
+
+`ml/score_listings.py` scores every pin in `public/listings.json` through the
+API in-process and writes `public/decisions.json`. The last run printed accept
+533, defer 365, reject 1,005 and skipped 207 (pins the API could not score).
+Re-run it after retraining or refreshing the listings.
+
 ## ค่าเสื่อม (building age)
 
 `train_models.depreciation_curve` measures it instead of assuming a rate: each
